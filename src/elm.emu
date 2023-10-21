@@ -1,0 +1,15 @@
+|> Article 
+    author = Matthew Griffith
+    title = How I Learned /elm-markup/
+    description = How I learned to use elm-markup.
+    #
+
+"Lorem ipsum dolor sit amet,"
+
+|>_ Math
+    src = http://placekitten.com/g/200/300
+    description = What a cute kitten.
+
+|>_ Image
+    src = http://placekitten.com/g/200/300
+    description = What a cute kitten.

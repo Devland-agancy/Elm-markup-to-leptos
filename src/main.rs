@@ -22,39 +22,39 @@ fn main() {
             Err(why) => panic!("couldn't read {}: {}", display, why),
             Ok(_) => {
                 let mut output = String::new();
-                //stack str for tagname , usize for indent level, bool if it's self closing
-                let mut tag_stack: Vec<(&str, usize, bool)> = Vec::new();
+                //stack str for tagname , usize for indent level, bool if it's self closing , bool if we're in props lines
+                let mut tag_stack: Vec<(&str, usize, bool, bool)> = Vec::new();
                 let lines = s.lines();
             
                 for line in lines {
                     let trimmed_line = line.trim();
                     let indent = line.len() - trimmed_line.len();
-            
+                    print!("trimmed_line, {}\n", trimmed_line.is_empty());
                     if trimmed_line.starts_with("|> ") {
                         let tag_name = &trimmed_line[3..];
-                        while let Some((last_tag, last_indent, is_self_closing)) = tag_stack.last().cloned() {
+                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
                             if indent <= last_indent {
                                 if is_self_closing {
                                     output.push_str(&format!("/>\n"));
                                 }else{
-                                    output.push_str(&format!("</{}>\n", last_tag));
+                                    output.push_str(&format!("\"</{}>\n", last_tag));
                                 }
                                 tag_stack.pop();
                             } else {
                                 break;
                             }
                         }
-                        output.push_str(&format!("<{}>\n", tag_name));
-                        tag_stack.push((tag_name, indent, false));
+                        output.push_str(&format!("<{}\n", tag_name));
+                        tag_stack.push((tag_name, indent, false, true));
                     }else if trimmed_line.starts_with("|>_ ") {
                         //self closing tag
                         let tag_name = &trimmed_line[4..];
-                        while let Some((last_tag, last_indent, is_self_closing)) = tag_stack.last().cloned() {
+                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
                             if indent <= last_indent {
                                 if is_self_closing {
                                     output.push_str(&format!("/>\n"));
                                 }else{
-                                    output.push_str(&format!("</{}>\n", last_tag));
+                                    output.push_str(&format!("\"</{}>\n", last_tag));
                                 }
                                 tag_stack.pop();
                             } else {
@@ -62,20 +62,22 @@ fn main() {
                             }
                         }
                         output.push_str(&format!("<{} \n", tag_name));
-                        tag_stack.push((tag_name, indent, true));
+                        tag_stack.push((tag_name, indent, true, true));
+                    } else if trimmed_line.is_empty() && tag_stack.last().cloned().unwrap().3 {
+
+                        output.push_str(&format!(">\nr#\""));
+                        let last = tag_stack.last_mut().unwrap();
+                        *last = (last.0,last.1,last.2,false);
+                   
                     } else if !trimmed_line.is_empty() {
-                        while let Some((last_tag, last_indent, is_self_closing)) = tag_stack.last().cloned() {
+                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
                           
-
-                            println!("indent{}", indent);
-                            println!("last_indent{}", last_indent);
-
                             if indent <= last_indent {
 
                                 if is_self_closing {
                                     output.push_str(&format!("/>\n"));
                                 }else{
-                                    output.push_str(&format!("</{}>\n", last_tag));
+                                    output.push_str(&format!("\"</{}>\n", last_tag));
                                 }
                                 tag_stack.pop();
                             } else {
@@ -86,11 +88,11 @@ fn main() {
                     }
                 }
             
-                while let Some((last_tag, _, is_self_closing)) = tag_stack.pop() {
+                while let Some((last_tag, _, is_self_closing, _)) = tag_stack.pop() {
                     if is_self_closing {
                         output.push_str(&format!("/>\n"));
                     }else{
-                        output.push_str(&format!("</{}>\n", last_tag));
+                        output.push_str(&format!("\"</{}>\n", last_tag));
                     }
                 }
             

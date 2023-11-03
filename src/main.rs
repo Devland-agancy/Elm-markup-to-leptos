@@ -1,108 +1,151 @@
-
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-fn main() {
-   
-    fn trf(elm: &str) -> String {
-        // Create a path to the desired file
-        let path = Path::new(elm);
-        let display = path.display();
+struct TagInfo {
+    name: String,
+    indent: usize,
+    is_self_closing: bool,
+    in_props: bool,
+}
 
-        // Open the path in read-only mode, returns `io::Result<File>`
-        let mut file = match File::open(&path) {
-            Err(why) => panic!("couldn't open {}: {}", display, why),
-            Ok(file) => file,
-        };
+fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
+    let trimmed_content = content.trim_start(); // Remove leading spaces from content
+    format!("{}{}{}", start, trimmed_content, end)
+}
 
-        // Read the file contents into a string, returns `io::Result<usize>`
-        let mut s = String::new();
-        match file.read_to_string(&mut s) {
-            Err(why) => panic!("couldn't read {}: {}", display, why),
-            Ok(_) => {
-                let mut output = String::new();
-                //stack str for tagname , usize for indent level, bool if it's self closing , bool if we're in props lines
-                let mut tag_stack: Vec<(&str, usize, bool, bool)> = Vec::new();
-                let lines = s.lines();
-            
-                for line in lines {
-                    let trimmed_line = line.trim();
-                    let indent = line.len() - trimmed_line.len();
-                    print!("trimmed_line, {}\n", trimmed_line.is_empty());
-                    if trimmed_line.starts_with("|> ") {
-                        let tag_name = &trimmed_line[3..];
-                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
-                            if indent <= last_indent {
-                                if is_self_closing {
-                                    output.push_str(&format!("/>\n"));
-                                }else{
-                                    output.push_str(&format!("\"</{}>\n", last_tag));
-                                }
-                                tag_stack.pop();
-                            } else {
-                                break;
-                            }
-                        }
-                        output.push_str(&format!("<{}\n", tag_name));
-                        tag_stack.push((tag_name, indent, false, true));
-                    }else if trimmed_line.starts_with("|>_ ") {
-                        //self closing tag
-                        let tag_name = &trimmed_line[4..];
-                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
-                            if indent <= last_indent {
-                                if is_self_closing {
-                                    output.push_str(&format!("/>\n"));
-                                }else{
-                                    output.push_str(&format!("\"</{}>\n", last_tag));
-                                }
-                                tag_stack.pop();
-                            } else {
-                                break;
-                            }
-                        }
-                        output.push_str(&format!("<{} \n", tag_name));
-                        tag_stack.push((tag_name, indent, true, true));
-                    } else if trimmed_line.is_empty() && tag_stack.last().cloned().unwrap().3 {
+struct ContentLine {
+    text: String,
+}
 
-                        output.push_str(&format!(">\nr#\""));
-                        let last = tag_stack.last_mut().unwrap();
-                        *last = (last.0,last.1,last.2,false);
-                   
-                    } else if !trimmed_line.is_empty() {
-                        while let Some((last_tag, last_indent, is_self_closing, _)) = tag_stack.last().cloned() {
-                          
-                            if indent <= last_indent {
-
-                                if is_self_closing {
-                                    output.push_str(&format!("/>\n"));
-                                }else{
-                                    output.push_str(&format!("\"</{}>\n", last_tag));
-                                }
-                                tag_stack.pop();
-                            } else {
-                                break;
-                            }
-                        }
-                        output.push_str(&format!("{}\n", line));
-                    }
-                }
-            
-                while let Some((last_tag, _, is_self_closing, _)) = tag_stack.pop() {
-                    if is_self_closing {
-                        output.push_str(&format!("/>\n"));
-                    }else{
-                        output.push_str(&format!("\"</{}>\n", last_tag));
-                    }
-                }
-            
-                output
-            },
+impl ContentLine {
+    fn new(text: &str) -> ContentLine {
+        ContentLine {
+            text: text.to_string(),
         }
     }
 
-    
+    fn handle_bold(mut self) -> Self {
+        let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"<Span bold=true>r#\"{}\"#</Span>\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
 
-    let html_code = trf("/home/chaker/code/lp/elm_to_view/src/elm.emu");
-   println!("{}", html_code);
+    fn handle_italic(mut self) -> Self {
+        let re = regex::Regex::new(r"\%(.*?)\%").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"<Span italic=true>r#\"{}\"#</Span>\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+}
+
+fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
+    while let Some(last_tag_info) = tag_stack.last() {
+        if *indent <= last_tag_info.indent {
+            if last_tag_info.is_self_closing {
+                output.push_str("/>\n");
+            } else {
+                output.push_str(&format!("</{}>\n", last_tag_info.name));
+            }
+            tag_stack.pop();
+        } else {
+            break;
+        }
+    }
+}
+
+// Let's also update the `trf` function to use `TagInfo`:
+fn trf(elm: &str) -> proc_macro2::TokenStream {
+    let path = Path::new(elm);
+    let display = path.display();
+
+    let mut file = match File::open(&path) {
+        Err(why) => panic!("couldn't open {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    let mut s = String::new();
+    match file.read_to_string(&mut s) {
+        Err(why) => panic!("couldn't read {}: {}", display, why),
+        Ok(_) => {
+            let mut output = String::new();
+            let mut tag_stack: Vec<TagInfo> = Vec::new();
+            let lines = s.lines();
+
+            for line in lines {
+                let trimmed_line = line.trim();
+                let indent = line.len() - trimmed_line.len();
+
+                if trimmed_line.starts_with("|> ") {
+                    let tag_name = trimmed_line[3..].to_string();
+                    tag_loop(&mut tag_stack, &mut output, &indent);
+
+                    output.push_str(&format!("<{}\n", tag_name));
+                    tag_stack.push(TagInfo {
+                        name: tag_name,
+                        indent,
+                        is_self_closing: false,
+                        in_props: true,
+                    });
+                } else if trimmed_line.starts_with("|>_ ") {
+                    let tag_name = trimmed_line[4..].to_string();
+                    tag_loop(&mut tag_stack, &mut output, &indent);
+
+                    output.push_str(&format!("<{} \n", tag_name));
+                    tag_stack.push(TagInfo {
+                        name: tag_name,
+                        indent,
+                        is_self_closing: true,
+                        in_props: true,
+                    });
+                } else if trimmed_line.is_empty()
+                    && tag_stack.last().map_or(false, |tag| tag.in_props)
+                {
+                    output.push_str(">\n");
+                    if let Some(last) = tag_stack.last_mut() {
+                        last.in_props = false;
+                    }
+                } else if !trimmed_line.is_empty() {
+                    tag_loop(&mut tag_stack, &mut output, &indent);
+
+                    let last = tag_stack.last().unwrap();
+                    if last.in_props {
+                        output.push_str(&format!("{}\n", line));
+                    } else {
+                        let processed_line = ContentLine::new(line).handle_bold().handle_italic();
+                        output.push_str(&concat_ignore_spaces(
+                            "r#\"",
+                            &processed_line.text,
+                            "\"#\n",
+                        ));
+                    }
+                }
+            }
+
+            while let Some(last_tag_info) = tag_stack.pop() {
+                if last_tag_info.is_self_closing {
+                    output.push_str("/>\n");
+                } else {
+                    output.push_str(&format!("</{}>\n", last_tag_info.name));
+                }
+            }
+
+            output
+                .replace("\n", " ")
+                .parse::<proc_macro2::TokenStream>()
+                .expect("Failed to parse Leptos view code")
+        }
+    }
+}
+
+fn main() {
+    let html_code = trf("/home/chaker/code/lp/Elm-markup-to-leptos/src/elm.emu");
+    println!("{}", html_code);
 }

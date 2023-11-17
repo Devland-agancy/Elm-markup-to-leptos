@@ -29,7 +29,7 @@ impl ContentLine {
         let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"<Span bold=true>r#\"{}\"#</Span>\"", &caps[1])
+                format!("\"#<Span bold=true>r#\"{}\"#</Span>r#\"", &caps[1])
             })
             .to_string();
         self
@@ -39,7 +39,40 @@ impl ContentLine {
         let re = regex::Regex::new(r"\%(.*?)\%").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"<Span italic=true>r#\"{}\"#</Span>\"", &caps[1])
+                format!("\"#<Span italic=true>r#\"{}\"#</Span>r#\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+
+    fn handle_math(mut self) -> Self {
+        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+
+        for cap in re.captures_iter(&self.text.clone()) {
+            let match_str = &cap[0];
+            let start_pos = cap.get(0).unwrap().start();
+            let end_pos = cap.get(0).unwrap().end();
+
+            // Check if the match is not part of a $$ sequence
+            if (start_pos == 0 || self.text.chars().nth(start_pos - 1).unwrap() != '$')
+                && (end_pos >= self.text.len() || self.text.chars().nth(end_pos).unwrap() != '$')
+            {
+                self.text = re
+                    .replace_all(&self.text, |caps: &regex::Captures| {
+                        format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                    })
+                    .to_string();
+            }
+        }
+
+        self
+    }
+
+    fn handle_math_block(mut self) -> Self {
+        let re = regex::Regex::new(r"\$\$(.*?)\$\$").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"#<MathBlock>r#\"$${}$$\"#</MathBlock>r#\"", &caps[1])
             })
             .to_string();
         self
@@ -62,7 +95,7 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 }
 
 // Let's also update the `trf` function to use `TagInfo`:
-fn trf(elm: &str) -> proc_macro2::TokenStream {
+fn trf(elm: &str) -> String {
     let path = Path::new(elm);
     let display = path.display();
 
@@ -119,7 +152,11 @@ fn trf(elm: &str) -> proc_macro2::TokenStream {
                     if last.in_props {
                         output.push_str(&format!("{}\n", line));
                     } else {
-                        let processed_line = ContentLine::new(line).handle_bold().handle_italic();
+                        let processed_line = ContentLine::new(line)
+                            .handle_bold()
+                            .handle_italic()
+                            .handle_math_block()
+                            .handle_math();
                         output.push_str(&concat_ignore_spaces(
                             "r#\"",
                             &processed_line.text,
@@ -137,10 +174,7 @@ fn trf(elm: &str) -> proc_macro2::TokenStream {
                 }
             }
 
-            output
-                .replace("\n", " ")
-                .parse::<proc_macro2::TokenStream>()
-                .expect("Failed to parse Leptos view code")
+            output.replace("\n", " ")
         }
     }
 }

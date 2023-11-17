@@ -56,6 +56,7 @@ pub fn elm_to_view(input: TokenStream) -> TokenStream {
     };
     output.into()
 }
+
 struct TagInfo {
     name: String,
     indent: usize,
@@ -83,7 +84,7 @@ impl ContentLine {
         let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"<Span bold=true>r#\"{}\"#</Span>\"", &caps[1])
+                format!("\"#<Span bold=true>r#\"{}\"#</Span>r#\"", &caps[1])
             })
             .to_string();
         self
@@ -93,7 +94,27 @@ impl ContentLine {
         let re = regex::Regex::new(r"\%(.*?)\%").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"<Span italic=true>r#\"{}\"#</Span>\"", &caps[1])
+                format!("\"#<Span italic=true>r#\"{}\"#</Span>r#\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+
+    fn handle_math(mut self) -> Self {
+        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"#<Math>r#$\"{}$\"#</Math>r#\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+
+    fn handle_math_block(mut self) -> Self {
+        let re = regex::Regex::new(r"\$$(.*?)\$$").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"#<MathBlock>r#$\"{}$\"#</MathBlock>r#\"", &caps[1])
             })
             .to_string();
         self
@@ -173,7 +194,11 @@ fn trf(elm: &str) -> proc_macro2::TokenStream {
                     if last.in_props {
                         output.push_str(&format!("{}\n", line));
                     } else {
-                        let processed_line = ContentLine::new(line).handle_bold().handle_italic();
+                        let processed_line = ContentLine::new(line)
+                            .handle_bold()
+                            .handle_italic()
+                            .handle_math_block()
+                            .handle_math();
                         output.push_str(&concat_ignore_spaces(
                             "r#\"",
                             &processed_line.text,

@@ -152,9 +152,10 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
     let mut output = String::new();
     let mut tag_stack: Vec<TagInfo> = Vec::new();
     let lines = elm.lines();
+    let self_closing_tags = vec!["Image"];
 
     for line in lines {
-        let trimmed_line = line.trim();
+        let trimmed_line = line.trim_start();
         let indent = line.len() - trimmed_line.len();
 
         if trimmed_line.starts_with("|> ") {
@@ -165,21 +166,14 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
             tag_stack.push(TagInfo {
                 name: tag_name,
                 indent,
-                is_self_closing: false,
+                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
                 in_props: true,
             });
-        } else if trimmed_line.starts_with("|>_ ") {
-            let tag_name = trimmed_line[4..].to_string();
-            tag_loop(&mut tag_stack, &mut output, &indent);
-
-            output.push_str(&format!("<{} \n", tag_name));
-            tag_stack.push(TagInfo {
-                name: tag_name,
-                indent,
-                is_self_closing: true,
-                in_props: true,
-            });
-        } else if trimmed_line.is_empty() && tag_stack.last().map_or(false, |tag| tag.in_props) {
+        } else if trimmed_line.is_empty()
+            && tag_stack
+                .last()
+                .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
+        {
             output.push_str(">\n");
             if let Some(last) = tag_stack.last_mut() {
                 last.in_props = false;

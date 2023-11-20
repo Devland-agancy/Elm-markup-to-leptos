@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::Path;
 
 use nom::sequence::Tuple;
-
+#[derive(Debug)]
 struct TagInfo {
     name: String,
     indent: usize,
@@ -95,84 +95,94 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 
 // Let's also update the `trf` function to use `TagInfo`:
 fn trf(elm: String) -> String {
-    let path = Path::new(&elm);
-    let display = path.display();
+    let self_closing_tags = vec!["Image"];
+    let mut s: String = String::new();
 
-    let self_closing_tags = vec!["img"];
+    let mut output = String::new();
+    let mut tag_stack: Vec<TagInfo> = Vec::new();
+    let lines = elm.lines();
+    for line in lines {
+        let trimmed_line = line.trim_start();
+        let indent = line.len() - trimmed_line.len();
 
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("couldn't open {}: {}", display, why),
-        Ok(file) => file,
-    };
-
-    let mut s = String::new();
-    match file.read_to_string(&mut s) {
-        Err(why) => panic!("couldn't read {}: {}", display, why),
-        Ok(_) => {
-            let mut output = String::new();
-            let mut tag_stack: Vec<TagInfo> = Vec::new();
-            let lines = s.lines();
-
-            for line in lines {
-                let trimmed_line = line.trim();
-                let indent = line.len() - trimmed_line.len();
-
-                if trimmed_line.starts_with("|> ") {
-                    let tag_name = trimmed_line[3..].to_string();
-                    tag_loop(&mut tag_stack, &mut output, &indent);
-                    output.push_str(&format!("<{}\n", tag_name));
-                    tag_stack.push(TagInfo {
-                        name: tag_name,
-                        indent,
-                        is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
-                        in_props: true,
-                    });
-                } else if trimmed_line.is_empty()
-                    && tag_stack
-                        .last()
-                        .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
-                {
-                    output.push_str(">\n");
-                    if let Some(last) = tag_stack.last_mut() {
-                        last.in_props = false;
-                    }
-                } else if !trimmed_line.is_empty() {
-                    tag_loop(&mut tag_stack, &mut output, &indent);
-
-                    let last = tag_stack.last().unwrap();
-                    if last.in_props {
-                        output.push_str(&format!("{}\n", line));
-                    } else {
-                        let processed_line = ContentLine::new(line)
-                            .handle_bold()
-                            .handle_italic()
-                            .handle_math_block()
-                            .handle_math()
-                            .handle_math_block_back();
-
-                        output.push_str(&concat_ignore_spaces(
-                            "r#\"",
-                            &processed_line.text,
-                            "\"#\n",
-                        ));
-                    }
-                }
+        if trimmed_line.starts_with("|> ") {
+            let tag_name = trimmed_line[3..].to_string();
+            tag_loop(&mut tag_stack, &mut output, &indent);
+            output.push_str(&format!("<{}\n", tag_name));
+            tag_stack.push(TagInfo {
+                name: tag_name,
+                indent,
+                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
+                in_props: true,
+            });
+        } else if trimmed_line.is_empty()
+            && tag_stack
+                .last()
+                .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
+        {
+            output.push_str(">\n");
+            if let Some(last) = tag_stack.last_mut() {
+                last.in_props = false;
             }
+        } else if !trimmed_line.is_empty() {
+            tag_loop(&mut tag_stack, &mut output, &indent);
 
-            while let Some(last_tag_info) = tag_stack.pop() {
-                if last_tag_info.is_self_closing {
-                    output.push_str("/>\n");
-                } else {
-                    output.push_str(&format!("</{}>\n", last_tag_info.name));
-                }
+            let last = tag_stack.last().unwrap();
+            if last.in_props {
+                output.push_str(&format!("{}\n", line));
+            } else {
+                let processed_line = ContentLine::new(line)
+                    .handle_bold()
+                    .handle_italic()
+                    .handle_math_block()
+                    .handle_math()
+                    .handle_math_block_back();
+
+                output.push_str(&concat_ignore_spaces("r#\"", &processed_line.text, "\"#\n"));
             }
-
-            output.replace("\n", " ")
         }
     }
+
+    while let Some(last_tag_info) = tag_stack.pop() {
+        if last_tag_info.is_self_closing {
+            output.push_str("/>\n");
+        } else {
+            output.push_str(&format!("</{}>\n", last_tag_info.name));
+        }
+    }
+
+    output.replace("\n", " ")
 }
 
 fn main() {
-    let html_code = trf("/home/chaker/code/lp/Elm-markup-to-leptos/src/elm.emu".to_string());
+    let html_code = trf(r#"
+    |> Paragraph
+
+        *The Definition.*
+        The %slope% of a line is a mathematical measure of how
+        &ldquo;steep&rdquo; a line is.
+        Here are a few examples (for an explanation of the values,
+        see below):
+
+    |> Image
+        src="ch2figs/collection_of_examples_3_x_2.svg"
+
+    |> Paragraph    
+        
+        The slope of a line is...
+
+    |> Paragraph   
+        margin_top = 15
+
+        the number of units the line goes up with each unit to the right
+        
+    |> Paragraph
+        margin_top = 15
+
+        ...assuming that numbers on the $y$-axis increase going up and that 
+        numbers on the $x$-axis increase going right, as is usually the case.
+        One can also describe slope as...
+    "#
+    .to_string());
     println!("{}", html_code);
 }

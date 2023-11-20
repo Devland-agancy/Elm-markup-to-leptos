@@ -192,7 +192,11 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
                     .handle_math()
                     .handle_math_block_back();
 
-                output.push_str(&concat_ignore_spaces("r#\"", &processed_line.text, "\"#\n"));
+                output.push_str(&concat_ignore_spaces(
+                    "r#\"",
+                    &processed_line.text,
+                    " \"#\n",
+                ));
             }
         }
     }

@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
+use nom::sequence::Tuple;
+
 struct TagInfo {
     name: String,
     indent: usize,
@@ -17,7 +19,6 @@ fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
 struct ContentLine {
     text: String,
 }
-
 impl ContentLine {
     fn new(text: &str) -> ContentLine {
         ContentLine {
@@ -45,34 +46,32 @@ impl ContentLine {
         self
     }
 
-    fn handle_math(mut self) -> Self {
-        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
-
-        for cap in re.captures_iter(&self.text.clone()) {
-            let match_str = &cap[0];
-            let start_pos = cap.get(0).unwrap().start();
-            let end_pos = cap.get(0).unwrap().end();
-
-            // Check if the match is not part of a $$ sequence
-            if (start_pos == 0 || self.text.chars().nth(start_pos - 1).unwrap() != '$')
-                && (end_pos >= self.text.len() || self.text.chars().nth(end_pos).unwrap() != '$')
-            {
-                self.text = re
-                    .replace_all(&self.text, |caps: &regex::Captures| {
-                        format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
-                    })
-                    .to_string();
-            }
-        }
-
-        self
-    }
-
     fn handle_math_block(mut self) -> Self {
         let re = regex::Regex::new(r"\$\$(.*?)\$\$").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"#<MathBlock>r#\"$${}$$\"#</MathBlock>r#\"", &caps[1])
+                // $$ is not included here as it will cause issues with handle_math fn , after we call handle_math we add $$ back
+                format!("\"#<MathBlock>{}</MathBlock>r#\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+
+    fn handle_math(mut self) -> Self {
+        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+            })
+            .to_string();
+        self
+    }
+
+    fn handle_math_block_back(mut self) -> Self {
+        let re = regex::Regex::new(r"<MathBlock>(.*?)</MathBlock>").unwrap();
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("<MathBlock>r#\"$${}$$\"#</MathBlock>", &caps[1])
             })
             .to_string();
         self
@@ -95,9 +94,11 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 }
 
 // Let's also update the `trf` function to use `TagInfo`:
-fn trf(elm: &str) -> String {
-    let path = Path::new(elm);
+fn trf(elm: String) -> String {
+    let path = Path::new(&elm);
     let display = path.display();
+
+    let self_closing_tags = vec!["img"];
 
     let mut file = match File::open(&path) {
         Err(why) => panic!("couldn't open {}: {}", display, why),
@@ -119,27 +120,17 @@ fn trf(elm: &str) -> String {
                 if trimmed_line.starts_with("|> ") {
                     let tag_name = trimmed_line[3..].to_string();
                     tag_loop(&mut tag_stack, &mut output, &indent);
-
                     output.push_str(&format!("<{}\n", tag_name));
                     tag_stack.push(TagInfo {
                         name: tag_name,
                         indent,
-                        is_self_closing: false,
-                        in_props: true,
-                    });
-                } else if trimmed_line.starts_with("|>_ ") {
-                    let tag_name = trimmed_line[4..].to_string();
-                    tag_loop(&mut tag_stack, &mut output, &indent);
-
-                    output.push_str(&format!("<{} \n", tag_name));
-                    tag_stack.push(TagInfo {
-                        name: tag_name,
-                        indent,
-                        is_self_closing: true,
+                        is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
                         in_props: true,
                     });
                 } else if trimmed_line.is_empty()
-                    && tag_stack.last().map_or(false, |tag| tag.in_props)
+                    && tag_stack
+                        .last()
+                        .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
                 {
                     output.push_str(">\n");
                     if let Some(last) = tag_stack.last_mut() {
@@ -156,7 +147,9 @@ fn trf(elm: &str) -> String {
                             .handle_bold()
                             .handle_italic()
                             .handle_math_block()
-                            .handle_math();
+                            .handle_math()
+                            .handle_math_block_back();
+
                         output.push_str(&concat_ignore_spaces(
                             "r#\"",
                             &processed_line.text,
@@ -180,6 +173,6 @@ fn trf(elm: &str) -> String {
 }
 
 fn main() {
-    let html_code = trf("/home/chaker/code/lp/Elm-markup-to-leptos/src/elm.emu");
+    let html_code = trf("/home/chaker/code/lp/Elm-markup-to-leptos/src/elm.emu".to_string());
     println!("{}", html_code);
 }

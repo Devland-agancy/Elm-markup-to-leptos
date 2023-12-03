@@ -146,7 +146,7 @@ fn trf(elm: String) -> String {
                 .last()
                 .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
         {
-            output.push_str(">\n");
+            output.push_str(">\n\"\"");
             if let Some(last) = tag_stack.last_mut() {
                 last.in_props = false;
             }
@@ -182,9 +182,8 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-    |> Pa
-
-        $$ \te{slope} = {\te{vertical change from \$A\$ to \$B\$} \over \te{horizontal change from \$A\$ to \$B\$}} $$
+    |> ImageRight
+        src="/images/31.svg"
 
         
     "#

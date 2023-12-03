@@ -25,6 +25,15 @@ impl ContentLine {
             text: text.to_string(),
         }
     }
+    //fn replace_symbols(mut self, symbol: &str, replacement_start: &str, replacement_end: &str) -> Self {
+    //    let re = regex::Regex::new(&format!(r"\{}(.*?)\{}", symbol, symbol)).unwrap();
+    //    self.text = re
+    //        .replace_all(&self.text, |caps: &regex::Captures| {
+    //            format!("\"#{}r#\"{}\"#{}r#\"", replacement_start,  &caps[1], replacement_end);
+    //        })
+    //        .to_string();
+    //    self
+    //}
 
     fn handle_bold(mut self) -> Self {
         let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
@@ -58,12 +67,29 @@ impl ContentLine {
     }
 
     fn handle_math(mut self) -> Self {
-        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
-        self.text = re
+        // handle escaped $
+        let re = regex::Regex::new(r"\\\$(.*?)\\\$").unwrap();
+        let mut escaped_text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
+                format!("XescapedX{}XescapedX", &caps[1])
+            })
+            .to_string();
+
+        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+        escaped_text = re
+            .replace_all(&escaped_text, |caps: &regex::Captures| {
                 format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
             })
             .to_string();
+
+        let re = regex::Regex::new(r"XescapedX(.*?)XescapedX").unwrap();
+        self.text = re
+            .replace_all(&escaped_text, |caps: &regex::Captures| {
+                println!("wwwwwwwwwwww{}", &caps[1]);
+                format!("${}$", &caps[1])
+            })
+            .to_string();
+
         self
     }
 
@@ -156,32 +182,11 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-    |> Paragraph
+    |> Pa
 
-        *The Definition.*
-        The %slope% of a line is a mathematical measure of how
-        &ldquo;steep&rdquo; a line is.
-        Here are a few examples (for an explanation of the values,
-        see below):
+        $$ \te{slope} = {\te{vertical change from \$A\$ to \$B\$} \over \te{horizontal change from \$A\$ to \$B\$}} $$
 
-    |> Image
-        src="ch2figs/collection_of_examples_3_x_2.svg"
-
-    |> Paragraph    
         
-        The slope of a line is...
-
-    |> Paragraph   
-        margin_top = 15
-
-        the number of units the line goes up with each unit to the right
-        
-    |> Paragraph
-        margin_top = 15
-
-        ...assuming that numbers on the $y$-axis increase going up and that 
-        numbers on the $x$-axis increase going right, as is usually the case.
-        One can also describe slope as...
     "#
     .to_string());
     println!("{}", html_code);

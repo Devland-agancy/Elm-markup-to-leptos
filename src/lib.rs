@@ -191,7 +191,7 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
                 .last()
                 .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
         {
-            output.push_str(">\n");
+            output.push_str(">\n\"\"");
             if let Some(last) = tag_stack.last_mut() {
                 last.in_props = false;
             }

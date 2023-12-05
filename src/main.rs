@@ -202,48 +202,10 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-        |> Paragraph   
-            margin_top = 15
+    |> Paragraph   
+        align = Align::Center
 
-            *Measuring Slope.*
-            The slope of a line is also the ratio of vertical change
-            to horizontal change between any two distinct points $A$, $B$
-            on the line:
-
-        |> Image
-            src="/images/31.svg"
-
-        |> Paragraph   
-
-            $$ \te{slope} = {\te{vertical change from \$A\$ to \$B\$} \over \te{horizontal change from \$A\$ to \$B\$}} $$
-            Indeed, dividing the vertical change by the horizontal change
-            gives the per-horizontal-unit vertical change.
-
-        |> Paragraph   
-            margin_top=15
-
-            More precisely, if
-            $$ A = (x_1, y_1) $$
-            and
-            $$ B = (x_2, y_2) $$
-            then
-            $$ x_2 - x_1 $$
-            and
-            $$ y_2 - y_1 $$
-            are the horizontal 
-            
-            |> i
-
-                &amp;
-
-            the vertical change, respectively,
-            from $A$ to $B$, so
-
-            |> MathBlock
-
-                \te{slope} = {y_2 - y_1 \over x_2 - x_1} 
-
-                \*\*\*\*
+        \*\*\*\*
         
     "#
     .to_string());

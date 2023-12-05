@@ -81,22 +81,32 @@ impl ContentLine {
     }
 
     fn handle_bold(mut self) -> Self {
+        self.text = ContentLine::escape_chars(&self.text, "*");
+
         let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
                 format!("\"#<Span bold=true>r#\"{}\"#</Span>r#\"", &caps[1])
             })
             .to_string();
+
+        self.text = ContentLine::un_escape_chars(&self.text, "*");
+
         self
     }
 
     fn handle_italic(mut self) -> Self {
+        self.text = ContentLine::escape_chars(&self.text, "%");
+
         let re = regex::Regex::new(r"\%(.*?)\%").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
                 format!("\"#<Span italic=true>r#\"{}\"#</Span>r#\"", &caps[1])
             })
             .to_string();
+
+        self.text = ContentLine::un_escape_chars(&self.text, "%");
+
         self
     }
 
@@ -112,28 +122,16 @@ impl ContentLine {
     }
 
     fn handle_math(mut self) -> Self {
-        // handle escaped $
-        let re = regex::Regex::new(r"\\\$(.*?)\\\$").unwrap();
-        let mut escaped_text = re
-            .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("XescapedX{}XescapedX", &caps[1])
-            })
-            .to_string();
+        self.text = ContentLine::escape_chars(&self.text, "$");
 
         let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
-        escaped_text = re
-            .replace_all(&escaped_text, |caps: &regex::Captures| {
+        self.text = re
+            .replace_all(&self.text, |caps: &regex::Captures| {
                 format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
             })
             .to_string();
 
-        let re = regex::Regex::new(r"XescapedX(.*?)XescapedX").unwrap();
-        self.text = re
-            .replace_all(&escaped_text, |caps: &regex::Captures| {
-                println!("wwwwwwwwwwww{}", &caps[1]);
-                format!("${}$", &caps[1])
-            })
-            .to_string();
+        self.text = ContentLine::un_escape_chars(&self.text, "$");
 
         self
     }
@@ -146,6 +144,28 @@ impl ContentLine {
             })
             .to_string();
         self
+    }
+
+    fn escape_chars(text: &str, _char: &str) -> String {
+        // handle escaped $
+        let re = regex::Regex::new(&format!(r"\\\{}(.*?)\\\{}", _char, _char)).unwrap();
+        let res = re
+            .replace_all(&text, |caps: &regex::Captures| {
+                format!("XescapedX{}XescapedX", &caps[1])
+            })
+            .to_string();
+
+        res
+    }
+    fn un_escape_chars(text: &str, _char: &str) -> String {
+        let re = regex::Regex::new(r"XescapedX(.*?)XescapedX").unwrap();
+        let res = re
+            .replace_all(&text, |caps: &regex::Captures| {
+                format!("{}{}{}", _char, &caps[1], _char)
+            })
+            .to_string();
+
+        res
     }
 }
 

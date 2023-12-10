@@ -141,7 +141,7 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 
 // Let's also update the `trf` function to use `TagInfo`:
 fn trf(elm: String) -> String {
-    let self_closing_tags = vec!["Image"];
+    let self_closing_tags = vec!["Image", "img"];
     let mut s: String = String::new();
 
     let mut output = String::new();
@@ -158,9 +158,10 @@ fn trf(elm: String) -> String {
             tag_stack.push(TagInfo {
                 name: tag_name,
                 indent,
-                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
+                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..].trim_end()),
                 in_props: true,
             });
+            println!("{:?}", tag_stack)
         } else if trimmed_line.is_empty()
             && tag_stack
                 .last()
@@ -202,11 +203,47 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-    |> Paragraph   
-        align = Align::Center
+|> Image 
+    src="/images/33.svg"
 
-        \*\*\*\*
+|> Grid
+    margin_top=15 margin_bottom=15 cols=4
+
+    $x_2 - x_1$
+    $y_2 - y_1$
+    |> Image 
+        src="/images/33.svg"
+
+    $${y_2-y_1 \over x_2-x_1}$$
+
+    $+$
+    $+$
+    |> Image 
+        src="/images/34.svg"
+
+    $${+ \over +} = \,+$$
+
+    $-$
+    $-$
+    |> Image 
+        src="/images/35.svg"
+
+    $${- \over -} = \,+$$
+
         
+    $+$
+    $-$
+    |> Image 
+        src="/images/36.svg"
+
+    $${- \over +} = \,-$$
+
+    $-$
+    |> Image 
+        src="/images/37.svg"
+
+    $$\frac{+}{-} = \,-$$
+
     "#
     .to_string());
     println!("{}", html_code);

@@ -189,7 +189,7 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
     let mut output = String::new();
     let mut tag_stack: Vec<TagInfo> = Vec::new();
     let lines = elm.lines();
-    let self_closing_tags = vec!["Image"];
+    let self_closing_tags = vec!["Image", "img"];
 
     for line in lines {
         let trimmed_line = line.trim_start();
@@ -203,7 +203,7 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
             tag_stack.push(TagInfo {
                 name: tag_name,
                 indent,
-                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..]),
+                is_self_closing: self_closing_tags.contains(&&trimmed_line[3..].trim_end()),
                 in_props: true,
             });
         } else if trimmed_line.is_empty()

@@ -124,10 +124,18 @@ impl ContentLine {
     fn handle_math(mut self) -> Self {
         self.text = ContentLine::escape_chars(&self.text, "$");
 
-        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+        let re = regex::Regex::new(r"\$(.*?)\$(\S*)").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                if caps.get(2).is_some() && caps.get(2).unwrap().len() > 0 {
+                    // If the character after the second $ is not a space
+                    format!(
+                        "\"#<span class=\"nobreak\"><Math>r#\"${}$\"#</Math>\"{}\"</span>r#\"",
+                        &caps[1], &caps[2]
+                    )
+                } else {
+                    format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                }
             })
             .to_string();
 

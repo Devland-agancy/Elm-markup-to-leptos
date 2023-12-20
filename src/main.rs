@@ -79,10 +79,18 @@ impl ContentLine {
     fn handle_math(mut self) -> Self {
         self.text = ContentLine::escape_chars(&self.text, "$");
 
-        let re = regex::Regex::new(r"\$(.*?)\$").unwrap();
+        let re = regex::Regex::new(r"\$(.*?)\$(\S*)").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                if caps.get(2).is_some() && caps.get(2).unwrap().len() > 0 {
+                    // If the character after the second $ is not a space
+                    format!(
+                        "\"#<span><Math>r#\"${}$\"#</Math>\"{}\"</span>r#\"",
+                        &caps[1], &caps[2]
+                    )
+                } else {
+                    format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                }
             })
             .to_string();
 
@@ -161,7 +169,6 @@ fn trf(elm: String) -> String {
                 is_self_closing: self_closing_tags.contains(&&trimmed_line[3..].trim_end()),
                 in_props: true,
             });
-            println!("{:?}", tag_stack)
         } else if trimmed_line.is_empty()
             && tag_stack
                 .last()
@@ -203,46 +210,11 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-|> Image 
+|> PRR 
     src="/images/33.svg"
 
-|> Grid
-    margin_top=15 margin_bottom=15 cols=4
-
-    $x_2 - x_1$
-    $y_2 - y_1$
-    |> Image 
-        src="/images/33.svg"
-
-    $${y_2-y_1 \over x_2-x_1}$$
-
-    $+$
-    $+$
-    |> Image 
-        src="/images/34.svg"
-
-    $${+ \over +} = \,+$$
-
-    $-$
-    $-$
-    |> Image 
-        src="/images/35.svg"
-
-    $${- \over -} = \,+$$
-
-        
-    $+$
-    $-$
-    |> Image 
-        src="/images/36.svg"
-
-    $${- \over +} = \,-$$
-
-    $-$
-    |> Image 
-        src="/images/37.svg"
-
-    $$\frac{+}{-} = \,-$$
+    $math$ hihi $other$w wowo 
+    $other$wsd d
 
     "#
     .to_string());

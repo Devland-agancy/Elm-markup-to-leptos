@@ -51,16 +51,16 @@ impl ContentLine {
     }
 
     fn handle_italic(mut self) -> Self {
-        self.text = ContentLine::escape_chars(&self.text, "%");
+        self.text = ContentLine::escape_chars(&self.text, "_");
 
-        let re = regex::Regex::new(r"\%(.*?)\%").unwrap();
+        let re = regex::Regex::new(r"\_(.*?)\_").unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
                 format!("\"#<Span italic=true>r#\"{}\"#</Span>r#\"", &caps[1])
             })
             .to_string();
 
-        self.text = ContentLine::un_escape_chars(&self.text, "%");
+        self.text = ContentLine::un_escape_chars(&self.text, "_");
 
         self
     }

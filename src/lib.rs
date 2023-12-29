@@ -2,23 +2,10 @@
 extern crate proc_macro;
 extern crate nom;
 
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
-
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::{parse_macro_input, LitStr};
-
-use nom::{
-    character::complete::{char, multispace0, none_of},
-    combinator::opt,
-    multi::many0,
-    sequence::{delimited, terminated},
-    IResult,
-};
-use regex::Regex;
 
 struct Input {
     cx: Ident,
@@ -36,19 +23,12 @@ impl syn::parse::Parse for Input {
 
 #[proc_macro]
 pub fn elm_to_view(input: TokenStream) -> TokenStream {
-    /* let tokens: proc_macro2::TokenStream = input.clone().into();
-    let mut tokens = tokens.into_iter();
-    let (cx, content) = (tokens.next(), tokens.next()); */
     let input_tokens = parse_macro_input!(input as Input);
     // Extract the HTML string
     let cx = input_tokens.cx;
     let elm: LitStr = input_tokens.elm;
 
     let leptos_code = trf(elm.value());
-    /*  println!(
-        "**********************************{}******************************************",
-        leptos_code
-    ); */
     let output = quote! {
         view! {
             cx, #leptos_code
@@ -62,11 +42,6 @@ struct TagInfo {
     indent: usize,
     is_self_closing: bool,
     in_props: bool,
-}
-
-fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
-    let trimmed_content = content.trim_start(); // Remove leading spaces from content
-    format!("{}{}{}", start, trimmed_content, end)
 }
 
 struct ContentLine {
@@ -177,6 +152,11 @@ impl ContentLine {
     }
 }
 
+fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
+    let trimmed_content = content.trim_start(); // Remove leading spaces from content
+    format!("{}{}{}", start, trimmed_content, end)
+}
+
 fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
     while let Some(last_tag_info) = tag_stack.last() {
         if *indent <= last_tag_info.indent {
@@ -194,19 +174,28 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 
 // Let's also update the `trf` function to use `TagInfo`:
 fn trf(elm: String) -> proc_macro2::TokenStream {
+    let self_closing_tags = vec!["Image", "img"];
+
     let mut output = String::new();
     let mut tag_stack: Vec<TagInfo> = Vec::new();
     let lines = elm.lines();
-    let self_closing_tags = vec!["Image", "img"];
-
-    for line in lines {
+    let mut lines_to_skip: u32 = 0;
+    for (index, line) in lines.clone().enumerate() {
+        if lines_to_skip > 0 {
+            lines_to_skip = lines_to_skip - 1;
+            continue;
+        }
         let trimmed_line = line.trim_start();
         let indent = line.len() - trimmed_line.len();
-
+        if indent % 4 != 0 {
+            panic!(
+                "Syntax error at line {}, There must be 4 spaces before each block",
+                index
+            )
+        }
         if trimmed_line.starts_with("|> ") {
             let tag_name = trimmed_line[3..].to_string();
             tag_loop(&mut tag_stack, &mut output, &indent);
-
             output.push_str(&format!("<{}\n", tag_name));
             tag_stack.push(TagInfo {
                 name: tag_name,
@@ -214,7 +203,7 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
                 is_self_closing: self_closing_tags.contains(&&trimmed_line[3..].trim_end()),
                 in_props: true,
             });
-        } else if trimmed_line.is_empty()
+        } else if trimmed_line.is_empty() // props lines
             && tag_stack
                 .last()
                 .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
@@ -226,22 +215,37 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
         } else if !trimmed_line.is_empty() {
             tag_loop(&mut tag_stack, &mut output, &indent);
 
-            let last = tag_stack.last().unwrap();
+            let last = tag_stack.last().expect("There is no parent tag");
             if last.in_props {
                 output.push_str(&format!("{}\n", line));
             } else {
-                let processed_line = ContentLine::new(line)
+                let mut text_node = String::new();
+                for (j, text_line) in lines.clone().skip(index).enumerate() {
+                    let trimmed_line = text_line.trim_start();
+                    let indent = text_line.len() - trimmed_line.len();
+                    if indent % 4 != 0 {
+                        panic!(
+                            "Syntax error at line {}, There must be 4 spaces before each block",
+                            j + index
+                        )
+                    }
+
+                    if text_line.trim_start().is_empty() {
+                        break;
+                    } else {
+                        text_node += &format!(" {}", text_line.trim_start());
+                        lines_to_skip = lines_to_skip + 1
+                    }
+                }
+
+                let processed_text = ContentLine::new(&text_node)
                     .handle_bold()
                     .handle_italic()
                     .handle_math_block()
                     .handle_math()
                     .handle_math_block_back();
 
-                output.push_str(&concat_ignore_spaces(
-                    "r#\"",
-                    &processed_line.text,
-                    " \"#\n",
-                ));
+                output.push_str(&concat_ignore_spaces("r#\"", &processed_text.text, "\"#\n"));
             }
         }
     }

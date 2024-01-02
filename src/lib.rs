@@ -55,66 +55,50 @@ impl ContentLine {
         }
     }
 
-    fn handle_bold(mut self) -> Self {
-        self.text = ContentLine::escape_chars(&self.text, "*");
+    pub fn add_delimeter(
+        mut self,
+        symbol: &str,
+        left_replacement: &str,
+        right_replacement: &str,
+        no_break: bool,
+        keep_delimeter: bool,
+    ) -> Self {
+        self.text = ContentLine::escape_chars(&self.text, symbol);
 
-        let re = regex::Regex::new(r"\*(.*?)\*").unwrap();
-        self.text = re
-            .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"#<Span bold=true>r#\"{}\"#</Span>r#\"", &caps[1])
-            })
-            .to_string();
-
-        self.text = ContentLine::un_escape_chars(&self.text, "*");
-
-        self
-    }
-
-    fn handle_italic(mut self) -> Self {
-        self.text = ContentLine::escape_chars(&self.text, "_");
-
-        let re = regex::Regex::new(r"\_(.*?)\_").unwrap();
-        self.text = re
-            .replace_all(&self.text, |caps: &regex::Captures| {
-                format!("\"#<Span italic=true>r#\"{}\"#</Span>r#\"", &caps[1])
-            })
-            .to_string();
-
-        self.text = ContentLine::un_escape_chars(&self.text, "_");
-
-        self
-    }
-
-    fn handle_math_block(mut self) -> Self {
-        let re = regex::Regex::new(r"\$\$(.*?)\$\$").unwrap();
-        self.text = re
-            .replace_all(&self.text, |caps: &regex::Captures| {
-                // $$ is not included here as it will cause issues with handle_math fn , after we call handle_math we add $$ back
-                format!("\"#<MathBlock>{}</MathBlock>r#\"", &caps[1])
-            })
-            .to_string();
-        self
-    }
-
-    fn handle_math(mut self) -> Self {
-        self.text = ContentLine::escape_chars(&self.text, "$");
-
-        let re = regex::Regex::new(r"\$(.*?)\$(\S*)").unwrap();
+        let re = regex::Regex::new(&format!(
+            r"\{}(.*?)\{}{}",
+            symbol,
+            symbol,
+            if no_break { "(\\S*)" } else { "" }
+        ))
+        .unwrap();
         self.text = re
             .replace_all(&self.text, |caps: &regex::Captures| {
                 if caps.get(2).is_some() && caps.get(2).unwrap().len() > 0 {
                     // If the character after the second $ is not a space
                     format!(
-                        "\"#<span class=\"nobreak\"><Math>r#\"${}$\"#</Math>\"{}\"</span>r#\"",
-                        &caps[1], &caps[2]
+                        "\"#<span class=\"nobreak\">{}r#\"{}{}{}\"#{}\"{}\"</span>r#\"",
+                        left_replacement,
+                        if keep_delimeter { symbol } else { "" },
+                        &caps[1],
+                        if keep_delimeter { symbol } else { "" },
+                        right_replacement,
+                        &caps[2]
                     )
                 } else {
-                    format!("\"#<Math>r#\"${}$\"#</Math>r#\"", &caps[1])
+                    format!(
+                        "\"#{}r#\"{}{}{}\"#{}r#\"",
+                        left_replacement,
+                        if keep_delimeter { symbol } else { "" },
+                        &caps[1],
+                        if keep_delimeter { symbol } else { "" },
+                        right_replacement
+                    )
                 }
             })
             .to_string();
 
-        self.text = ContentLine::un_escape_chars(&self.text, "$");
+        self.text = ContentLine::un_escape_chars(&self.text, symbol);
 
         self
     }
@@ -172,7 +156,6 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
     }
 }
 
-// Let's also update the `trf` function to use `TagInfo`:
 fn trf(elm: String) -> proc_macro2::TokenStream {
     let self_closing_tags = vec!["Image", "img"];
 
@@ -239,10 +222,17 @@ fn trf(elm: String) -> proc_macro2::TokenStream {
                 }
 
                 let processed_text = ContentLine::new(&text_node)
-                    .handle_bold()
-                    .handle_italic()
-                    .handle_math_block()
-                    .handle_math()
+                    .add_delimeter("*", "<Span bold=true>", "</Span>", false, false)
+                    .add_delimeter(
+                        "_\\_",
+                        "<Paragragh Align::Center><Span italic=true>",
+                        "</Span></Paragraph>",
+                        false,
+                        false,
+                    )
+                    .add_delimeter("_", "<Span italic=true>", "</Span>", false, false)
+                    .add_delimeter("$\\$", "<MathBlock>", "</MathBlock>", true, false)
+                    .add_delimeter("$", "<Math>", "</Math>", true, true)
                     .handle_math_block_back();
 
                 output.push_str(&concat_ignore_spaces("r#\"", &processed_text.text, "\"#\n"));

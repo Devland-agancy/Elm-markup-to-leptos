@@ -96,10 +96,17 @@ fn trf(elm: String) -> String {
                 }
 
                 let processed_text = ContentLine::new(&text_node)
-                    .handle_bold()
-                    .handle_italic()
-                    .handle_math_block()
-                    .handle_math()
+                    .add_delimeter("*", "<Span bold=true>", "</Span>", false, false)
+                    .add_delimeter(
+                        "_\\_",
+                        "<Paragragh Align::Center><Span italic=true>",
+                        "</Span></Paragraph>",
+                        false,
+                        false,
+                    )
+                    .add_delimeter("_", "<Span italic=true>", "</Span>", false, false)
+                    .add_delimeter("$\\$", "<MathBlock>", "</MathBlock>", true, false)
+                    .add_delimeter("$", "<Math>", "</Math>", true, true)
                     .handle_math_block_back();
 
                 output.push_str(&concat_ignore_spaces("r#\"", &processed_text.text, "\"#\n"));
@@ -122,12 +129,10 @@ fn main() {
     let html_code = trf(r#"
     |> Paragraph
 
-        $$Here are a few examples (for an explanation of the values,
-        see below):
-        see below):
-        see below):$$
+        
+        __see __
+        below*)*
 
-        see below):
 
         new test
 

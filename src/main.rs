@@ -95,21 +95,9 @@ fn trf(elm: String) -> String {
                     }
                 }
 
-                let processed_text = ContentLine::new(&text_node)
-                    .add_delimeter("*", "<Span bold=true>", "</Span>", false, false)
-                    .add_delimeter(
-                        "_\\_",
-                        "<Paragragh Align::Center><Span italic=true>",
-                        "</Span></Paragraph>",
-                        false,
-                        false,
-                    )
-                    .add_delimeter("_", "<Span italic=true>", "</Span>", false, false)
-                    .add_delimeter("$\\$", "<MathBlock>", "</MathBlock>", true, false)
-                    .add_delimeter("$", "<Math>", "</Math>", true, true)
-                    .handle_math_block_back();
+                let processed_text = ContentLine::new(&text_node).handle_delimeters();
 
-                output.push_str(&concat_ignore_spaces("r#\"", &processed_text.text, "\"#\n"));
+                output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n"));
             }
         }
     }
@@ -127,15 +115,46 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-    |> Paragraph
 
+|> Paragraph  
+    indent=Indent::Line
+
+    (In order not to discriminate, maybe we should also include this picture:
         
-        __see __
-        below*)*
+    |> Image
+        src="/images/47.svg"
+        container_classes="pt-4"
 
 
-        new test
+|> Paragraph   
+    margin_top = 15
 
+    Then “rise” and “run” have their signs flipped,
+    but the ratio rise-over-run is the same, as already mentioned.)
+
+|> Paragraph   
+    margin_top = 15   
+
+    %An Additional Miscellaneous Notation.%
+    The slope formula is occasionally written
+    $$ \te{slope} = \frac{\Delta y}{\Delta x} $$
+
+|> Paragraph   
+
+    where the foreign-looking symbols $\Delta x$, $\Delta y$ can be thought
+    of as shorthands for “$x_2 - x_1\!$”, “$y_2 - y_1\!$” respectively.
+    (Or, a<br> little more exactly, as shorthands for the phrases “change in
+    $x$”, “change in $y$”.)
+        
+|> Paragraph   
+    margin_top = 15  
+
+    *Solving for “rise” and “run”.*
+    Multiplying
+    $$
+    \te{slope} = \frac{\te{rise}}{\te{run}}
+    $$
+    
     "#
     .to_string());
     println!("{}", html_code);

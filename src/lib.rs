@@ -159,9 +159,10 @@ impl ContentLine {
                         if next_char == c && i + 2 < self.text.len() {
                             char_after_closing_del = self.get_slice(i + 2, i + 2).unwrap();
                         }
-                        if char_after_closing_del != " " {
-                            output.push_str("\"#<span class=\"nobreak\">");
-                        }
+                    }
+                    if char_after_closing_del != " " && char_after_closing_del != "" && del.no_break
+                    {
+                        output.push_str("\"#<span class=\"nobreak\">");
                     } else {
                         output.push_str("\"#");
                     }
@@ -194,7 +195,8 @@ impl ContentLine {
                     }
                     output.push_str("\"#");
                     output.push_str(del.right_replacement);
-                    if del.no_break && char_after_closing_del != " " {
+                    if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
+                    {
                         output.push_str("</span>r#\"");
                     } else {
                         output.push_str("r#\"");

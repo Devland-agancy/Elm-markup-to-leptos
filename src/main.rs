@@ -115,46 +115,110 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-
-|> Paragraph  
-    indent=Indent::Line
-
-    (In order not to discriminate, maybe we should also include this picture:
-        
-    |> Image
-        src="/images/47.svg"
-        container_classes="pt-4"
-
-
-|> Paragraph   
+|>  Table
+    cols=vec![120, 120, 120, 120]
+    lines=true
     margin_top = 15
 
-    Then “rise” and “run” have their signs flipped,
-    but the ratio rise-over-run is the same, as already mentioned.)
+    |> tr
 
-|> Paragraph   
-    margin_top = 15   
-
-    %An Additional Miscellaneous Notation.%
-    The slope formula is occasionally written
-    $$ \te{slope} = \frac{\Delta y}{\Delta x} $$
-
-|> Paragraph   
-
-    where the foreign-looking symbols $\Delta x$, $\Delta y$ can be thought
-    of as shorthands for “$x_2 - x_1\!$”, “$y_2 - y_1\!$” respectively.
-    (Or, a<br> little more exactly, as shorthands for the phrases “change in
-    $x$”, “change in $y$”.)
+        |> td
         
-|> Paragraph   
-    margin_top = 15  
+            $x_2 - x_1$
 
-    *Solving for “rise” and “run”.*
-    Multiplying
-    $$
-    \te{slope} = \frac{\te{rise}}{\te{run}}
-    $$
+        |> td
+        
+            $y_2 - y_1$
+
+        |> td
+        
+            |> img
+                src="/images/33.svg" width="50"
+                style="margin-top:7px; margin-bottom:7px;"
+
+        |> td
+        
+            $${y_2-y_1 \over x_2-x_1}$$
     
+    |> tr
+
+        |> td
+        
+            $+$
+
+        |> td
+        
+            $+$
+
+        |> td
+
+            |> img
+                src="/images/34.svg" width="105"
+                style="margin-top:7px; margin-bottom:7px;"
+        
+        |> td
+        
+            $${+ \over +} = \,+$$
+    
+    |> tr
+
+        |> td
+        
+            $-$
+
+        |> td
+        
+            $-$
+
+        |> td
+        
+            |> img
+                src="/images/35.svg" width="105"
+                style="margin-top:10px; margin-bottom:4px;"
+
+        |> td
+        
+            $${- \over -} = \,+$$
+    
+    |> tr
+
+        |> td
+        
+            $+$
+
+        |> td
+        
+            $-$
+
+        |> td
+        
+            |> img
+                src="/images/36.svg" width="105"
+                style="margin-top:10px; margin-bottom:4px;"
+        |> td
+        
+            $${- \over +} = \,-$$
+    
+    |> tr
+
+        |> td
+        
+            $-$
+
+        |> td
+        
+            $+$
+
+        |> td
+        
+            |> img
+                src="/images/37.svg" width="105"
+                style="margin-top:10px; margin-bottom:4px;"
+
+        |> td
+        
+            $$\frac{+}{-} = \,-$$
+
     "#
     .to_string());
     println!("{}", html_code);

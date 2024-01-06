@@ -117,8 +117,11 @@ fn main() {
     let html_code = trf(r#"
 |> Paragraph   
 
-    On the other hand, the line below has slope $-0.5$, because it goes up 
-    by _minus_ $0.5$ units with each unit to the right:
+    .$$ 
+    \te{slope} = {\te{vertical change from $A$ to $B$} \over \te{horizontal change from $A$ to $B$}} 
+    $$
+    Indeed, _dividing_ the vertical change* by the horizontal change
+    gives the per-horizonta$$l-unit vertical change.
 
     "#
     .to_string());

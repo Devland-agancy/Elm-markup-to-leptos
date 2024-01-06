@@ -61,7 +61,7 @@ impl ContentLine {
 
         let mut output = String::new();
 
-        let mut found_symbol: &str = "";
+        let mut found_symbol: String = "".to_string();
 
         while i < self.text.len() {
             while i < self.text.len()
@@ -78,14 +78,14 @@ impl ContentLine {
                 let next_char = &self.get_char(i + 1)[..];
 
                 if next_char == c {
-                    found_symbol = self.get_slice(i, i + 1).unwrap();
+                    found_symbol = c.to_string() + c;
 
                     i = i + 2;
                     j = i;
                     while i < self.text.len()
                         && (self.get_char(i - 1) == "\\"
                             || (i < self.text.len() - 1
-                                && found_symbol != self.get_slice(i, i + 1).unwrap()))
+                                && found_symbol != self.get_slice(i, i + 2).unwrap()))
                     {
                         i = i + 1;
                     }
@@ -94,7 +94,7 @@ impl ContentLine {
                         i = i + 1
                     }
                 } else {
-                    found_symbol = c;
+                    found_symbol = c.to_string();
                     i = i + 1;
                     j = i;
                     while i < self.text.len()
@@ -123,15 +123,15 @@ impl ContentLine {
                     output.push_str(del.left_replacement);
                     output.push_str("r#\"");
                     if del.keep_delimiter {
-                        output.push_str(found_symbol);
+                        output.push_str(&found_symbol);
                     }
                     i = j;
                     if next_char == c {
                         while self.get_char(i - 1) == "\\"
-                            || found_symbol != self.get_slice(i, i + 1).unwrap()
+                            || found_symbol != self.get_slice(i, i + 2).unwrap()
                         {
                             output.push_str(self.get_char(i).as_str());
-                            i = i + 1
+                            i = i + 1;
                         }
                         i = i + 2
                     } else {
@@ -145,7 +145,7 @@ impl ContentLine {
                     }
 
                     if del.keep_delimiter {
-                        output.push_str(found_symbol);
+                        output.push_str(&found_symbol);
                     }
                     output.push_str("\"#");
                     output.push_str(del.right_replacement);
@@ -157,7 +157,7 @@ impl ContentLine {
                     }
                 } else {
                     // closing del not found , we push the symbol as normal text and continue
-                    output.push_str(found_symbol);
+                    output.push_str(&found_symbol);
                     i = j;
                 }
             }

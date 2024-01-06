@@ -19,7 +19,7 @@ const DELIMETERS: [DelimeterRules; 5] = [
     },
     DelimeterRules {
         symbol: "__",
-        left_replacement: "<Paragragh Align::Center><Span italic=true>",
+        left_replacement: "<Paragragh align=Align::Center><Span italic=true>",
         right_replacement: "</Span></Paragraph>",
         no_break: false,
         keep_delimiter: false,

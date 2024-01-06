@@ -109,9 +109,9 @@ impl ContentLine {
                     let del = self.get_delimeter(&found_symbol);
                     let mut char_after_closing_del = "";
                     if i + 1 < self.text.len() && del.no_break {
-                        char_after_closing_del = self.get_slice(i + 1, i + 1).unwrap();
+                        char_after_closing_del = self.get_slice(i + 1, i + 2).unwrap();
                         if next_char == c && i + 2 < self.text.len() {
-                            char_after_closing_del = self.get_slice(i + 2, i + 2).unwrap();
+                            char_after_closing_del = self.get_slice(i + 2, i + 3).unwrap();
                         }
                     }
                     if char_after_closing_del != " " && char_after_closing_del != "" && del.no_break

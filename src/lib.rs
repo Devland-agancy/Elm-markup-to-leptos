@@ -114,6 +114,19 @@ impl ContentLine {
                 && ((i > 0 && self.get_char(i - 1) == "\\")
                     || !symbols.contains(&self.get_char(i).as_str()))
             {
+                if i > 0
+                    && self.get_char(i - 1) == "\\"
+                    && symbols.contains(&self.get_char(i).as_str())
+                {
+                    output.pop(); // remove the "\"
+                    if symbols.contains(&self.get_char(i + 1).as_str()) {
+                        output.push_str(&self.get_char(i).as_str());
+                        output.push_str(&self.get_char(i + 1).as_str());
+                        i = i + 2;
+                        j = i;
+                        continue;
+                    }
+                }
                 output.push_str(&self.get_char(i).as_str());
                 i = i + 1;
                 j = i;

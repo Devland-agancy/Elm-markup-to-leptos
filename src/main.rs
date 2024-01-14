@@ -115,10 +115,47 @@ fn trf(elm: String) -> String {
 
 fn main() {
     let html_code = trf(r#"
-|> Paragraph    
+|> Paragraph   
+    margin_top = 15 
     
-    To explain now, the slope of a \\*li*ne \is...
-    _the number of units the line goes up with each unit to the right_
+    On the other hand, an equation of the form
+    $$
+    y = ax + b
+    $$
+    cannot describe a vertical line, because $a$ is the slope, while<br>
+    a vertical line has no slope, so what would $a$ be equal to?
+    Instead, a vertical line is described by an equation of the form
+    $$
+    x = c
+    $$
+    (see Fig. 1) where $c \in \rr$ is a constant,
+    similarly to the more familiar equation
+    $$
+    y = b
+    $$
+    for a horizontal line, where $b \in \rr$ is a constant.
+
+    |> ImageLeft
+        src="/images/50.svg"
+        width=200
+        pos_y="-10.5rem"
+        pos_x="1rem"
+        squiggle_right="0rem"
+        squiggle_top="62%"
+        hidden_in_mobile=true
+
+|> Paragraph   
+    indent=Indent::Line
+
+    One should also keep in mind that an equation can define a
+    line without having either of the forms “$y = ax + b$“
+    or “$x = c$sdsd. For example,
+    $$
+    x + y = 3
+    $$
+    
+
+
     
     "#
     .to_string());

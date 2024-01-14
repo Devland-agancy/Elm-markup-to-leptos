@@ -124,7 +124,7 @@ impl ContentLine {
                     if i + 1 < self.text.len() && del.no_break {
                         char_after_closing_del = self.get_slice(i + 1, i + 2).unwrap();
                         if next_char == c && i + 2 < self.text.len() {
-                            char_after_closing_del = self.get_slice(i + 2, i + 3).unwrap();
+                            char_after_closing_del = self.get_slice(i + 2, i + 3).unwrap_or("_");
                         }
                     }
                     if char_after_closing_del != " " && char_after_closing_del != "" && del.no_break
@@ -164,7 +164,12 @@ impl ContentLine {
                     output.push_str(del.right_replacement);
                     if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
                     {
-                        output.push_str("</span>r#\"");
+                        output.push_str("\"");
+                        while self.get_char(i) != " " && self.get_char(i) != "" {
+                            output.push_str(self.get_char(i).as_str());
+                            i = i + 1
+                        }
+                        output.push_str("\"</span>r#\"");
                     } else {
                         output.push_str("r#\"");
                     }

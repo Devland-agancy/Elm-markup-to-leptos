@@ -211,7 +211,10 @@ impl ContentLine {
                     if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
                     {
                         output.push_str("\"");
-                        while self.get_char(i) != " " && self.get_char(i) != "" {
+                        while i < self.text.len()
+                            && self.get_char(i) != " "
+                            && self.get_char(i) != ""
+                        {
                             output.push_str(self.get_char(i).as_str());
                             i = i + 1
                         }

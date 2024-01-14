@@ -148,15 +148,24 @@ fn main() {
     indent=Indent::Line
 
     One should also keep in mind that an equation can define a
-    line without having either of the forms “$y = ax + b$“
-    or “$x = c$sdsd. For example,
+    line without having either of the forms “$y = ax + b$”
+    or “$x = c$”. For example,
     $$
     x + y = 3
     $$
-    
 
+|> Paragraph   
+    margin_top = 15
 
-    
+    is equivalent to
+    $$
+    y = 3 - x
+    $$
+
+|> Paragraph   
+    margin_top = 15
+
+    and thus describes a line of $y$-intercept $3$ and slope $-1$.
     "#
     .to_string());
     println!("{}", html_code);

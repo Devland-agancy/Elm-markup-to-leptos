@@ -164,7 +164,7 @@ impl ContentLine {
                     output.push_str(del.right_replacement);
                     if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
                     {
-                        output.push_str("\"");
+                        output.push_str("r#\"");
                         let mut string = "".to_string();
                         while i < self.text.len()
                             && self.get_char(i) != " "

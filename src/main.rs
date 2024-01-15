@@ -114,7 +114,7 @@ fn trf(elm: String) -> String {
 }
 
 fn main() {
-    let html_code = trf(r#"
+    let html_code = trf( r#"
     |> Paragraph 
     
         *Slopes.*

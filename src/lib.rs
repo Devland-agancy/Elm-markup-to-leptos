@@ -29,6 +29,7 @@ pub fn elm_to_view(input: TokenStream) -> TokenStream {
     let elm: LitStr = input_tokens.elm;
 
     let leptos_code = trf(elm.value());
+
     let output = quote! {
         view! {
             cx, #leptos_code
@@ -210,8 +211,8 @@ impl ContentLine {
                     output.push_str(del.right_replacement);
                     if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
                     {
-                        output.push_str("\"");
                         let mut string = "".to_string();
+                        output.push_str("r#\"");
                         while i < self.text.len()
                             && self.get_char(i) != " "
                             && self.get_char(i) != ""

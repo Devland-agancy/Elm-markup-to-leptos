@@ -286,7 +286,7 @@ fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
 }
 
 fn trf(elm: String) -> proc_macro2::TokenStream {
-    let self_closing_tags = vec!["Image", "img"];
+    let self_closing_tags = vec!["Image", "img", "SectionDivider"];
 
     let mut output = String::new();
     let mut tag_stack: Vec<TagInfo> = Vec::new();

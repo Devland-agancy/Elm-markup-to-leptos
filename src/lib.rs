@@ -56,7 +56,7 @@ struct DelimeterRules {
     keep_delimiter: bool,
 }
 
-const DELIMETERS: [DelimeterRules; 5] = [
+const DELIMETERS: [DelimeterRules; 7] = [
     DelimeterRules {
         symbol: "*",
         left_replacement: "<Span bold=true>",
@@ -91,6 +91,20 @@ const DELIMETERS: [DelimeterRules; 5] = [
         right_replacement: "</Math>",
         no_break: true,
         keep_delimiter: true,
+    },
+    DelimeterRules {
+        symbol: "@",
+        left_replacement: "<ImageLink direction=Direction::Left>",
+        right_replacement: "</ImageLink>",
+        no_break: false,
+        keep_delimiter: false,
+    },
+    DelimeterRules {
+        symbol: "@@",
+        left_replacement: "<ImageLink direction=Direction::Right>",
+        right_replacement: "</ImageLink>",
+        no_break: false,
+        keep_delimiter: false,
     },
 ];
 

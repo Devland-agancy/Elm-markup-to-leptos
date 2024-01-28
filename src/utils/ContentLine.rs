@@ -79,24 +79,20 @@ impl ContentLine {
 
         while i < self.text.len() {
             while i < self.text.len()
-                && ((i > 0 && self.get_char(i - 1) == "\\")
-                    || !symbols.contains(&self.get_char(i).as_str()))
+                && (self.is_escaped(i) || !symbols.contains(&self.get_char(i).as_str()))
             {
-                if i > 0
-                    && self.get_char(i - 1) == "\\"
-                    && symbols.contains(&self.get_char(i).as_str())
-                {
+                if self.is_escaped(i) && symbols.contains(&self.get_char(i).as_str()) {
                     output.pop(); // remove the "\"
                     if symbols.contains(&self.get_char(i + 1).as_str()) {
                         output.push_str(&self.get_char(i).as_str());
                         output.push_str(&self.get_char(i + 1).as_str());
-                        i = i + 2;
+                        i += 2;
                         j = i;
                         continue;
                     }
                 }
                 output.push_str(&self.get_char(i).as_str());
-                i = i + 1;
+                i += 1;
                 j = i;
             }
 
@@ -107,28 +103,27 @@ impl ContentLine {
                 if next_char == c {
                     found_symbol = c.to_string() + c;
 
-                    i = i + 2;
+                    i += 2;
                     j = i;
                     while i < self.text.len()
-                        && (self.get_char(i - 1) == "\\"
+                        && (self.is_escaped(i)
                             || (i < self.text.len() - 1
-                                && found_symbol != self.get_slice(i, i + 2).unwrap()))
+                                && found_symbol != self.get_slice(i, i + 2).unwrap_or("")))
                     {
-                        i = i + 1;
+                        i += 1;
                     }
                     if i == self.text.len() - 1 {
                         // not found , we add one so that  i < self.text.len()
-                        i = i + 1
+                        i += 1
                     }
                 } else {
                     found_symbol = c.to_string();
-                    i = i + 1;
+                    i += 1;
                     j = i;
                     while i < self.text.len()
-                        && (self.get_char(i - 1) == "\\"
-                            || found_symbol != self.get_char(i).as_str())
+                        && (self.is_escaped(i) || found_symbol != self.get_char(i).as_str())
                     {
-                        i = i + 1;
+                        i += 1;
                     }
                 }
 
@@ -154,21 +149,19 @@ impl ContentLine {
                     }
                     i = j;
                     if next_char == c {
-                        while self.get_char(i - 1) == "\\"
+                        while self.is_escaped(i)
                             || found_symbol != self.get_slice(i, i + 2).unwrap()
                         {
                             output.push_str(self.get_char(i).as_str());
-                            i = i + 1;
+                            i += 1;
                         }
-                        i = i + 2
+                        i += 2
                     } else {
-                        while self.get_char(i - 1) == "\\"
-                            || found_symbol != self.get_char(i).as_str()
-                        {
+                        while self.is_escaped(i) || found_symbol != self.get_char(i).as_str() {
                             output.push_str(self.get_char(i).as_str());
-                            i = i + 1
+                            i += 1
                         }
-                        i = i + 1
+                        i += 1
                     }
 
                     if del.keep_delimiter {
@@ -185,7 +178,7 @@ impl ContentLine {
                             && self.get_char(i) != ""
                         {
                             string.push_str(self.get_char(i).as_str());
-                            i = i + 1
+                            i += 1
                         }
                         let handled_string = self::ContentLine::new(&string).handle_delimeters();
                         output.push_str(&handled_string);
@@ -193,11 +186,11 @@ impl ContentLine {
                     } else {
                         output.push_str("r#\"");
                     }
-                } else {
-                    // closing del not found , we push the symbol as normal text and continue
-                    output.push_str(&found_symbol);
-                    i = j;
+                    continue;
                 }
+                // closing del not found , we push the symbol as normal text and continue
+                output.push_str(&found_symbol);
+                i = j;
             }
         }
 
@@ -214,6 +207,10 @@ impl ContentLine {
             .nth(i)
             .unwrap_or(" ".chars().nth(0).unwrap())
             .to_string()
+    }
+
+    fn is_escaped(&self, i: usize) -> bool {
+        i > 0 && self.get_char(i - 1) == "\\"
     }
 
     fn get_slice(&self, start: usize, end: usize) -> Option<&str> {

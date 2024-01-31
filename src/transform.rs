@@ -144,7 +144,7 @@ fn handle_inline_element(
         if inner_indent > initial_indent {
             skips += 1;
             if in_props {
-                element.push_str(inner_trimmed_line);
+                element.push_str(&(inner_trimmed_line.to_string() + " "));
                 continue;
             }
             element_content.push_str(&(inner_trimmed_line.to_string() + " "));

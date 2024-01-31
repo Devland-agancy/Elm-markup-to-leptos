@@ -1,4 +1,4 @@
-pub struct ContentLine {
+pub struct ElementText {
     pub text: String,
 }
 struct DelimeterRules {
@@ -61,9 +61,9 @@ const DELIMETERS: [DelimeterRules; 7] = [
     },
 ];
 
-impl ContentLine {
-    pub fn new(text: &str) -> ContentLine {
-        ContentLine {
+impl ElementText {
+    pub fn new(text: &str) -> ElementText {
+        ElementText {
             text: text.to_string(),
         }
     }
@@ -180,7 +180,7 @@ impl ContentLine {
                             string.push_str(self.get_char(i).as_str());
                             i += 1
                         }
-                        let handled_string = self::ContentLine::new(&string).handle_delimeters();
+                        let handled_string = self::ElementText::new(&string).handle_delimeters();
                         output.push_str(&handled_string);
                         output.push_str("\"#</span>r#\"");
                     } else {

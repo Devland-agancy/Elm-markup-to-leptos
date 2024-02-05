@@ -10,7 +10,7 @@ struct TagInfo {
 }
 
 pub fn transform(elm: String) -> String {
-    let self_closing_tags = vec!["Image", "img", "SectionDivider"];
+    let self_closing_tags = vec!["img", "SectionDivider"];
 
     let mut output = String::new();
     let mut tag_stack: Vec<TagInfo> = Vec::new();

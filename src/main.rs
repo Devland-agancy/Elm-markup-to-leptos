@@ -1,16 +1,28 @@
 pub mod element_text;
 pub mod transform;
 
-use transform::transform;
+use leptos::html::Tr;
+use transform::Transformer;
 
 fn main() {
-    let html_code = transform(
+    let transformer: Transformer = Transformer::new(vec!["img", "SectionDivider"], "Paragraph");
+
+    let html_code = transformer.transform(
         r#"
-|> Paragraph   
+    |> Example
 
-    can be positive or $negative or zero$( more on zero below),
+        *Example 1.*
+        A line that passes through the points
 
-
+        $$A = (-2, 5)$$
+        
+        and
+        
+        $$B = (4, 1)$$
+        
+        has slope
+        
+        $${1 - 5 \over 4 - (-2)} = {-4 \over 6} = - {2 \over 3}.$$
     "#
         .to_string(),
     );

@@ -14,14 +14,20 @@ struct TagInfo {
 #[derive(Debug)]
 pub struct Transformer {
     pub self_closing_tags: Vec<&'static str>,
+    pub tags_with_paragraphs: Vec<&'static str>,
     pub paragraph_tag: &'static str,
 }
 
 impl Transformer {
-    pub fn new(self_closing_tags: Vec<&'static str>, paragraph_tag: &'static str) -> Transformer {
+    pub fn new(
+        self_closing_tags: Vec<&'static str>,
+        tags_with_paragraphs: Vec<&'static str>,
+        paragraph_tag: &'static str,
+    ) -> Transformer {
         Transformer {
             self_closing_tags,
             paragraph_tag,
+            tags_with_paragraphs,
         }
     }
 
@@ -115,12 +121,19 @@ impl Transformer {
                         processed_text += &text;
                         continue;
                     }
-                    processed_text += &format!(
-                        "\"#<{}>r#\"{}\"#</{}>r#\"",
-                        self.paragraph_tag,
-                        &ElementText::new(&text).handle_delimeters(),
-                        self.paragraph_tag
-                    );
+                    if self
+                        .tags_with_paragraphs
+                        .contains(&tag_stack.last().unwrap().name.as_str())
+                    {
+                        processed_text += &format!(
+                            "\"#<{}>r#\"{}\"#</{}>r#\"",
+                            self.paragraph_tag,
+                            &ElementText::new(&text).handle_delimeters(),
+                            self.paragraph_tag
+                        );
+                        continue;
+                    }
+                    processed_text += &ElementText::new(&text).handle_delimeters();
                 }
                 output.push_str(&Self::concat_ignore_spaces(
                     "r#\"",

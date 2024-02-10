@@ -72,9 +72,7 @@ impl ElementText {
         let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
         let mut i = 0;
         let mut j = 0;
-
         let mut output = String::new();
-
         let mut found_symbol: String = "".to_string();
 
         while i < self.text.len() {

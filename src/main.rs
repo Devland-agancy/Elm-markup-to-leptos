@@ -5,7 +5,11 @@ use leptos::html::Tr;
 use transform::Transformer;
 
 fn main() {
-    let transformer: Transformer = Transformer::new(vec!["img", "SectionDivider"], "Paragraph");
+    let transformer: Transformer = Transformer::new(
+        vec!["img", "SectionDivider"],
+        vec!["Paragraphs", "Example"],
+        "Paragraph",
+    );
 
     let html_code = transformer.transform(
         r#"

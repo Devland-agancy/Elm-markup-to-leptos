@@ -1,7 +1,7 @@
-use leptos::html::Tr;
+use leptos::html::{Br, Tr};
 
 use super::element_text::ElementText;
-use std::str::Lines;
+use std::{collections::btree_map::Range, iter::Enumerate, str::Lines};
 
 #[derive(Debug)]
 struct TagInfo {
@@ -31,7 +31,7 @@ impl Transformer {
         }
     }
 
-    pub fn transform(&self, elm: String) -> String {
+    pub fn transform(&self, elm: String, start_index: usize) -> String {
         let mut output = String::new();
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
@@ -41,8 +41,9 @@ impl Transformer {
                 lines_to_skip = lines_to_skip - 1;
                 continue;
             }
+
             let trimmed_line = line.trim_start();
-            let indent = line.len() - trimmed_line.len();
+            let indent = Self::get_line_indent(line, trimmed_line);
             Self::check_indent_size(indent, index);
 
             if trimmed_line.starts_with("|> ") {
@@ -72,14 +73,19 @@ impl Transformer {
             }
             if !trimmed_line.is_empty() {
                 Self::tag_loop(&mut tag_stack, &mut output, &indent);
-                let last = tag_stack.last().expect("There is no parent tag");
+
+                let last = tag_stack.last().expect(&format!(
+                    "There is no parent tag . line {}",
+                    index + start_index
+                ));
                 if last.in_props {
                     // tag props
                     output.push_str(&format!("{}\n", line));
                     continue;
                 }
                 // tag content
-                let mut nodes: Vec<(String, bool)> = Vec::new(); // if there is an inline element in the text , the text should be seperated to sub text before the element , the element ( bool is added to know if the node is an element ) and the subtext after the element . it shouldn't be handeled as 1 text
+                let mut nodes: Vec<Vec<(String, bool)>> = Vec::new(); // if there is an inline element in the text , the text should be seperated to sub text before the element ( bool is added to know if the node is an element ) and the subtext after the element . it shouldn't be handeled as 1 block ,
+                nodes.push(Vec::new());
                 let mut text_node = String::new();
                 let mut inner_lines_to_skip: u32 = 0;
 
@@ -88,53 +94,86 @@ impl Transformer {
                         inner_lines_to_skip = inner_lines_to_skip - 1;
                         continue;
                     }
-                    let trimmed_line = text_line.trim_start();
-                    let indent = text_line.len() - trimmed_line.len();
+                    let inner_trimmed_line = text_line.trim_start();
+                    let indent = Self::get_line_indent(text_line, inner_trimmed_line);
                     Self::check_indent_size(indent, index);
-                    if trimmed_line.is_empty() {
-                        break;
+
+                    // break if next line is new ( not nested ) element
+                    if let Some(next_line) = lines.clone().nth(index + j + 1) {
+                        let next_line_trimmed = next_line.trim_start();
+                        let next_line_indent = Self::get_line_indent(next_line, next_line_trimmed);
+                        if next_line_indent <= tag_stack.last().unwrap().indent
+                            && next_line_trimmed.starts_with("|>")
+                        {
+                            if text_node != "" {
+                                nodes.last_mut().unwrap().push((text_node.clone(), false));
+                            }
+                            break;
+                        }
                     }
-                    if !trimmed_line.starts_with("|>") {
-                        text_node += &format!(" {}", trimmed_line);
+
+                    if inner_trimmed_line.is_empty() {
+                        if text_node != "" {
+                            nodes.last_mut().unwrap().push((text_node.clone(), false));
+                            text_node = "".to_string();
+                        }
+                        lines_to_skip += 1;
+                        nodes.push(Vec::new());
+                        continue;
+                    }
+                    if !inner_trimmed_line.starts_with("|>") {
+                        text_node += &format!(" {}", inner_trimmed_line);
                         lines_to_skip += 1;
                         continue;
                     }
-                    nodes.push((text_node, false));
-                    text_node = "".to_string();
+                    if text_node != "" {
+                        nodes.last_mut().unwrap().push((text_node, false));
+                        text_node = "".to_string();
+                    }
+
                     // handle inline element that can't be handled by delimiters ( they need props )
-                    let (element, skips) = Self::handle_inline_element(
-                        lines.clone(),
-                        trimmed_line,
-                        j + index + 1,
-                        indent,
-                    );
+                    let (element, skips) =
+                        self.handle_inline_element_1(lines.clone(), j + index, indent);
+
                     inner_lines_to_skip += skips;
-                    lines_to_skip += skips;
-                    nodes.push((format!("\"#{}r#\"", element), true));
+                    lines_to_skip += skips + 1;
+
+                    nodes
+                        .last_mut()
+                        .unwrap()
+                        .push((format!("\"#{}r#\"", element), true));
                 }
-                if text_node != "" {
-                    nodes.push((text_node, false));
-                }
+
                 let mut processed_text = String::new();
-                for (text, is_element) in nodes {
-                    if is_element {
-                        processed_text += &text;
+
+                for sub_nodes in nodes {
+                    if sub_nodes.len() == 0 {
                         continue;
                     }
+                    // subnodes are seperated with empty line
+                    let mut sub_node_text = "".to_string();
+
+                    for (text, is_element) in sub_nodes {
+                        if is_element {
+                            sub_node_text += &text;
+                            continue;
+                        }
+                        sub_node_text += &ElementText::new(&text).handle_delimeters();
+                    }
+
                     if self
                         .tags_with_paragraphs
                         .contains(&tag_stack.last().unwrap().name.as_str())
                     {
                         processed_text += &format!(
                             "\"#<{}>r#\"{}\"#</{}>r#\"",
-                            self.paragraph_tag,
-                            &ElementText::new(&text).handle_delimeters(),
-                            self.paragraph_tag
+                            self.paragraph_tag, sub_node_text, self.paragraph_tag
                         );
                         continue;
                     }
-                    processed_text += &ElementText::new(&text).handle_delimeters();
+                    processed_text += sub_node_text.as_str();
                 }
+                nodes = vec![];
                 output.push_str(&Self::concat_ignore_spaces(
                     "r#\"",
                     &processed_text,
@@ -154,47 +193,46 @@ impl Transformer {
         output.replace("\n", " ")
     }
 
-    fn handle_inline_element(
+    fn handle_inline_element_1(
+        &self,
         lines: Lines<'_>,
-        element_line: &str,
         start_from: usize,
         initial_indent: usize,
     ) -> (String, u32) {
         let mut element = "".to_string();
-        let mut element_content = "".to_string();
         let mut end_line = start_from;
         let mut inner_indent = initial_indent + 4;
         let mut skips: u32 = 0;
-        let mut in_props = true;
+        let mut prev_line = "";
 
-        let tag_name = element_line[3..].to_string();
-        element.push_str(&format!("<{} \n", tag_name));
         while inner_indent > initial_indent || inner_indent == 0 {
-            if lines.clone().nth(end_line).is_none() {
+            if lines.clone().nth(end_line + 1).is_none() {
                 break;
             }
-            let inner_line = lines.clone().nth(end_line).unwrap();
+
+            let inner_line = lines.clone().nth(end_line + 1).unwrap();
             let inner_trimmed_line = inner_line.trim_start();
-            inner_indent = inner_line.len() - inner_trimmed_line.len();
-            end_line += 1;
-            if inner_indent == 0 && in_props {
-                element.push_str(">\n r#\"");
+            inner_indent = Self::get_line_indent(inner_line, inner_trimmed_line);
+
+            if inner_indent > initial_indent || inner_indent == 0 {
+                end_line += 1;
                 skips += 1;
-                in_props = false;
-                continue;
-            }
-            if inner_indent > initial_indent {
-                skips += 1;
-                if in_props {
-                    element.push_str(&(inner_trimmed_line.to_string() + " "));
-                    continue;
-                }
-                element_content.push_str(&(inner_trimmed_line.to_string() + " "));
             }
         }
+        // do not skip empty line at the end
+        let prev_line = lines.clone().nth(end_line).unwrap();
 
-        element.push_str(&ElementText::new(&element_content).handle_delimeters());
-        element.push_str(&format!("\"#</{}>\n", tag_name));
+        if prev_line.is_empty() || prev_line.chars().all(char::is_whitespace) {
+            skips -= 1
+        }
+
+        let mut i = start_from;
+        for i in start_from..=end_line {
+            element += &(lines.clone().nth(i).unwrap().to_string() + "\n");
+        }
+
+        element += &("".to_string() + "\n");
+        element = self.transform(element, start_from);
         (element, skips)
     }
 
@@ -216,6 +254,13 @@ impl Transformer {
                 break;
             }
         }
+    }
+
+    fn get_line_indent(line: &str, trimmed: &str) -> usize {
+        if line.is_empty() || line.chars().all(char::is_whitespace) {
+            return 0;
+        };
+        line.len() - trimmed.len()
     }
 
     fn check_indent_size(size: usize, error_at: usize) {

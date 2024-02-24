@@ -1,12 +1,12 @@
 [package]
 name = "elm-parser"
-version = "0.1.4"
+version = "1.0.0"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/"
 readme = "README.md"
 homepage = "https://littel-bo-peep-leptos-v2.fly.io/"
-repository = "https://github.com/Devland-agancy/little-bo-peep-leptos"
+repository = "https://github.com/Devland-agancy/Elm-markup-to-leptos"
 description = "Elm markup parser to leptos"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

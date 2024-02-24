@@ -13,22 +13,38 @@ fn main() {
 
     let html_code = transformer.transform(
         r#"
-    |> Example
+|> Section
 
-        *Example 1.*
-        A line that passes through the points
+    |> Paragraphs
 
-        $$A = (-2, 5)$$
+        we
+
+        |> okok 
+            img
         
-        and
+        |> than 
+            img
+
+        |> than 
+            img
+
+        |> than 
+            img
+            asd
+
+            asdasd
+
+        ...these forrmulas, commonly useful 
         
-        $$B = (4, 1)$$
-        
-        has slope
-        
-        $${1 - 5 \over 4 - (-2)} = {-4 \over 6} = - {2 \over 3}.$$
+        in “applied” problems.
+
+|> Example
+
+    *Example 3.*
+
     "#
         .to_string(),
+        0,
     );
     println!("{}", html_code);
 }

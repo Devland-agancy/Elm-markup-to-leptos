@@ -17,30 +17,15 @@ fn main() {
 
     |> Paragraphs
 
-        we
+        on both sides by $x-x_0$, we find the fraction-less equation
 
-        |> okok 
-            img
+        $$
+        p(x-x_0) = y-y_0
+        $$
+
+        which is satisfied by the point $(x,y) = (x_0,y_0)$ as well as
+        by every other point on the line.
         
-        |> than 
-            img
-
-        |> than 
-            img
-
-        |> than 
-            img
-            asd
-
-            asdasd
-
-        ...these forrmulas, commonly useful 
-        
-        in “applied” problems.
-
-|> Example
-
-    *Example 3.*
 
     "#
         .to_string(),

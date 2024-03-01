@@ -1,17 +1,21 @@
 pub struct ElementText {
     pub text: String,
 }
+
+#[derive(Debug)]
 struct DelimeterRules {
     symbol: &'static str,
+    end_symbol: &'static str,
     left_replacement: &'static str,
     right_replacement: &'static str,
     no_break: bool,
     keep_delimiter: bool,
 }
 
-const DELIMETERS: [DelimeterRules; 7] = [
+const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "*",
+        end_symbol: "*",
         left_replacement: "<Span bold=true>",
         right_replacement: "</Span>",
         no_break: false,
@@ -19,6 +23,15 @@ const DELIMETERS: [DelimeterRules; 7] = [
     },
     DelimeterRules {
         symbol: "__",
+        end_symbol: "__",
+        left_replacement: "<Span italic=true align=Align::Center>",
+        right_replacement: "</Span>",
+        no_break: false,
+        keep_delimiter: false,
+    },
+    DelimeterRules {
+        symbol: "_|",
+        end_symbol: "|_",
         left_replacement: "<Span italic=true align=Align::Center>",
         right_replacement: "</Span>",
         no_break: false,
@@ -26,6 +39,7 @@ const DELIMETERS: [DelimeterRules; 7] = [
     },
     DelimeterRules {
         symbol: "_",
+        end_symbol: "_",
         left_replacement: "<Span italic=true>",
         right_replacement: "</Span>",
         no_break: false,
@@ -33,6 +47,7 @@ const DELIMETERS: [DelimeterRules; 7] = [
     },
     DelimeterRules {
         symbol: "$$",
+        end_symbol: "$$",
         left_replacement: "<MathBlock>",
         right_replacement: "</MathBlock>",
         no_break: true,
@@ -40,24 +55,11 @@ const DELIMETERS: [DelimeterRules; 7] = [
     },
     DelimeterRules {
         symbol: "$",
+        end_symbol: "$",
         left_replacement: "<Math>",
         right_replacement: "</Math>",
         no_break: true,
         keep_delimiter: true,
-    },
-    DelimeterRules {
-        symbol: "@",
-        left_replacement: "<ImageLink direction=Direction::Left>",
-        right_replacement: "</ImageLink>",
-        no_break: false,
-        keep_delimiter: false,
-    },
-    DelimeterRules {
-        symbol: "@@",
-        left_replacement: "<ImageLink direction=Direction::Right>",
-        right_replacement: "</ImageLink>",
-        no_break: false,
-        keep_delimiter: false,
     },
 ];
 
@@ -69,105 +71,65 @@ impl ElementText {
     }
 
     pub fn handle_delimeters(self) -> String {
-        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
         let mut i = 0;
         let mut j = 0;
         let mut output = String::new();
-        let mut found_symbol: String = "".to_string();
 
         while i < self.text.len() {
-            while i < self.text.len()
-                && (self.is_escaped(i) || !symbols.contains(&self.get_char(i).as_str()))
-            {
-                if self.is_escaped(i) && symbols.contains(&self.get_char(i).as_str()) {
-                    output.pop(); // remove the "\"
-                    if symbols.contains(&self.get_char(i + 1).as_str()) {
-                        output.push_str(&self.get_char(i).as_str());
-                        output.push_str(&self.get_char(i + 1).as_str());
-                        i += 2;
-                        j = i;
-                        continue;
-                    }
-                }
-                output.push_str(&self.get_char(i).as_str());
-                i += 1;
-                j = i;
+            let (del, skips, text) = &self.find_next_delimeter(i);
+            output += text;
+
+            if !del.is_some() {
+                break;
             }
 
-            if i < self.text.len() {
-                let c = &self.get_char(i)[..];
-                let next_char = &self.get_char(i + 1)[..];
+            i = *skips;
 
-                if next_char == c {
-                    found_symbol = c.to_string() + c;
+            if i <= self.text.len() {
+                let (found, closing_index, del_content) =
+                    &self.find_closing_delimeter(i, &del.unwrap());
 
-                    i += 2;
-                    j = i;
-                    while i < self.text.len()
-                        && (self.is_escaped(i)
-                            || (i < self.text.len() - 1
-                                && found_symbol != self.get_slice(i, i + 2).unwrap_or("")))
-                    {
-                        i += 1;
-                    }
-                    if i == self.text.len() - 1 {
-                        // not found , we add one so that  i < self.text.len()
-                        i += 1
-                    }
-                } else {
-                    found_symbol = c.to_string();
-                    i += 1;
-                    j = i;
-                    while i < self.text.len()
-                        && (self.is_escaped(i) || found_symbol != self.get_char(i).as_str())
-                    {
-                        i += 1;
-                    }
+                if !found {
+                    // closing del not found , we push the symbol as normal text and continue
+
+                    output.push_str(&del.unwrap().symbol);
+                    output.push_str(del_content);
+
+                    i = *closing_index;
+                    continue;
                 }
-
-                if i < self.text.len() {
-                    let del = self.get_delimeter(&found_symbol);
+                if i <= self.text.len() {
+                    i = closing_index + del.unwrap().end_symbol.len();
                     let mut char_after_closing_del = "";
-                    if i + 1 < self.text.len() && del.no_break {
-                        char_after_closing_del = self.get_slice(i + 1, i + 2).unwrap_or("");
-                        if next_char == c && i + 2 < self.text.len() {
-                            char_after_closing_del = self.get_slice(i + 2, i + 3).unwrap_or("_");
-                        }
+                    if i <= self.text.len() && del.unwrap().no_break {
+                        char_after_closing_del = &self.get_slice(i, i + 1).unwrap_or("");
                     }
-                    if char_after_closing_del != " " && char_after_closing_del != "" && del.no_break
+
+                    if char_after_closing_del != " "
+                        && char_after_closing_del != ""
+                        && del.unwrap().no_break
                     {
                         output.push_str("\"#<span class=\"nobreak\">");
                     } else {
                         output.push_str("\"#");
                     }
-                    output.push_str(del.left_replacement);
+                    output.push_str(del.unwrap().left_replacement);
                     output.push_str("r#\"");
-                    if del.keep_delimiter {
-                        output.push_str(&found_symbol);
-                    }
-                    i = j;
-                    if next_char == c {
-                        while self.is_escaped(i)
-                            || found_symbol != self.get_slice(i, i + 2).unwrap()
-                        {
-                            output.push_str(self.get_char(i).as_str());
-                            i += 1;
-                        }
-                        i += 2
-                    } else {
-                        while self.is_escaped(i) || found_symbol != self.get_char(i).as_str() {
-                            output.push_str(self.get_char(i).as_str());
-                            i += 1
-                        }
-                        i += 1
+
+                    if del.unwrap().keep_delimiter {
+                        output.push_str(&del.unwrap().symbol);
                     }
 
-                    if del.keep_delimiter {
-                        output.push_str(&found_symbol);
+                    output.push_str(&del_content);
+
+                    if del.unwrap().keep_delimiter {
+                        output.push_str(&del.unwrap().end_symbol);
                     }
                     output.push_str("\"#");
-                    output.push_str(del.right_replacement);
-                    if del.no_break && char_after_closing_del != " " && char_after_closing_del != ""
+                    output.push_str(del.unwrap().right_replacement);
+                    if del.unwrap().no_break
+                        && char_after_closing_del != " "
+                        && char_after_closing_del != ""
                     {
                         output.push_str("r#\"");
                         let mut string = "".to_string();
@@ -176,27 +138,139 @@ impl ElementText {
                             && self.get_char(i) != ""
                         {
                             string.push_str(self.get_char(i).as_str());
-                            i += 1
+                            i += 1;
                         }
                         let handled_string = self::ElementText::new(&string).handle_delimeters();
+                        i += 1;
                         output.push_str(&handled_string);
                         output.push_str("\"#</span>r#\"");
                     } else {
-                        output.push_str("r#\"");
+                        output.push_str("r#\" ");
+                        i += 1;
                     }
-                    continue;
                 }
-                // closing del not found , we push the symbol as normal text and continue
-                output.push_str(&found_symbol);
-                i = j;
             }
         }
-
         output
     }
 
     fn get_delimeter(&self, symbol: &str) -> &DelimeterRules {
         DELIMETERS.iter().find(|d| d.symbol == symbol).unwrap()
+    }
+
+    fn find_next_delimeter(&self, mut i: usize) -> (Option<&DelimeterRules>, usize, String) {
+        let mut found_symbol = "";
+        let mut del: Option<&DelimeterRules> = None;
+        let mut text = "".to_string();
+        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+        let mut has_multi_char = false;
+        while i <= self.text.len() {
+            let _del = DELIMETERS.iter().find(|d| {
+                if i.checked_sub(d.symbol.len()).is_some() {
+                    d.symbol
+                        == &self
+                            .text
+                            .chars()
+                            .take(i)
+                            .skip(i - d.symbol.len())
+                            .collect::<String>()
+                } else {
+                    false
+                }
+            });
+            if _del.is_some() {
+                if symbols.contains(
+                    // in case founded delimiter is same as another delimeter first char e.g $ and $$
+                    &self
+                        .text
+                        .chars()
+                        .take(i + 1)
+                        .skip(i - _del.unwrap().symbol.len())
+                        .collect::<String>()
+                        .as_str(),
+                ) {
+                    i += 1;
+                    has_multi_char = true;
+                    continue;
+                }
+                del = _del;
+                found_symbol = _del.unwrap().symbol;
+                if !has_multi_char {}
+                if self.is_escaped(i - found_symbol.len()) {
+                    for _x in 1..found_symbol.len() {
+                        // pop added characters including "\"
+                        text.pop();
+                    }
+                    text.push_str(found_symbol); // push again without "\"
+                    i += 1;
+                    continue;
+                }
+                break;
+            }
+            if i.checked_sub(1).is_some() {
+                text.push_str(&self.get_char(i - 1));
+            }
+            i += 1;
+        }
+
+        (del, i, text)
+    }
+
+    fn find_closing_delimeter(
+        &self,
+        mut i: usize,
+        found_del: &DelimeterRules,
+    ) -> (bool, usize, String) {
+        let end_symbol = found_del.end_symbol;
+        let mut found = false;
+        let mut del_content = "".to_string();
+        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+
+        while i < self.text.len() {
+            let is_found = end_symbol
+                == &self
+                    .text
+                    .chars()
+                    .take(i + end_symbol.len())
+                    .skip(i)
+                    .collect::<String>();
+            if !is_found {
+                if end_symbol
+                    != &self
+                        .text
+                        .chars()
+                        .take(i + end_symbol.len())
+                        .skip(i)
+                        .collect::<String>()
+                {
+                    del_content.push_str(&self.get_char(i));
+                }
+                i += 1;
+
+                continue;
+            }
+            let next_char = &self.text.chars().take(i + 2).skip(i).collect::<String>();
+            if symbols.contains(
+                // in case founded delimiter is same as another delimeter first char e.g $ and $$
+                // this is solution for this case $ xx $$ , we don't want xx $ to be considered as text inside $ $ ,
+                &next_char.as_str(),
+            ) && next_char != &end_symbol
+            {
+                i += 2;
+                del_content.push_str(next_char);
+                continue;
+            }
+            found = true;
+            if self.is_escaped(i) {
+                del_content.push_str(end_symbol);
+                found = false;
+                i += end_symbol.len() + 1;
+                continue;
+            }
+            break;
+        }
+
+        (found, i, del_content)
     }
 
     fn get_char(&self, i: usize) -> String {
@@ -214,6 +288,7 @@ impl ElementText {
     fn get_slice(&self, start: usize, end: usize) -> Option<&str> {
         assert!(end >= start);
         let s = &self.text;
+
         let mut iter = s
             .char_indices()
             .map(|(pos, _)| pos)
@@ -224,6 +299,7 @@ impl ElementText {
         for _ in start..end {
             iter.next();
         }
+
         Some(&s[start_pos..*iter.peek()?])
     }
 }

@@ -17,20 +17,26 @@ pub struct Transformer {
     pub tags_with_paragraphs: Vec<&'static str>,
     pub paragraph_tag: &'static str,
     pub tags_before_non_indents: Vec<&'static str>,
+    pub no_x_padding_tags: Vec<&'static str>,
+    pub tags_with_non_indent_first_child: Vec<&'static str>,
 }
 
 impl Transformer {
     pub fn new(
         self_closing_tags: Vec<&'static str>,
         tags_with_paragraphs: Vec<&'static str>,
+        no_x_padding_tags: Vec<&'static str>,
         paragraph_tag: &'static str,
         tags_before_non_indents: Vec<&'static str>,
+        tags_with_non_indent_first_child: Vec<&'static str>,
     ) -> Transformer {
         Transformer {
             self_closing_tags,
             paragraph_tag,
             tags_with_paragraphs,
+            tags_with_non_indent_first_child,
             tags_before_non_indents,
+            no_x_padding_tags,
         }
     }
 
@@ -97,6 +103,7 @@ impl Transformer {
                         inner_lines_to_skip = inner_lines_to_skip - 1;
                         continue;
                     }
+
                     let inner_trimmed_line = text_line.trim_start();
                     let indent = Self::get_line_indent(text_line, inner_trimmed_line);
                     Self::check_indent_size(indent, index);
@@ -125,6 +132,14 @@ impl Transformer {
                         nodes.push(Vec::new());
                         continue;
                     }
+
+                    if indent < tag_stack.last().unwrap().indent {
+                        if text_node != "" {
+                            nodes.last_mut().unwrap().push((text_node.clone(), false));
+                        }
+                        break;
+                    }
+
                     if !inner_trimmed_line.starts_with("|>") {
                         text_node += &format!(" {}", inner_trimmed_line);
                         lines_to_skip += 1;
@@ -148,7 +163,6 @@ impl Transformer {
                         .push((format!("\"#{}r#\"", element), true));
                 }
                 let mut processed_text = String::new();
-
                 for (node_idx, sub_nodes) in nodes.iter().enumerate() {
                     if sub_nodes.len() == 0 {
                         continue;
@@ -161,63 +175,47 @@ impl Transformer {
                             sub_node_text += &text;
                             continue;
                         }
-                        // For |> Indent the emitter’s rule is that a paragraph has an indent by default except:
-                        let mut no_paragraph_indent = false;
-                        // the first paragraph of every section, exercise, or example does not have an indent
-                        no_paragraph_indent = node_idx == 0
-                            && sub_node_idx == 0
-                            && self
-                                .tags_with_paragraphs
-                                .contains(&tag_stack.last().unwrap().name.as_str());
-                        // a paragraph that follows a paragraph ending with the ‘$$’ delimeter does not have an indent
-                        if !no_paragraph_indent && node_idx > 0 {
-                            if let Some(last_prev_sub_node) = nodes[node_idx - 1].last() {
-                                let prev_text = &last_prev_sub_node.0;
-                                if prev_text.len() > 1 {
-                                    no_paragraph_indent = &prev_text[prev_text.len() - 2..] == "$$";
-                                }
-                            }
-                        }
-                        // a paragraph that follows tags defined in tags_before_non_indents
-                        if !no_paragraph_indent {
-                            let mut prev_tag = "".to_string();
-                            if sub_node_idx > 0 {
-                                prev_tag = Self::get_tag_from_string(
-                                    sub_nodes[sub_node_idx - 1].0.as_str(),
-                                );
-                            }
-                            if node_idx > 0 {
-                                prev_tag = Self::get_tag_from_string(
-                                    nodes[node_idx - 1].last().unwrap().0.as_str(),
-                                );
-                            }
-                            no_paragraph_indent =
-                                self.tags_before_non_indents.contains(&prev_tag.as_str());
-                        }
+
+                        let no_paragraph_indent = self.handle_paragraph_indent(
+                            &tag_stack,
+                            &nodes,
+                            &sub_nodes,
+                            node_idx,
+                            sub_node_idx,
+                            &text,
+                        );
 
                         if no_paragraph_indent {
                             sub_node_text += &ElementText::new(&text).handle_delimeters();
                         } else {
-                            sub_node_text += &ElementText::new(&format!(
-                                "\"#<Indent>\"{}\"</Indent>r#\"",
-                                &text
-                            ))
-                            .handle_delimeters();
+                            let handled_text = &format!(
+                                "\"#<Indent>r#\"{}\"#</Indent>r#\"",
+                                &ElementText::new(&text).handle_delimeters()
+                            );
+                            sub_node_text += handled_text;
                         }
                     }
-
                     if self
                         .tags_with_paragraphs
                         .contains(&tag_stack.last().unwrap().name.as_str())
                     {
+                        let no_padding = self
+                            .no_x_padding_tags
+                            .contains(&tag_stack.last().unwrap().name.as_str());
+
                         processed_text += &format!(
-                            "\"#<{}>r#\"{}\"#</{}>r#\"",
-                            self.paragraph_tag, sub_node_text, self.paragraph_tag
+                            "\"#<{} {}>r#\"{}\"#</{}>r#\"",
+                            self.paragraph_tag,
+                            if no_padding { "no_padding = true" } else { "" },
+                            sub_node_text,
+                            self.paragraph_tag
                         );
                         continue;
                     }
                     processed_text += sub_node_text.as_str();
                 }
+                println!("nodes |{:#?}|", nodes);
+
                 nodes = vec![];
                 output.push_str(&Self::concat_ignore_spaces(
                     "r#\"",
@@ -235,7 +233,10 @@ impl Transformer {
             output.push_str(&format!("</{}>\n", last_tag_info.name));
         }
 
-        output.replace("\n", " ")
+        output
+            .replace("\n", " ")
+            .replace("r#\"\"#", "")
+            .replace("r#\" \"#", " ")
     }
 
     fn handle_inline_element_1(
@@ -250,7 +251,15 @@ impl Transformer {
         let mut skips: u32 = 0;
         let mut prev_line = "";
 
-        while inner_indent > initial_indent || inner_indent == 0 {
+        while inner_indent > initial_indent
+            || lines.clone().nth(end_line).unwrap().is_empty()
+            || lines
+                .clone()
+                .nth(end_line)
+                .unwrap()
+                .chars()
+                .all(char::is_whitespace)
+        {
             if lines.clone().nth(end_line + 1).is_none() {
                 break;
             }
@@ -259,10 +268,15 @@ impl Transformer {
             let inner_trimmed_line = inner_line.trim_start();
             inner_indent = Self::get_line_indent(inner_line, inner_trimmed_line);
 
-            if inner_indent > initial_indent || inner_indent == 0 {
+            if inner_indent > initial_indent
+                || inner_line.is_empty()
+                || inner_line.chars().all(char::is_whitespace)
+            {
                 end_line += 1;
                 skips += 1;
+                continue;
             }
+            break;
         }
         // do not skip empty line at the end
         let prev_line = lines.clone().nth(end_line).unwrap();
@@ -275,7 +289,6 @@ impl Transformer {
         for i in start_from..=end_line {
             element += &(lines.clone().nth(i).unwrap().to_string() + "\n");
         }
-
         element += &("".to_string() + "\n");
         element = self.transform(element, start_from);
         (element, skips)
@@ -328,5 +341,74 @@ impl Transformer {
                 error_at
             )
         }
+    }
+
+    fn get_slice(text: &str, start: usize, end: usize) -> Option<&str> {
+        assert!(end >= start);
+
+        let mut iter = text
+            .char_indices()
+            .map(|(pos, _)| pos)
+            .chain(Some(text.len()))
+            .skip(start)
+            .peekable();
+        let start_pos = *iter.peek()?;
+        for _ in start..end {
+            iter.next();
+        }
+
+        Some(&text[start_pos..*iter.peek()?])
+    }
+    fn handle_paragraph_indent(
+        &self,
+        tag_stack: &Vec<TagInfo>,
+        nodes: &Vec<Vec<(String, bool)>>,
+        sub_nodes: &Vec<(String, bool)>,
+        node_idx: usize,
+        sub_node_idx: usize,
+        text: &str,
+    ) -> bool {
+        // For |> Indent the emitter’s rule is that a paragraph has an indent by default except:
+        let mut no_paragraph_indent = false;
+        // the first paragraph of every section, exercise, or example does not have an indent
+
+        no_paragraph_indent = node_idx == 0
+            && sub_node_idx == 0
+            && self
+                .tags_with_non_indent_first_child
+                .contains(&tag_stack.last().unwrap().name.as_str());
+        // paragraph starting with _
+        no_paragraph_indent = no_paragraph_indent
+            || (text.len() > 2 && ["_"].contains(&&Self::get_slice(text, 1, 2).unwrap()));
+
+        // $$, __,  |_ paragraphs
+        let centering_delimiters = vec!["$$", "__", "|_"];
+        no_paragraph_indent = no_paragraph_indent
+            || (text.len() > 4
+                && centering_delimiters.contains(&&Self::get_slice(text, 1, 3).unwrap()));
+
+        // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeter does not have an indent
+        if !no_paragraph_indent && node_idx > 0 {
+            if let Some(last_prev_sub_node) = nodes[node_idx - 1].last() {
+                let prev_text = &last_prev_sub_node.0;
+                if prev_text.len() > 1 {
+                    no_paragraph_indent =
+                        centering_delimiters.contains(&&prev_text[prev_text.len() - 2..]);
+                }
+            }
+        }
+        // a paragraph that follows tags defined in tags_before_non_indents
+        if !no_paragraph_indent {
+            let mut prev_tag = "".to_string();
+            if sub_node_idx > 0 {
+                prev_tag = Self::get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
+            }
+            if node_idx > 0 {
+                prev_tag =
+                    Self::get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
+            }
+            no_paragraph_indent = self.tags_before_non_indents.contains(&prev_tag.as_str());
+        }
+        no_paragraph_indent
     }
 }

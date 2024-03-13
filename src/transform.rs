@@ -107,7 +107,7 @@ impl Transformer {
                     let inner_trimmed_line = text_line.trim_start();
                     let indent = Self::get_line_indent(text_line, inner_trimmed_line);
                     Self::check_indent_size(indent, index);
-
+                    Self::check_extra_spaces(indent, tag_stack.last().unwrap().indent, index);
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
                         let next_line_trimmed = next_line.trim_start();
@@ -195,6 +195,7 @@ impl Transformer {
                             sub_node_text += handled_text;
                         }
                     }
+
                     if self
                         .tags_with_paragraphs
                         .contains(&tag_stack.last().unwrap().name.as_str())
@@ -214,8 +215,6 @@ impl Transformer {
                     }
                     processed_text += sub_node_text.as_str();
                 }
-                println!("nodes |{:#?}|", nodes);
-
                 nodes = vec![];
                 output.push_str(&Self::concat_ignore_spaces(
                     "r#\"",
@@ -340,6 +339,12 @@ impl Transformer {
                 "Syntax error at line {}, There must be 4 spaces before each block",
                 error_at
             )
+        }
+    }
+
+    fn check_extra_spaces(indent: usize, parent_indent: usize, error_at: usize) {
+        if indent > parent_indent + 4 {
+            panic!("Syntax error at line {}, There are extra spaces", error_at)
         }
     }
 

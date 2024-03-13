@@ -37,10 +37,12 @@ fn main() {
 
     ok 
 
-    |> Table
+    $$ Unfortunately, the equation $$
+    |> ImageRight
+        ok
 
-    Unfortunately, the equation
-            
+          ok
+
     "#
         .to_string(),
         0,

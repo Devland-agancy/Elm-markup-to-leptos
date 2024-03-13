@@ -7,7 +7,7 @@ use std::process::Command;
 use transform::Transformer;
 
 fn main() {
-    let transformer: Transformer = Transformer::new(
+    let mut transformer: Transformer = Transformer::new(
         vec!["img", "SectionDivider"],
         vec!["Paragraphs", "Example", "Section", "Solution"],
         vec!["Example"],
@@ -31,7 +31,7 @@ fn main() {
         ],
     );
 
-    let html_code = transformer.transform(
+    let pre = transformer.pre_process(
         r#"
 |> Section
 
@@ -41,12 +41,16 @@ fn main() {
     |> ImageRight
         ok
 
-          ok
+|> Exercise
+    hi
+
+|> Exercise
+    hi
 
     "#
         .to_string(),
-        0,
     );
+    let leptos_code = transformer.transform(pre, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
         Err(error) => {
@@ -60,7 +64,7 @@ fn main() {
         {}
     }}
     "#,
-        html_code
+        leptos_code
     );
     match file.write_all(file_content.as_bytes()) {
         Ok(_) => {

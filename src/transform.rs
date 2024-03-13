@@ -3,7 +3,7 @@ use leptos::html::{Br, Tr};
 use super::element_text::ElementText;
 use std::{collections::btree_map::Range, iter::Enumerate, str::Lines};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TagInfo {
     name: String,
     indent: usize,
@@ -19,6 +19,7 @@ pub struct Transformer {
     pub tags_before_non_indents: Vec<&'static str>,
     pub no_x_padding_tags: Vec<&'static str>,
     pub tags_with_non_indent_first_child: Vec<&'static str>,
+    exercises_pre_proccessed: bool,
 }
 
 impl Transformer {
@@ -31,6 +32,7 @@ impl Transformer {
         tags_with_non_indent_first_child: Vec<&'static str>,
     ) -> Transformer {
         Transformer {
+            exercises_pre_proccessed: false,
             self_closing_tags,
             paragraph_tag,
             tags_with_paragraphs,
@@ -40,22 +42,59 @@ impl Transformer {
         }
     }
 
+    pub fn pre_process(&mut self, elm: String) -> String {
+        let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
+        let binding = lines.clone();
+
+        /* Wrap exercises inside Exercises component */
+        let mut exercises = binding
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.trim() == "|> Exercise");
+
+        if let Some(exo) = exercises.nth(0) {
+            // before line exo.0 , I want to insert 2 lines 1 containser |> Ex and second one is empty
+            let ex_line = "|> Exercises".to_string();
+            lines.insert(exo.0, ex_line);
+            // add prop line which is like labels=vec!["0", "1", "2", "3"]
+            let mut props_string = "labels=vec![\"0\"".to_string();
+            for i in 1..exercises.count() + 1 {
+                props_string += &format!(",\"{}\"", i);
+            }
+            props_string += "]";
+
+            lines.insert(exo.0 + 1, props_string);
+            lines.insert(exo.0 + 2, "".to_string());
+            for i in exo.0 + 1..lines.len() {
+                if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
+                    continue;
+                };
+                lines[i] = format!("    {}", lines[i]);
+            }
+            self.exercises_pre_proccessed = true
+        }
+        lines.join("\n")
+    }
+
     pub fn transform(&self, elm: String, start_index: usize) -> String {
         let mut output = String::new();
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
         let mut lines_to_skip: u32 = 0;
+        let mut track_line_index;
+        let mut track_line_delta: usize = 0;
+
         for (index, line) in lines.clone().enumerate() {
             if lines_to_skip > 0 {
                 lines_to_skip = lines_to_skip - 1;
                 continue;
             }
-
+            track_line_index = index + start_index - track_line_delta;
             let trimmed_line = line.trim_start();
             let indent = Self::get_line_indent(line, trimmed_line);
-            Self::check_indent_size(indent, index + start_index);
+            Self::check_indent_size(indent, track_line_index);
             if let Some(last) = tag_stack.last() {
-                Self::check_extra_spaces(indent, last.indent, index + start_index);
+                Self::check_extra_spaces(indent, last.indent, track_line_index);
             }
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim().to_string();
@@ -67,6 +106,10 @@ impl Transformer {
                     is_self_closing: self.self_closing_tags.contains(&tag_name.as_str()),
                     in_props: true,
                 });
+
+                if tag_name == "Exercises" && self.exercises_pre_proccessed {
+                    track_line_delta += 3
+                }
                 continue;
             }
             if trimmed_line.is_empty() // end of props
@@ -85,7 +128,7 @@ impl Transformer {
 
                 let last = tag_stack.last().expect(&format!(
                     "There is no parent tag . line {}",
-                    index + start_index
+                    track_line_index
                 ));
                 if last.in_props {
                     // tag props
@@ -106,11 +149,11 @@ impl Transformer {
 
                     let inner_trimmed_line = text_line.trim_start();
                     let indent = Self::get_line_indent(text_line, inner_trimmed_line);
-                    Self::check_indent_size(indent, index + start_index + j);
+                    Self::check_indent_size(indent, track_line_index + j);
                     Self::check_extra_spaces(
                         indent,
                         tag_stack.last().unwrap().indent,
-                        index + start_index + j,
+                        track_line_index + j,
                     );
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
@@ -156,7 +199,7 @@ impl Transformer {
 
                     // handle inline element that can't be handled by delimiters ( they need props )
                     let (element, skips) =
-                        self.handle_inline_element_1(lines.clone(), j + index, indent);
+                        self.handle_inline_element(lines.clone(), j + index, indent);
 
                     inner_lines_to_skip += skips;
                     lines_to_skip += skips + 1;
@@ -242,7 +285,7 @@ impl Transformer {
             .replace("r#\" \"#", " ")
     }
 
-    fn handle_inline_element_1(
+    fn handle_inline_element(
         &self,
         lines: Lines<'_>,
         start_from: usize,
@@ -371,6 +414,7 @@ impl Transformer {
 
         Some(&text[start_pos..*iter.peek()?])
     }
+
     fn handle_paragraph_indent(
         &self,
         tag_stack: &Vec<TagInfo>,

@@ -53,18 +53,18 @@ impl Transformer {
 
             let trimmed_line = line.trim_start();
             let indent = Self::get_line_indent(line, trimmed_line);
-            Self::check_indent_size(indent, index);
-
+            Self::check_indent_size(indent, index + start_index);
+            if let Some(last) = tag_stack.last() {
+                Self::check_extra_spaces(indent, last.indent, index + start_index);
+            }
             if trimmed_line.starts_with("|> ") {
-                let tag_name = trimmed_line[3..].to_string();
+                let tag_name = trimmed_line[3..].trim().to_string();
                 Self::tag_loop(&mut tag_stack, &mut output, &indent);
                 output.push_str(&format!("<{}\n", tag_name));
                 tag_stack.push(TagInfo {
-                    name: tag_name,
+                    name: tag_name.clone(),
                     indent,
-                    is_self_closing: self
-                        .self_closing_tags
-                        .contains(&&trimmed_line[3..].trim_end()),
+                    is_self_closing: self.self_closing_tags.contains(&tag_name.as_str()),
                     in_props: true,
                 });
                 continue;
@@ -106,8 +106,12 @@ impl Transformer {
 
                     let inner_trimmed_line = text_line.trim_start();
                     let indent = Self::get_line_indent(text_line, inner_trimmed_line);
-                    Self::check_indent_size(indent, index);
-                    Self::check_extra_spaces(indent, tag_stack.last().unwrap().indent, index);
+                    Self::check_indent_size(indent, index + start_index + j);
+                    Self::check_extra_spaces(
+                        indent,
+                        tag_stack.last().unwrap().indent,
+                        index + start_index + j,
+                    );
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
                         let next_line_trimmed = next_line.trim_start();
@@ -337,14 +341,17 @@ impl Transformer {
         if size % 4 != 0 {
             panic!(
                 "Syntax error at line {}, There must be 4 spaces before each block",
-                error_at
+                error_at + 1
             )
         }
     }
 
     fn check_extra_spaces(indent: usize, parent_indent: usize, error_at: usize) {
         if indent > parent_indent + 4 {
-            panic!("Syntax error at line {}, There are extra spaces", error_at)
+            panic!(
+                "Syntax error at line {}, There are extra spaces",
+                error_at + 1
+            )
         }
     }
 

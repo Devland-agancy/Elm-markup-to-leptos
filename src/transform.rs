@@ -71,7 +71,11 @@ impl Transformer {
             let last_exo = exercises.last().unwrap();
             let initial_indent = lines[last_exo.0].len() - lines[last_exo.0].trim_start().len();
             let mut i = last_exo.0 + 4;
-            while i < lines.len() && lines[i].len() - lines[i].trim_start().len() > initial_indent {
+            while i < lines.len()
+                && (lines[i].is_empty()
+                    || lines[i].chars().all(char::is_whitespace)
+                    || lines[i].len() - lines[i].trim_start().len() > initial_indent)
+            {
                 i += 1;
             }
             for i in exo.0 + 1..i {

@@ -37,17 +37,14 @@ fn main() {
 
     ok 
 
-    $$ Unfortunately, the equation $$
-    |> ImageRight
-        ok
+|> Exercise
+
+    ok
 
 |> Exercise
-    hi
-
-|> Exercise
-    hi
 
 |> ok
+
     "#
         .to_string(),
     );

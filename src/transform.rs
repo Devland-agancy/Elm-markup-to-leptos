@@ -69,8 +69,11 @@ impl Transformer {
 
             /* Add 4 space indent to exercises */
             let last_exo = exercises.last().unwrap();
-            let initial_indent = lines[last_exo.0].len() - lines[last_exo.0].trim_start().len();
+            let initial_indent =
+                lines[last_exo.0 + 3].len() - lines[last_exo.0 + 3].trim_start().len();
+
             let mut i = last_exo.0 + 4;
+
             while i < lines.len()
                 && (lines[i].is_empty()
                     || lines[i].chars().all(char::is_whitespace)
@@ -86,6 +89,7 @@ impl Transformer {
             }
             self.exercises_pre_proccessed = true
         }
+        println!("{}", lines.join("\n"));
         lines.join("\n")
     }
 

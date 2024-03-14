@@ -1,7 +1,7 @@
 use leptos::html::{Br, Tr};
 
 use super::element_text::ElementText;
-use std::{collections::btree_map::Range, iter::Enumerate, str::Lines};
+use std::{collections::btree_map::Range, fmt::format, iter::Enumerate, str::Lines};
 
 #[derive(Debug, Default)]
 struct TagInfo {
@@ -89,6 +89,34 @@ impl Transformer {
             }
             self.exercises_pre_proccessed = true
         }
+        println!("{}", lines.join("\n"));
+        lines.join("\n")
+    }
+
+    pub fn pre_process_examples(&mut self, elm: String) -> String {
+        let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
+        let binding = lines.clone();
+
+        /* Wrap exercises inside Exercises component */
+        /* Right now this works only if there are consuctive exercises */
+        let _ = binding
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.trim() == "|> Example")
+            .enumerate()
+            .for_each(|(idx, ex)| {
+                // Suppose there are not props for Example , we add title at 3rd line
+                let indent = ex.1.len() - ex.1.trim_start().len();
+                let mut indent_string = "    ".to_string();
+                for i in 0..indent {
+                    indent_string += " ";
+                }
+                lines.insert(
+                    ex.0 + 2 + idx,
+                    format!("{}*Example {}.*", indent_string, idx + 1),
+                );
+            });
+
         println!("{}", lines.join("\n"));
         lines.join("\n")
     }

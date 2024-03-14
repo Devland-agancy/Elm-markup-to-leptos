@@ -35,8 +35,8 @@ fn main() {
         r#"
 |> Section
 
-    ok 
-
+    ok
+    
     |> Example
 
         hi 1
@@ -47,7 +47,7 @@ fn main() {
 
     |> Example
 
-        hi 3
+         hi 3
 
 |> Example
 

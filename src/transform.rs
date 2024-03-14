@@ -19,7 +19,7 @@ pub struct Transformer {
     pub tags_before_non_indents: Vec<&'static str>,
     pub no_x_padding_tags: Vec<&'static str>,
     pub tags_with_non_indent_first_child: Vec<&'static str>,
-    exercises_pre_proccessed: bool,
+    track_line_delta: usize,
 }
 
 impl Transformer {
@@ -32,13 +32,13 @@ impl Transformer {
         tags_with_non_indent_first_child: Vec<&'static str>,
     ) -> Transformer {
         Transformer {
-            exercises_pre_proccessed: false,
             self_closing_tags,
             paragraph_tag,
             tags_with_paragraphs,
             tags_with_non_indent_first_child,
             tags_before_non_indents,
             no_x_padding_tags,
+            track_line_delta: 0,
         }
     }
 
@@ -87,9 +87,7 @@ impl Transformer {
                 };
                 lines[i] = format!("    {}", lines[i]);
             }
-            self.exercises_pre_proccessed = true
         }
-        println!("{}", lines.join("\n"));
         lines.join("\n")
     }
 
@@ -117,24 +115,22 @@ impl Transformer {
                 );
             });
 
-        println!("{}", lines.join("\n"));
         lines.join("\n")
     }
 
-    pub fn transform(&self, elm: String, start_index: usize) -> String {
+    pub fn transform(&mut self, elm: String, start_index: usize) -> String {
         let mut output = String::new();
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
         let mut lines_to_skip: u32 = 0;
         let mut track_line_index;
-        let mut track_line_delta: usize = 0;
 
         for (index, line) in lines.clone().enumerate() {
             if lines_to_skip > 0 {
                 lines_to_skip = lines_to_skip - 1;
                 continue;
             }
-            track_line_index = index + start_index - track_line_delta;
+            track_line_index = index + start_index - self.track_line_delta;
             let trimmed_line = line.trim_start();
             let indent = Self::get_line_indent(line, trimmed_line);
             Self::check_indent_size(indent, track_line_index);
@@ -152,8 +148,12 @@ impl Transformer {
                     in_props: true,
                 });
 
-                if tag_name == "Exercises" && self.exercises_pre_proccessed {
-                    track_line_delta += 3
+                if tag_name == "Exercises" {
+                    self.track_line_delta += 3
+                }
+
+                if tag_name == "Example" {
+                    self.track_line_delta += 1
                 }
                 continue;
             }
@@ -331,7 +331,7 @@ impl Transformer {
     }
 
     fn handle_inline_element(
-        &self,
+        &mut self,
         lines: Lines<'_>,
         start_from: usize,
         initial_indent: usize,

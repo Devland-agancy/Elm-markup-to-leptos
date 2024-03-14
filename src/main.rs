@@ -36,27 +36,27 @@ fn main() {
 |> Section
 
     ok
-    
-    |> Example
 
-        hi 1
+|> Exercise
 
-    |> Example
+    $$ y_0 - px_0 $$
 
-        hi 2
+|> Exercise
 
-    |> Example
-
-         hi 3
-
-|> Example
-
-    hi 4
+    the $y$-intercept in all cases.
 
     "#
         .to_string(),
     );
-    pre = transformer.pre_process_examples(pre);
+
+    pre = transformer.auto_increamental_title(pre, "Example", "Example", None, None);
+    pre = transformer.auto_increamental_title(
+        pre,
+        "Exercise",
+        "Exercise",
+        Some("ExerciseQuestion"),
+        Some("Solution"),
+    );
 
     let leptos_code = transformer.transform(pre, 0);
     let mut file = match File::create("src/output.rs") {

@@ -91,30 +91,62 @@ impl Transformer {
         lines.join("\n")
     }
 
-    pub fn pre_process_examples(&mut self, elm: String) -> String {
+    pub fn auto_increamental_title(
+        &mut self,
+        elm: String,
+        tag_name: &str,
+        title_label: &str,
+        wrapper: Option<&str>,
+        wrapper_break_on: Option<&str>,
+    ) -> String {
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
+        let mut jump = 2;
 
-        /* Wrap exercises inside Exercises component */
-        /* Right now this works only if there are consuctive exercises */
         let _ = binding
             .iter()
             .enumerate()
-            .filter(|(_, line)| line.trim() == "|> Example")
+            .filter(|(_, line)| line.trim() == format!("|> {}", tag_name))
             .enumerate()
             .for_each(|(idx, ex)| {
                 // Suppose there are not props for Example , we add title at 3rd line
                 let indent = ex.1.len() - ex.1.trim_start().len();
                 let mut indent_string = "    ".to_string();
-                for i in 0..indent {
+                for _ in 0..indent {
                     indent_string += " ";
                 }
+                if let Some(wrapper) = wrapper {
+                    lines.insert(
+                        ex.0 + jump + idx,
+                        format!("{}|> {}", indent_string, wrapper),
+                    );
+                    lines.insert(ex.0 + jump + 1 + idx, "".to_string());
+                    indent_string += "    ";
+                    jump += 2;
+
+                    let mut i = ex.0 + jump + idx;
+
+                    while i < lines.len()
+                        && lines[i].trim() != format!("|> {}", wrapper_break_on.unwrap())
+                        && (lines[i].is_empty()
+                            || lines[i].chars().all(char::is_whitespace)
+                            || lines[i].len() - lines[i].trim_start().len() > indent)
+                    {
+                        i += 1;
+                    }
+
+                    for i in ex.0 + jump + idx..i {
+                        if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
+                            continue;
+                        };
+                        lines[i] = format!("    {}", lines[i]);
+                    }
+                }
                 lines.insert(
-                    ex.0 + 2 + idx,
-                    format!("{}*Example {}.*", indent_string, idx + 1),
+                    ex.0 + jump + idx,
+                    format!("{}*{} {}.*", indent_string, title_label, idx + 1),
                 );
             });
-
         lines.join("\n")
     }
 
@@ -155,6 +187,11 @@ impl Transformer {
                 if tag_name == "Example" {
                     self.track_line_delta += 1
                 }
+
+                if tag_name == "Exercise" {
+                    self.track_line_delta += 3
+                }
+
                 continue;
             }
             if trimmed_line.is_empty() // end of props

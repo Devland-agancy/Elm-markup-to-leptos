@@ -31,7 +31,7 @@ fn main() {
         ],
     );
 
-    let pre = transformer.pre_process(
+    let pre = transformer.pre_process_exercises(
         r#"
 |> Section
 
@@ -47,6 +47,7 @@ fn main() {
 |> Exercise
     hi
 
+|> ok
     "#
         .to_string(),
     );

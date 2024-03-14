@@ -42,11 +42,12 @@ impl Transformer {
         }
     }
 
-    pub fn pre_process(&mut self, elm: String) -> String {
+    pub fn pre_process_exercises(&mut self, elm: String) -> String {
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
 
         /* Wrap exercises inside Exercises component */
+        /* Right now this works only if there are consuctive exercises */
         let mut exercises = binding
             .iter()
             .enumerate()
@@ -58,14 +59,22 @@ impl Transformer {
             lines.insert(exo.0, ex_line);
             // add prop line which is like labels=vec!["0", "1", "2", "3"]
             let mut props_string = "labels=vec![\"0\"".to_string();
-            for i in 1..exercises.count() + 1 {
+            for i in 1..exercises.clone().count() + 1 {
                 props_string += &format!(",\"{}\"", i);
             }
             props_string += "]";
 
             lines.insert(exo.0 + 1, props_string);
             lines.insert(exo.0 + 2, "".to_string());
-            for i in exo.0 + 1..lines.len() {
+
+            /* Add 4 space indent to exercises */
+            let last_exo = exercises.last().unwrap();
+            let initial_indent = lines[last_exo.0].len() - lines[last_exo.0].trim_start().len();
+            let mut i = last_exo.0 + 4;
+            while i < lines.len() && lines[i].len() - lines[i].trim_start().len() > initial_indent {
+                i += 1;
+            }
+            for i in exo.0 + 1..i {
                 if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
                     continue;
                 };

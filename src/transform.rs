@@ -57,39 +57,14 @@ impl Transformer {
             .filter(|(_, line)| line.trim() == "|> Exercise");
 
         if let Some(exo) = exercises.nth(0) {
-            // before line exo.0 , I want to insert 2 lines 1 containser |> Ex and second one is empty
-            let ex_line = "|> Exercises".to_string();
-            lines.insert(exo.0, ex_line);
             // add prop line which is like labels=vec!["0", "1", "2", "3"]
-            let mut props_string = "labels=vec![\"0\"".to_string();
+            let mut props_string = "    labels=vec![\"0\"".to_string();
             for i in 1..exercises.clone().count() + 1 {
                 props_string += &format!(",\"{}\"", i);
             }
             props_string += "]";
 
-            lines.insert(exo.0 + 1, props_string);
-            lines.insert(exo.0 + 2, "".to_string());
-
-            /* Add 4 space indent to exercises */
-            let last_exo = exercises.last().unwrap();
-            let initial_indent =
-                lines[last_exo.0 + 3].len() - lines[last_exo.0 + 3].trim_start().len();
-
-            let mut i = last_exo.0 + 4;
-
-            while i < lines.len()
-                && (lines[i].is_empty()
-                    || lines[i].chars().all(char::is_whitespace)
-                    || lines[i].len() - lines[i].trim_start().len() > initial_indent)
-            {
-                i += 1;
-            }
-            for i in exo.0 + 1..i {
-                if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
-                    continue;
-                };
-                lines[i] = format!("    {}", lines[i]);
-            }
+            lines.insert(exo.0 - 1, props_string);
         }
         lines.join("\n")
     }
@@ -184,7 +159,7 @@ impl Transformer {
                 });
 
                 if tag_name == "Exercises" {
-                    self.track_line_delta += 3
+                    self.track_line_delta += 1
                 }
 
                 if tag_name == "Example" {

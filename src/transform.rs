@@ -19,6 +19,7 @@ pub struct Transformer {
     pub tags_before_non_indents: Vec<&'static str>,
     pub no_x_padding_tags: Vec<&'static str>,
     pub tags_with_non_indent_first_child: Vec<&'static str>,
+    pub tags_with_no_indents: Vec<&'static str>,
     track_line_delta: usize,
 }
 
@@ -30,6 +31,7 @@ impl Transformer {
         paragraph_tag: &'static str,
         tags_before_non_indents: Vec<&'static str>,
         tags_with_non_indent_first_child: Vec<&'static str>,
+        tags_with_no_indents: Vec<&'static str>,
     ) -> Transformer {
         Transformer {
             self_closing_tags,
@@ -38,6 +40,7 @@ impl Transformer {
             tags_with_non_indent_first_child,
             tags_before_non_indents,
             no_x_padding_tags,
+            tags_with_no_indents,
             track_line_delta: 0,
         }
     }
@@ -507,46 +510,56 @@ impl Transformer {
         text: &str,
     ) -> bool {
         // For |> Indent the emitter’s rule is that a paragraph has an indent by default except:
-        let mut no_paragraph_indent = false;
+        /* ------------- */
         // the first paragraph of every section, exercise, or example does not have an indent
-
-        no_paragraph_indent = node_idx == 0
+        if self
+            .tags_with_no_indents
+            .contains(&tag_stack.last().unwrap().name.as_str())
+        {
+            return true;
+        }
+        if node_idx == 0
             && sub_node_idx == 0
             && self
                 .tags_with_non_indent_first_child
-                .contains(&tag_stack.last().unwrap().name.as_str());
+                .contains(&tag_stack.last().unwrap().name.as_str())
+        {
+            return true;
+        }
         // paragraph starting with _
-        no_paragraph_indent = no_paragraph_indent
-            || (text.len() > 2 && ["_"].contains(&&Self::get_slice(text, 1, 2).unwrap()));
+        if text.len() > 2 && ["_", "*"].contains(&&Self::get_slice(text, 1, 2).unwrap()) {
+            return true;
+        }
 
         // $$, __,  |_ paragraphs
         let centering_delimiters = vec!["$$", "__", "|_"];
-        no_paragraph_indent = no_paragraph_indent
-            || (text.len() > 4
-                && centering_delimiters.contains(&&Self::get_slice(text, 1, 3).unwrap()));
+        if text.len() > 4 && centering_delimiters.contains(&&Self::get_slice(text, 1, 3).unwrap()) {
+            return true;
+        }
 
         // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeter does not have an indent
-        if !no_paragraph_indent && node_idx > 0 {
+        if node_idx > 0 {
             if let Some(last_prev_sub_node) = nodes[node_idx - 1].last() {
                 let prev_text = &last_prev_sub_node.0;
-                if prev_text.len() > 1 {
-                    no_paragraph_indent =
-                        centering_delimiters.contains(&&prev_text[prev_text.len() - 2..]);
+                if prev_text.len() > 1
+                    && centering_delimiters.contains(&&prev_text[prev_text.len() - 2..])
+                {
+                    return true;
                 }
             }
         }
         // a paragraph that follows tags defined in tags_before_non_indents
-        if !no_paragraph_indent {
-            let mut prev_tag = "".to_string();
-            if sub_node_idx > 0 {
-                prev_tag = Self::get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
-            }
-            if node_idx > 0 {
-                prev_tag =
-                    Self::get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
-            }
-            no_paragraph_indent = self.tags_before_non_indents.contains(&prev_tag.as_str());
+        let mut prev_tag = "".to_string();
+        if sub_node_idx > 0 {
+            prev_tag = Self::get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
         }
-        no_paragraph_indent
+        if node_idx > 0 {
+            prev_tag = Self::get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
+        }
+        if self.tags_before_non_indents.contains(&prev_tag.as_str()) {
+            return true;
+        }
+
+        false
     }
 }

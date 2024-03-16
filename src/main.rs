@@ -47,47 +47,19 @@ fn main() {
     );
 
     let mut pre = transformer.pre_process_exercises(
-        r#"|> Grid
+        r#"|> Section
     classes="animate-appear-slow"
-    cols=3 
-    sm_cols=2
 
-    a. $ 0.9^2 < 0.9 $
 
-    b. $ \sqrt{0.01} = 0.1 $
+    for every real number $x$, where $|x|$ 
+    denotes the absolute value of $x$.
 
-    c. $ \sqrt[2]{\up{0.8}\sqrt[3]{2}} = \sqrt[3]{\up{0.8}\sqrt[2]{2}} $
+    (Nb: If ever you want to indicate both solutions of the
+    equation $x^2 = 4$ you can always use the notation.
+    “$\pm \sqrt{4}$” 
+    This is what happens, for example, in the 
+    maybe-well-known formula
 
-    d. ${\sqrt{2} \over \up{0.55}2} = \sqrt{0.5}$
-
-    e. $ {1 \over \sqrt{2}} = \sqrt{0.5} $
-
-    f. $ 2^{30} > 1000^3 $
-
-    g. $ {1 \over 0.95} > 1.05 $
-
-    |> Span
-        hi
-
-        h. $ (-1)^{101} = -1 $
-
-|> Exercises
-
-    |> Exercise
-
-        ok
-
-        |> Solution
-
-            ok
-
-    |> Exercise
-
-        ok
-
-        |> Solution
-
-            ok
     "#
         .to_string(),
     );

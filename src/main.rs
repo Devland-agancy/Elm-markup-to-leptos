@@ -1,17 +1,31 @@
 pub mod element_text;
 pub mod transform;
-use leptos::html::Tr;
 use std::fs::File;
 use std::io::prelude::*;
 use std::process::Command;
-use transform::Transformer;
+use transform::{AutoWrapper, Transformer};
 
 fn main() {
     let mut transformer: Transformer = Transformer::new(
         vec!["img", "SectionDivider"],
-        vec!["Paragraphs", "Example", "Section", "Solution"],
+        vec![
+            AutoWrapper {
+                tags: vec!["Paragraphs", "Example", "Section", "Solution"],
+                wrap_children_with: "Paragraph",
+                enable_manual_wrap: true,
+            },
+            AutoWrapper {
+                tags: vec!["Grid"],
+                wrap_children_with: "Span",
+                enable_manual_wrap: true,
+            },
+            AutoWrapper {
+                tags: vec!["List"],
+                wrap_children_with: "Item",
+                enable_manual_wrap: true,
+            },
+        ],
         vec!["Example"],
-        "Paragraph",
         vec![
             "Image",
             "DisplayImage",
@@ -29,22 +43,51 @@ fn main() {
             "Table",
             "Solution",
         ],
+        vec!["Grid", "List"],
     );
 
     let mut pre = transformer.pre_process_exercises(
-        r#"
-|> Section
+        r#"|> Grid
+    classes="animate-appear-slow"
+    cols=3 
+    sm_cols=2
 
-    ok
+    a. $ 0.9^2 < 0.9 $
 
-|> Exercise
+    b. $ \sqrt{0.01} = 0.1 $
 
-    $$ y_0 - px_0 $$
+    c. $ \sqrt[2]{\up{0.8}\sqrt[3]{2}} = \sqrt[3]{\up{0.8}\sqrt[2]{2}} $
 
-|> Exercise
+    d. ${\sqrt{2} \over \up{0.55}2} = \sqrt{0.5}$
 
-    the $y$-intercept in all cases.
+    e. $ {1 \over \sqrt{2}} = \sqrt{0.5} $
 
+    f. $ 2^{30} > 1000^3 $
+
+    g. $ {1 \over 0.95} > 1.05 $
+
+    |> Span
+        hi
+
+        h. $ (-1)^{101} = -1 $
+
+|> Exercises
+
+    |> Exercise
+
+        ok
+
+        |> Solution
+
+            ok
+
+    |> Exercise
+
+        ok
+
+        |> Solution
+
+            ok
     "#
         .to_string(),
     );

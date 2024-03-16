@@ -11,32 +11,36 @@ struct TagInfo {
     in_props: bool,
 }
 
+#[derive(Debug, Default)]
+pub struct AutoWrapper {
+    pub wrap_children_with: &'static str,
+    pub tags: Vec<&'static str>,
+    pub enable_manual_wrap: bool, // do not wrap if child is already wrapped
+}
+
 #[derive(Debug)]
 pub struct Transformer {
     pub self_closing_tags: Vec<&'static str>,
-    pub tags_with_paragraphs: Vec<&'static str>,
-    pub paragraph_tag: &'static str,
     pub tags_before_non_indents: Vec<&'static str>,
     pub no_x_padding_tags: Vec<&'static str>,
     pub tags_with_non_indent_first_child: Vec<&'static str>,
     pub tags_with_no_indents: Vec<&'static str>,
+    pub auto_wrappers: Vec<AutoWrapper>,
     track_line_delta: usize,
 }
 
 impl Transformer {
     pub fn new(
         self_closing_tags: Vec<&'static str>,
-        tags_with_paragraphs: Vec<&'static str>,
+        auto_wrappers: Vec<AutoWrapper>,
         no_x_padding_tags: Vec<&'static str>,
-        paragraph_tag: &'static str,
         tags_before_non_indents: Vec<&'static str>,
         tags_with_non_indent_first_child: Vec<&'static str>,
         tags_with_no_indents: Vec<&'static str>,
     ) -> Transformer {
         Transformer {
             self_closing_tags,
-            paragraph_tag,
-            tags_with_paragraphs,
+            auto_wrappers,
             tags_with_non_indent_first_child,
             tags_before_non_indents,
             no_x_padding_tags,
@@ -303,20 +307,30 @@ impl Transformer {
                         }
                     }
 
-                    if self
-                        .tags_with_paragraphs
-                        .contains(&tag_stack.last().unwrap().name.as_str())
-                    {
+                    let auto_wrapper = self.auto_wrappers.iter().find(|wrapper| {
+                        wrapper
+                            .tags
+                            .contains(&tag_stack.last().unwrap().name.as_str())
+                    });
+
+                    if let Some(a_w) = auto_wrapper {
+                        if a_w.enable_manual_wrap
+                            && Self::get_tag_from_string(&sub_node_text) == a_w.wrap_children_with
+                        {
+                            processed_text += sub_node_text.as_str();
+                            continue;
+                        }
+
                         let no_padding = self
                             .no_x_padding_tags
                             .contains(&tag_stack.last().unwrap().name.as_str());
 
                         processed_text += &format!(
                             "\"#<{} {}>r#\"{}\"#</{}>r#\"",
-                            self.paragraph_tag,
+                            a_w.wrap_children_with,
                             if no_padding { "no_padding = true" } else { "" },
                             sub_node_text,
-                            self.paragraph_tag
+                            a_w.wrap_children_with
                         );
                         continue;
                     }

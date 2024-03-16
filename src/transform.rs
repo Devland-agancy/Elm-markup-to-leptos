@@ -1,4 +1,5 @@
 use leptos::html::{Br, Tr};
+use regex::Regex;
 
 use super::element_text::ElementText;
 use std::{collections::btree_map::Range, fmt::format, iter::Enumerate, str::Lines};
@@ -515,8 +516,9 @@ impl Transformer {
         {
             return true;
         }
-        // paragraph starting with _
-        if text.len() > 2 && ["_", "*"].contains(&&Self::get_slice(text, 1, 2).unwrap()) {
+        // paragraph starting with xx. ( a note or point in a list )
+        let re = Regex::new(r"^.+?\.\s?(?:_|\*)?").unwrap();
+        if re.is_match(text) {
             return true;
         }
 
@@ -528,8 +530,8 @@ impl Transformer {
 
         // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeter does not have an indent
         if node_idx > 0 {
-            if let Some(last_prev_sub_node) = nodes[node_idx - 1].last() {
-                let prev_text = &last_prev_sub_node.0;
+            if let Some(first_prev_sub_node) = nodes[node_idx - 1].first() {
+                let prev_text = &first_prev_sub_node.0;
                 if prev_text.len() > 1
                     && centering_delimiters.contains(&&prev_text[prev_text.len() - 2..])
                 {

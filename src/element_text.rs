@@ -32,7 +32,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "_|",
         end_symbol: "|_",
-        left_replacement: "<Span italic=true align=Align::Center>",
+        left_replacement: "<Span align=Align::Center>",
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,

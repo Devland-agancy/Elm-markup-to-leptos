@@ -518,10 +518,7 @@ impl Transformer {
         }
         // paragraph starting with xx. ( a note or point in a list )
         let re = Regex::new(r"^ *\w+(\.|[\s_*])").unwrap();
-        println!("{}", text);
         if re.is_match(text) {
-            println!("{}", text);
-
             return true;
         }
 

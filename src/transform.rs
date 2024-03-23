@@ -1,15 +1,13 @@
-use leptos::html::{Br, Tr};
-use regex::Regex;
-
 use super::element_text::ElementText;
-use std::{collections::btree_map::Range, fmt::format, iter::Enumerate, str::Lines};
+use super::helpers::*;
+use std::str::Lines;
 
 #[derive(Debug, Default)]
-struct TagInfo {
-    name: String,
-    indent: usize,
-    is_self_closing: bool,
-    in_props: bool,
+pub struct TagInfo {
+    pub name: String,
+    pub indent: usize,
+    pub is_self_closing: bool,
+    pub in_props: bool,
 }
 
 #[derive(Debug, Default)]
@@ -50,7 +48,7 @@ impl Transformer {
         }
     }
 
-    pub fn pre_process_exercises(&mut self, elm: String) -> String {
+    pub fn pre_process_exercises(&mut self, elm: &String) -> String {
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
 
@@ -147,14 +145,14 @@ impl Transformer {
             }
             track_line_index = index + start_index - self.track_line_delta;
             let trimmed_line = line.trim_start();
-            let indent = Self::get_line_indent(line, trimmed_line);
-            Self::check_indent_size(indent, track_line_index);
+            let indent = get_line_indent(line, trimmed_line);
+            check_indent_size(indent, track_line_index);
             if let Some(last) = tag_stack.last() {
-                Self::check_extra_spaces(indent, last.indent, track_line_index);
+                check_extra_spaces(indent, last.indent, track_line_index);
             }
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim().to_string();
-                Self::tag_loop(&mut tag_stack, &mut output, &indent);
+                tag_loop(&mut tag_stack, &mut output, &indent);
                 output.push_str(&format!("<{}\n", tag_name));
                 tag_stack.push(TagInfo {
                     name: tag_name.clone(),
@@ -189,7 +187,7 @@ impl Transformer {
                 continue;
             }
             if !trimmed_line.is_empty() {
-                Self::tag_loop(&mut tag_stack, &mut output, &indent);
+                tag_loop(&mut tag_stack, &mut output, &indent);
 
                 let last = tag_stack.last().expect(&format!(
                     "There is no parent tag . line {}",
@@ -213,9 +211,9 @@ impl Transformer {
                     }
 
                     let inner_trimmed_line = text_line.trim_start();
-                    let indent = Self::get_line_indent(text_line, inner_trimmed_line);
-                    Self::check_indent_size(indent, track_line_index + j);
-                    Self::check_extra_spaces(
+                    let indent = get_line_indent(text_line, inner_trimmed_line);
+                    check_indent_size(indent, track_line_index + j);
+                    check_extra_spaces(
                         indent,
                         tag_stack.last().unwrap().indent,
                         track_line_index + j,
@@ -223,7 +221,7 @@ impl Transformer {
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
                         let next_line_trimmed = next_line.trim_start();
-                        let next_line_indent = Self::get_line_indent(next_line, next_line_trimmed);
+                        let next_line_indent = get_line_indent(next_line, next_line_trimmed);
 
                         if next_line_indent <= tag_stack.last().unwrap().indent
                             && next_line_trimmed.starts_with("|>")
@@ -316,7 +314,7 @@ impl Transformer {
 
                     if let Some(a_w) = auto_wrapper {
                         if a_w.enable_manual_wrap
-                            && Self::get_tag_from_string(&sub_node_text) == a_w.wrap_children_with
+                            && get_tag_from_string(&sub_node_text) == a_w.wrap_children_with
                         {
                             processed_text += sub_node_text.as_str();
                             continue;
@@ -338,11 +336,7 @@ impl Transformer {
                     processed_text += sub_node_text.as_str();
                 }
                 nodes = vec![];
-                output.push_str(&Self::concat_ignore_spaces(
-                    "r#\"",
-                    &processed_text,
-                    "\"#\n",
-                ));
+                output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n"));
             }
         }
 
@@ -387,7 +381,7 @@ impl Transformer {
 
             let inner_line = lines.clone().nth(end_line + 1).unwrap();
             let inner_trimmed_line = inner_line.trim_start();
-            inner_indent = Self::get_line_indent(inner_line, inner_trimmed_line);
+            inner_indent = get_line_indent(inner_line, inner_trimmed_line);
 
             if inner_indent > initial_indent
                 || inner_line.is_empty()
@@ -413,81 +407,6 @@ impl Transformer {
         element += &("".to_string() + "\n");
         element = self.transform(element, start_from);
         (element, skips)
-    }
-
-    fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
-        let trimmed_content = content.trim_start(); // Remove leading spaces from content
-        format!("{}{}{}", start, trimmed_content, end)
-    }
-
-    fn get_tag_from_string(string: &str) -> String {
-        let mut i = 3;
-        let mut tag = "".to_string();
-        while i < string.len()
-            && string.chars().nth(i).unwrap() != ' '
-            && string.chars().nth(i).unwrap() != '>'
-        {
-            tag.push(string.chars().nth(i).unwrap());
-            i += 1
-        }
-        tag
-    }
-
-    fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usize) {
-        while let Some(last_tag_info) = tag_stack.last() {
-            if *indent <= last_tag_info.indent {
-                if last_tag_info.is_self_closing {
-                    output.push_str("/>\n");
-                } else {
-                    output.push_str(&format!("</{}>\n", last_tag_info.name));
-                }
-                tag_stack.pop();
-            } else {
-                break;
-            }
-        }
-    }
-
-    fn get_line_indent(line: &str, trimmed: &str) -> usize {
-        if line.is_empty() || line.chars().all(char::is_whitespace) {
-            return 0;
-        };
-        line.len() - trimmed.len()
-    }
-
-    fn check_indent_size(size: usize, error_at: usize) {
-        if size % 4 != 0 {
-            panic!(
-                "Syntax error at line {}, There must be 4 spaces before each block",
-                error_at + 1
-            )
-        }
-    }
-
-    fn check_extra_spaces(indent: usize, parent_indent: usize, error_at: usize) {
-        if indent > parent_indent + 4 {
-            panic!(
-                "Syntax error at line {}, There are extra spaces",
-                error_at + 1
-            )
-        }
-    }
-
-    fn get_slice(text: &str, start: usize, end: usize) -> Option<&str> {
-        assert!(end >= start);
-
-        let mut iter = text
-            .char_indices()
-            .map(|(pos, _)| pos)
-            .chain(Some(text.len()))
-            .skip(start)
-            .peekable();
-        let start_pos = *iter.peek()?;
-        for _ in start..end {
-            iter.next();
-        }
-
-        Some(&text[start_pos..*iter.peek()?])
     }
 
     fn handle_paragraph_indent(
@@ -517,14 +436,16 @@ impl Transformer {
             return true;
         }
         // paragraph starting with xx. ( a note or point in a list )
-        let re = Regex::new(r"^ *\w+(\.|[\s_*])").unwrap();
+        // deprecated , Use |> Pause before the paragraph
+        /* let re = Regex::new(r"^ *\w+(\.|[\s_*])").unwrap();
         if re.is_match(text) {
             return true;
-        }
+        } */
 
         // $$, __,  |_ paragraphs
-        let centering_delimiters = vec!["$$", "__", "|_"];
-        if text.len() > 4 && centering_delimiters.contains(&&Self::get_slice(text, 1, 3).unwrap()) {
+        let centering_delimiters = vec!["$$", "__", "|_", "_|"];
+        println!("__||{}", &get_slice(text, 1, 3).unwrap());
+        if text.len() > 4 && centering_delimiters.contains(&&get_slice(text, 1, 3).unwrap()) {
             return true;
         }
 
@@ -542,10 +463,10 @@ impl Transformer {
         // a paragraph that follows tags defined in tags_before_non_indents
         let mut prev_tag = "".to_string();
         if sub_node_idx > 0 {
-            prev_tag = Self::get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
+            prev_tag = get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
         }
         if node_idx > 0 {
-            prev_tag = Self::get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
+            prev_tag = get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
         }
         if self.tags_before_non_indents.contains(&prev_tag.as_str()) {
             return true;

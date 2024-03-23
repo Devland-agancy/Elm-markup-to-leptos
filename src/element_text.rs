@@ -75,9 +75,14 @@ impl ElementText {
         let mut j = 0;
         let mut output = String::new();
 
-        while i < self.text.len() {
+        while i <= self.text.len() {
             let (del, skips, text) = &self.find_next_delimeter(i);
-            output += text;
+
+            if text == " " {
+                output += "r#\" \"#"
+            } else {
+                output += text;
+            }
 
             if !del.is_some() {
                 break;
@@ -94,10 +99,10 @@ impl ElementText {
 
                     output.push_str(&del.unwrap().symbol);
                     output.push_str(del_content);
-
-                    i = *closing_index;
+                    i = *closing_index + 1;
                     continue;
                 }
+
                 if i <= self.text.len() {
                     i = closing_index + del.unwrap().end_symbol.len();
                     let mut char_after_closing_del = "";
@@ -145,7 +150,7 @@ impl ElementText {
                         output.push_str(&handled_string);
                         output.push_str("\"#</span>r#\"");
                     } else {
-                        output.push_str("r#\" ");
+                        output.push_str("r#\"");
                         i += 1;
                     }
                 }
@@ -164,6 +169,7 @@ impl ElementText {
         let mut text = "".to_string();
         let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
         let mut has_multi_char = false;
+
         while i <= self.text.len() {
             let _del = DELIMETERS.iter().find(|d| {
                 if i.checked_sub(d.symbol.len()).is_some() {
@@ -178,6 +184,7 @@ impl ElementText {
                     false
                 }
             });
+
             if _del.is_some() {
                 if symbols.contains(
                     // in case founded delimiter is same as another delimeter first char e.g $ and $$
@@ -197,17 +204,21 @@ impl ElementText {
                 found_symbol = _del.unwrap().symbol;
                 if !has_multi_char {}
                 if self.is_escaped(i - found_symbol.len()) {
-                    for _x in 1..found_symbol.len() {
-                        // pop added characters including "\"
+                    let mut nth = text.chars().nth(i);
+                    while nth.is_some() && nth.unwrap() != '\\' {
                         text.pop();
+                        nth = text.chars().nth(i);
                     }
+                    // pop the "\"
+                    text.pop();
+
                     text.push_str(found_symbol); // push again without "\"
                     i += 1;
                     continue;
                 }
                 break;
             }
-            if i.checked_sub(1).is_some() {
+            if i.checked_sub(1).is_some() && !(i == 1 && &self.get_char(i - 1) == " ") {
                 text.push_str(&self.get_char(i - 1));
             }
             i += 1;
@@ -264,7 +275,7 @@ impl ElementText {
             if self.is_escaped(i) {
                 del_content.push_str(end_symbol);
                 found = false;
-                i += end_symbol.len() + 1;
+                i += end_symbol.len();
                 continue;
             }
             break;

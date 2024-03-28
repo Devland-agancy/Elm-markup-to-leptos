@@ -201,7 +201,7 @@ impl Transformer {
                     if let Some(prop_value) = prop_value {
                         let is_number = prop_value.trim().parse::<f32>();
                         let is_bool = prop_value.trim() == "false" || prop_value.trim() == "true";
-                        let is_vec = prop_value.trim().starts_with("vec[");
+                        let is_vec = prop_value.trim().starts_with("vec![");
 
                         if is_number.is_err() && !is_bool && !is_vec {
                             prop_line = format!(

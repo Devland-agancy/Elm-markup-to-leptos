@@ -1,6 +1,6 @@
 [package]
 name = "elm-parser"
-version = "1.4.10"
+version = "1.5.0"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/"

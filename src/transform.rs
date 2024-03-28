@@ -195,7 +195,20 @@ impl Transformer {
                 ));
                 if last.in_props {
                     // tag props
-                    output.push_str(&format!("{}\n", line));
+                    let mut prop_line = line.to_string();
+                    // add quotes to prop value if it's a string
+                    let prop_value = line.split("=").nth(1);
+                    if let Some(prop_value) = prop_value {
+                        let is_number = prop_value.trim().parse::<f32>();
+                        if is_number.is_err() {
+                            prop_line = format!(
+                                "{} = \"{}\"",
+                                line.split("=").nth(0).unwrap().trim(),
+                                prop_value.trim()
+                            )
+                        }
+                    }
+                    output.push_str(&format!("{}\n", prop_line));
                     continue;
                 }
                 // tag content
@@ -444,7 +457,6 @@ impl Transformer {
 
         // $$, __,  |_ paragraphs
         let centering_delimiters = vec!["$$", "__", "|_", "_|"];
-        println!("__||{}", &get_slice(text, 1, 3).unwrap());
         if text.len() > 4 && centering_delimiters.contains(&&get_slice(text, 1, 3).unwrap()) {
             return true;
         }

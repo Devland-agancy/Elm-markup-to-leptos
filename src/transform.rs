@@ -200,7 +200,9 @@ impl Transformer {
                     let prop_value = line.split("=").nth(1);
                     if let Some(prop_value) = prop_value {
                         let is_number = prop_value.trim().parse::<f32>();
-                        if is_number.is_err() {
+                        let is_bool = prop_value.trim() == "false" || prop_value.trim() == "true";
+
+                        if is_number.is_err() && !is_bool {
                             prop_line = format!(
                                 "{} = \"{}\"",
                                 line.split("=").nth(0).unwrap().trim(),

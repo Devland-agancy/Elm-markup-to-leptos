@@ -195,23 +195,7 @@ impl Transformer {
                 ));
                 if last.in_props {
                     // tag props
-                    let mut prop_line = line.to_string();
-                    // add quotes to prop value if it's a string
-                    let prop_value = line.split("=").nth(1);
-                    if let Some(prop_value) = prop_value {
-                        let is_number = prop_value.trim().parse::<f32>();
-                        let is_bool = prop_value.trim() == "false" || prop_value.trim() == "true";
-                        let is_vec = prop_value.trim().starts_with("vec![");
-
-                        if is_number.is_err() && !is_bool && !is_vec {
-                            prop_line = format!(
-                                "{} = \"{}\"",
-                                line.split("=").nth(0).unwrap().trim(),
-                                prop_value.trim()
-                            )
-                        }
-                    }
-                    output.push_str(&format!("{}\n", prop_line));
+                    output.push_str(&format!("{}\n", Self::handle_prop_line(line)));
                     continue;
                 }
                 // tag content
@@ -488,5 +472,23 @@ impl Transformer {
         }
 
         false
+    }
+
+    fn handle_prop_line(line: &str) -> String {
+        let mut prop_line = line.trim().to_string();
+        // add quotes to prop value if it's a string
+        let prop_value = prop_line.split_once(" ");
+        if let Some((prop_key, prop_value)) = prop_value {
+            let is_number = prop_value.trim().parse::<f32>();
+            let is_bool = prop_value.trim() == "false" || prop_value.trim() == "true";
+            let is_vec = prop_value.trim().starts_with("vec![");
+
+            if is_number.is_err() && !is_bool && !is_vec {
+                prop_line = format!("{}=\"{}\"", prop_key.trim(), prop_value.trim())
+            } else {
+                prop_line = format!("{}={}", prop_key.trim(), prop_value.trim())
+            }
+        }
+        prop_line
     }
 }

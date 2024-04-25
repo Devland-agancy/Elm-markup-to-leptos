@@ -25,7 +25,7 @@ pub struct Transformer {
     pub tags_with_non_indent_first_child: Vec<&'static str>,
     pub tags_with_no_indents: Vec<&'static str>,
     pub auto_wrappers: Vec<AutoWrapper>,
-    track_line_delta: usize,
+    track_line_delta: isize,
 }
 
 impl Transformer {
@@ -69,6 +69,22 @@ impl Transformer {
 
             lines.insert(exo.0 - 1, props_string);
         }
+        lines.join("\n")
+    }
+
+    pub fn remove_empty_line_above(&mut self, elm: String, tags: Vec<&str>) -> String {
+        let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
+        let binding = lines.clone();
+
+        binding
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.trim().len() > 3 && tags.contains(&&line.trim()[3..]))
+            .for_each(|tag| {
+                lines.remove(tag.0 - 1);
+                self.track_line_delta -= 1
+            });
+
         lines.join("\n")
     }
 
@@ -131,7 +147,7 @@ impl Transformer {
         lines.join("\n")
     }
 
-    pub fn transform(&mut self, elm: String, start_index: usize) -> String {
+    pub fn transform(&mut self, elm: String, start_index: isize) -> String {
         let mut output = String::new();
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
@@ -143,10 +159,10 @@ impl Transformer {
                 lines_to_skip = lines_to_skip - 1;
                 continue;
             }
-            track_line_index = index + start_index - self.track_line_delta;
+            track_line_index = (index as isize) + start_index - self.track_line_delta;
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line, trimmed_line);
-            check_indent_size(indent, track_line_index);
+            check_indent_size(indent as isize, track_line_index);
             if let Some(last) = tag_stack.last() {
                 check_extra_spaces(indent, last.indent, track_line_index);
             }
@@ -212,11 +228,11 @@ impl Transformer {
 
                     let inner_trimmed_line = text_line.trim_start();
                     let indent = get_line_indent(text_line, inner_trimmed_line);
-                    check_indent_size(indent, track_line_index + j);
+                    check_indent_size(indent as isize, track_line_index + j as isize);
                     check_extra_spaces(
                         indent,
                         tag_stack.last().unwrap().indent,
-                        track_line_index + j,
+                        track_line_index + j as isize,
                     );
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
@@ -405,7 +421,7 @@ impl Transformer {
             element += &(lines.clone().nth(i).unwrap().to_string() + "\n");
         }
         element += &("".to_string() + "\n");
-        element = self.transform(element, start_from);
+        element = self.transform(element, start_from as isize);
         (element, skips)
     }
 

@@ -502,7 +502,10 @@ impl Transformer {
             let is_vec = prop_value.trim().starts_with("vec![");
 
             if is_number.is_err() && !is_bool && !is_vec {
-                prop_line = format!("{}=\"{}\"", prop_key.trim(), prop_value.trim())
+                prop_line = match prop_key {
+                    "src" => format!("{}=\"/{}\"", prop_key.trim(), prop_value.trim()),
+                    _ => format!("{}=\"{}\"", prop_key.trim(), prop_value.trim()),
+                }
             } else {
                 prop_line = format!("{}={}", prop_key.trim(), prop_value.trim())
             }

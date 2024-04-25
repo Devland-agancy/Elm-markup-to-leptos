@@ -75,13 +75,15 @@ impl Transformer {
     pub fn remove_empty_line_above(&mut self, elm: String, tags: Vec<&str>) -> String {
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
+        let mut lines_removed = 0;
 
         binding
             .iter()
             .enumerate()
-            .filter(|(_, line)| line.trim().len() > 3 && tags.contains(&&line.trim()[3..]))
+            .filter(|(_, line)| line.trim().starts_with("|> ") && tags.contains(&&line.trim()[3..]))
             .for_each(|tag| {
-                lines.remove(tag.0 - 1);
+                lines.remove(tag.0 - 1 - lines_removed);
+                lines_removed += 1;
                 self.track_line_delta -= 1
             });
 

@@ -66,19 +66,19 @@ fn main() {
 
     let mut pre = transformer.pre_process_exercises(
         &r#"
-        
-|> Solution
+|> hi 
 
-    hihi
+    |> Solution
 
-|> Solution
+         hihi
 
-    hoho
+    |> Solution
 
+        hoho
 
-|> Solution
+    |> Solution
 
-    hoho
+        hoho
 
     "#
         .to_string(),

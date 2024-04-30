@@ -82,8 +82,16 @@ impl Transformer {
             .filter(|(_, line)| line.trim() == "|> Solution");
 
         for i in 0..solutions.clone().count() {
-            let props_string = format!("    solution_number={}", i);
-            lines.insert(solutions.next().unwrap().0 + 1 + i, props_string);
+            let solution = solutions.next().unwrap();
+            let solution_tag_line = solution.0 + i;
+
+            let indent = solution.1.len() - solution.1.trim_start().len();
+            let mut indent_string = "    ".to_string();
+            for _ in 0..indent {
+                indent_string += " ";
+            }
+            let props_string = format!("{}solution_number={}", indent_string, i);
+            lines.insert(solution_tag_line + 1, props_string);
         }
         lines.join("\n")
     }
@@ -205,6 +213,10 @@ impl Transformer {
 
                 if tag_name == "Exercise" {
                     self.track_line_delta += 3
+                }
+
+                if tag_name == "Solution" {
+                    self.track_line_delta += 1
                 }
 
                 continue;

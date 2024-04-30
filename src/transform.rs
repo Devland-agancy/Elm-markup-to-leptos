@@ -72,6 +72,22 @@ impl Transformer {
         lines.join("\n")
     }
 
+    pub fn pre_process_solutions(&mut self, elm: String) -> String {
+        let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
+        let binding = lines.clone();
+
+        let mut solutions = binding
+            .iter()
+            .enumerate()
+            .filter(|(_, line)| line.trim() == "|> Solution");
+
+        for i in 0..solutions.clone().count() {
+            let props_string = format!("    solution_number={}", i);
+            lines.insert(solutions.next().unwrap().0 + 1 + i, props_string);
+        }
+        lines.join("\n")
+    }
+
     pub fn remove_empty_line_above(&mut self, elm: String, tags: Vec<&str>) -> String {
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();

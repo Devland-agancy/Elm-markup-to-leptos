@@ -1,8 +1,12 @@
 pub mod element_text;
+pub mod elm_json;
+pub mod helpers;
 pub mod transform;
-use std::fs::File;
+
 use std::io::prelude::*;
+use std::path::Path;
 use std::process::Command;
+use std::{fs::File, io::BufReader};
 use transform::{AutoWrapper, Transformer};
 
 fn main() {
@@ -46,24 +50,42 @@ fn main() {
         vec!["Grid", "List"],
     );
 
+    let path = Path::new("src/elm.emu");
+    // Open the file
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        Err(error) => {
+            println!("Failed to open file: {}", error);
+            return;
+        }
+    };
+
+    let mut reader = BufReader::new(file);
+    let mut contents = String::new();
+    let _ = reader.read_to_string(&mut contents);
+
     let mut pre = transformer.pre_process_exercises(
-        r#"|> Section
-    classes="animate-appear-slow"
+        &r#"
+        
+|> Solution
+
+    hihi
+
+|> Solution
+
+    hoho
 
 
-    for every real number $x$, where $|x|$ 
-    denotes the absolute value of $x$.
+|> Solution
 
-    (Nb: If ever you want to indicate both solutions of the
-    equation $x^2 = 4$ you can always use the notation.
-    “$\pm \sqrt{4}$” 
-    This is what happens, for example, in the 
-    maybe-well-known formula
+    hoho
 
     "#
         .to_string(),
     );
 
+    pre = transformer.remove_empty_line_above(pre, vec!["ImageRight", "ImageLeft"]);
+    pre = transformer.pre_process_solutions(pre);
     pre = transformer.auto_increamental_title(pre, "Example", "Example", None, None);
     pre = transformer.auto_increamental_title(
         pre,
@@ -101,4 +123,21 @@ fn main() {
         }
         Err(error) => println!("Error writing to file: {}", error),
     }
+
+    /*   let mut json_file = match File::create("src/json_output.json") {
+        Ok(file) => file,
+        Err(error) => {
+            println!("Error creating file: {}", error);
+            return;
+        }
+    };
+    let mut json = ElmJSON::new();
+    let json_res = json.export_json(&contents);
+
+    match file.write_all(json_res.as_bytes()) {
+        Ok(_) => {
+            println!("Json written to file successfully");
+        }
+        Err(error) => println!("Error writing to file: {}", error),
+    } */
 }

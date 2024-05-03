@@ -28,17 +28,31 @@ fn main() {
 
     let mut emitter: Emitter = Emitter::new(
         r#"
-    |> Section
+|> Section
 
-        *Syntax.*
-        A
-    
-        __function__
-    
-        is a “rule” for transforming inputs (usually
-        numbers) into outputs (usually numbers as well).
-        One can think of a function as a box with an
-        “input tube” and an “output tube”:
+    $
+    $$
+    (v \ra v^2)(10) = 100
+    $$
+    $$
+    (z \ra z^3)(10) + (t \ra t^2)(5) = 1025.
+    $$
+
+    (Etc.) (Indeed, to emphasize again, the variable 
+    denoting the input does not matter: it is just a 
+    placeholder, and you obtain the same output, and 
+    the same <i>function</i>, no matter what symbol 
+    you choose.*) (*As long as you don't collide with 
+    other existing variable names.)
+
+    is a “rule” for transforming inputs (usually
+    numbers) into outputs (usually numbers as well).
+    One can think of a function as a box with an
+    “input tube” and an “output tube”:
+
+    okhello
+
+    hellos
 
     "#
         .to_string(),

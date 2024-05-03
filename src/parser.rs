@@ -376,10 +376,8 @@ impl Parser {
                     && centering_delimiters
                         .contains(&prev_text.chars().rev().take(2).collect::<String>().as_str())
                 {
-                    println!("asdasd");
                     return true;
                 }
-                println!("pass");
             }
         }
         // a paragraph that follows tags defined in tags_before_non_indents

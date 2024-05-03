@@ -373,10 +373,13 @@ impl Parser {
             if let Some(first_prev_sub_node) = nodes[node_idx - 1].first() {
                 let prev_text = &first_prev_sub_node.0;
                 if prev_text.len() > 1
-                    && centering_delimiters.contains(&&prev_text[prev_text.len() - 2..])
+                    && centering_delimiters
+                        .contains(&prev_text.chars().rev().take(2).collect::<String>().as_str())
                 {
+                    println!("asdasd");
                     return true;
                 }
+                println!("pass");
             }
         }
         // a paragraph that follows tags defined in tags_before_non_indents

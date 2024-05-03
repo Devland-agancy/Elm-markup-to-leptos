@@ -64,7 +64,6 @@ impl Emitter {
 
     pub fn remove_empty_line_above(
         &mut self,
-
         tags: Vec<&str>,
         ignore_prop: Option<(&str, &str)>, // (key, value)
         mut track_line_delta: isize,

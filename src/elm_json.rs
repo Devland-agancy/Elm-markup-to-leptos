@@ -71,7 +71,7 @@ impl ElmJSON {
             }
 
             let trimmed_line = line.trim_start();
-            let indent = get_line_indent(line, trimmed_line);
+            let indent = get_line_indent(line);
 
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
@@ -176,7 +176,7 @@ impl ElmJSON {
                     }
 
                     let inner_trimmed_line = text_line.trim_start();
-                    let indent = get_line_indent(text_line, inner_trimmed_line);
+                    let indent = get_line_indent(text_line);
                     check_indent_size(indent as isize, track_line_index + j as isize);
                     check_extra_spaces(
                         indent,
@@ -186,7 +186,7 @@ impl ElmJSON {
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
                         let next_line_trimmed = next_line.trim_start();
-                        let next_line_indent = get_line_indent(next_line, next_line_trimmed);
+                        let next_line_indent = get_line_indent(next_line);
 
                         if next_line_indent <= tag_stack.last().unwrap().indent
                             && next_line_trimmed.starts_with("|>")
@@ -303,7 +303,7 @@ impl ElmJSON {
 
             let inner_line = lines.clone().nth(end_line + 1).unwrap();
             let inner_trimmed_line = inner_line.trim_start();
-            inner_indent = get_line_indent(inner_line, inner_trimmed_line);
+            inner_indent = get_line_indent(inner_line);
 
             if inner_indent > initial_indent
                 || inner_line.is_empty()

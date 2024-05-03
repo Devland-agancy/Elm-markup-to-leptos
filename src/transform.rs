@@ -96,7 +96,14 @@ impl Transformer {
         lines.join("\n")
     }
 
-    pub fn remove_empty_line_above(&mut self, elm: String, tags: Vec<&str>) -> String {
+    pub fn remove_empty_line_above(
+        &mut self,
+        elm: String,
+        tags: Vec<&str>,
+        ignore_prop: Option<(&str, &str)>, // (key, value)
+    ) -> String {
+        // Removes empty lines above tags
+
         let mut lines: Vec<String> = elm.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
         let mut lines_removed = 0;
@@ -104,7 +111,35 @@ impl Transformer {
         binding
             .iter()
             .enumerate()
-            .filter(|(_, line)| line.trim().starts_with("|> ") && tags.contains(&&line.trim()[3..]))
+            .filter(|(i, line)| {
+                let tag_found = line.trim().starts_with("|> ") && tags.contains(&&line.trim()[3..]);
+                let mut should_ignore = false;
+
+                if tag_found && ignore_prop.is_some() {
+                    // search props
+                    let indent = get_line_indent(line);
+                    let mut j = *i + 1;
+                    let next_line = binding.iter().nth(j);
+                    if let Some(mut next_line) = next_line {
+                        let mut next_line_indent = get_line_indent(next_line);
+
+                        while next_line_indent > indent && !should_ignore {
+                            let prop_key = next_line.trim().split_once(" ");
+                            if let Some(prop_key) = prop_key {
+                                should_ignore = prop_key.0 == ignore_prop.unwrap().0
+                                    && prop_key.1 == ignore_prop.unwrap().1
+                            }
+                            j += 1;
+                            if binding.iter().nth(j).is_none() {
+                                break;
+                            }
+                            next_line = binding.iter().nth(j).unwrap();
+                            next_line_indent = get_line_indent(next_line);
+                        }
+                    }
+                }
+                tag_found && !should_ignore
+            })
             .for_each(|tag| {
                 lines.remove(tag.0 - 1 - lines_removed);
                 lines_removed += 1;
@@ -187,7 +222,7 @@ impl Transformer {
             }
             track_line_index = (index as isize) + start_index - self.track_line_delta;
             let trimmed_line = line.trim_start();
-            let indent = get_line_indent(line, trimmed_line);
+            let indent = get_line_indent(line);
             check_indent_size(indent as isize, track_line_index);
             if let Some(last) = tag_stack.last() {
                 check_extra_spaces(indent, last.indent, track_line_index);
@@ -257,7 +292,7 @@ impl Transformer {
                     }
 
                     let inner_trimmed_line = text_line.trim_start();
-                    let indent = get_line_indent(text_line, inner_trimmed_line);
+                    let indent = get_line_indent(text_line);
                     check_indent_size(indent as isize, track_line_index + j as isize);
                     check_extra_spaces(
                         indent,
@@ -267,7 +302,7 @@ impl Transformer {
                     // break if next line is new ( not nested ) element
                     if let Some(next_line) = lines.clone().nth(index + j + 1) {
                         let next_line_trimmed = next_line.trim_start();
-                        let next_line_indent = get_line_indent(next_line, next_line_trimmed);
+                        let next_line_indent = get_line_indent(next_line);
 
                         if next_line_indent <= tag_stack.last().unwrap().indent
                             && next_line_trimmed.starts_with("|>")
@@ -426,8 +461,7 @@ impl Transformer {
             }
 
             let inner_line = lines.clone().nth(end_line + 1).unwrap();
-            let inner_trimmed_line = inner_line.trim_start();
-            inner_indent = get_line_indent(inner_line, inner_trimmed_line);
+            inner_indent = get_line_indent(inner_line);
 
             if inner_indent > initial_indent
                 || inner_line.is_empty()

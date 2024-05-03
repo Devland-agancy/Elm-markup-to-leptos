@@ -66,25 +66,36 @@ fn main() {
 
     let mut pre = transformer.pre_process_exercises(
         &r#"
-|> hi 
+|> Image
+    src images/55.svg
+    container_classes relativew-fit
 
-    |> Solution
+    |> ImageRight
+        src images/56.svg
+        attached false
+        offset_y 5rem
+        use_squiggle_on_mobile false
+    
+    |> ImageLeft
+        src images/57.svg
+        attached false
+        offset_x -5rem
+        offset_y 1rem
+        y bottom
+        img_position bottom
+        use_squiggle_on_mobile false
 
-         hihi
-
-    |> Solution
-
-        hoho
-
-    |> Solution
-
-        hoho
-
-    "#
+"#
         .to_string(),
     );
 
-    pre = transformer.remove_empty_line_above(pre, vec!["ImageRight", "ImageLeft"]);
+    pre = transformer.remove_empty_line_above(
+        pre,
+        vec!["ImageRight", "ImageLeft"],
+        Some(("attached", "false")),
+    );
+
+    println!("pre {}", pre);
     pre = transformer.pre_process_solutions(pre);
     pre = transformer.auto_increamental_title(pre, "Example", "Example", None, None);
     pre = transformer.auto_increamental_title(

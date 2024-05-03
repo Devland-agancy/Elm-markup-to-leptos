@@ -1,16 +1,49 @@
 pub mod element_text;
 pub mod elm_json;
+pub mod emitter;
 pub mod helpers;
-pub mod transform;
+pub mod parser;
 
+use emitter::Emitter;
+use parser::{AutoWrapper, Parser};
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 use std::{fs::File, io::BufReader};
-use transform::{AutoWrapper, Transformer};
 
 fn main() {
-    let mut transformer: Transformer = Transformer::new(
+    let path = Path::new("src/elm.emu");
+    // Open the file
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        Err(error) => {
+            println!("Failed to open file: {}", error);
+            return;
+        }
+    };
+
+    let mut reader = BufReader::new(file);
+    let mut contents = String::new();
+    let _ = reader.read_to_string(&mut contents);
+
+    let mut emitter: Emitter = Emitter::new(
+        r#"
+    |> Section
+
+        *Syntax.*
+        A
+    
+        __function__
+    
+        is a “rule” for transforming inputs (usually
+        numbers) into outputs (usually numbers as well).
+        One can think of a function as a box with an
+        “input tube” and an “output tube”:
+
+    "#
+        .to_string(),
+    );
+    let mut parser: Parser = Parser::new(
         vec!["img", "SectionDivider"],
         vec![
             AutoWrapper {
@@ -50,63 +83,23 @@ fn main() {
         vec!["Grid", "List"],
     );
 
-    let path = Path::new("src/elm.emu");
-    // Open the file
-    let file = match File::open(&path) {
-        Ok(file) => file,
-        Err(error) => {
-            println!("Failed to open file: {}", error);
-            return;
-        }
-    };
+    emitter = emitter
+        .pre_process_exercises()
+        .remove_empty_line_above(
+            vec!["ImageRight", "ImageLeft"],
+            Some(("attached", "false")),
+            parser.track_line_delta,
+        )
+        .pre_process_solutions()
+        .auto_increamental_title("Example", "Example", None, None)
+        .auto_increamental_title(
+            "Exercise",
+            "Exercise",
+            Some("ExerciseQuestion"),
+            Some("Solution"),
+        );
 
-    let mut reader = BufReader::new(file);
-    let mut contents = String::new();
-    let _ = reader.read_to_string(&mut contents);
-
-    let mut pre = transformer.pre_process_exercises(
-        &r#"
-|> Image
-    src images/55.svg
-    container_classes relativew-fit
-
-    |> ImageRight
-        src images/56.svg
-        attached false
-        offset_y 5rem
-        use_squiggle_on_mobile false
-    
-    |> ImageLeft
-        src images/57.svg
-        attached false
-        offset_x -5rem
-        offset_y 1rem
-        y bottom
-        img_position bottom
-        use_squiggle_on_mobile false
-
-"#
-        .to_string(),
-    );
-
-    pre = transformer.remove_empty_line_above(
-        pre,
-        vec!["ImageRight", "ImageLeft"],
-        Some(("attached", "false")),
-    );
-
-    println!("pre {}", pre);
-    pre = transformer.pre_process_solutions(pre);
-    pre = transformer.auto_increamental_title(pre, "Example", "Example", None, None);
-    pre = transformer.auto_increamental_title(
-        pre,
-        "Exercise",
-        "Exercise",
-        Some("ExerciseQuestion"),
-        Some("Solution"),
-    );
-
-    let leptos_code = transformer.transform(pre, 0);
+    let leptos_code = parser.transform(emitter.elm, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
         Err(error) => {

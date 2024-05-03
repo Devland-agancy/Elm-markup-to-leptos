@@ -2,7 +2,7 @@ use std::str::Lines;
 
 use super::element_text::ElementText;
 use super::helpers::*;
-use super::transform::TagInfo;
+use super::parser::TagInfo;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use syn::token::Enum;

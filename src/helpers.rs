@@ -1,4 +1,4 @@
-use crate::transform::TagInfo;
+use crate::parser::TagInfo;
 
 pub fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
     let trimmed_content = content.trim_start(); // Remove leading spaces from content
@@ -33,11 +33,11 @@ pub fn tag_loop(tag_stack: &mut Vec<TagInfo>, output: &mut String, indent: &usiz
     }
 }
 
-pub fn get_line_indent(line: &str, trimmed: &str) -> usize {
+pub fn get_line_indent(line: &str) -> usize {
     if line.is_empty() || line.chars().all(char::is_whitespace) {
         return 0;
     };
-    line.len() - trimmed.len()
+    line.len() - line.trim_start().len()
 }
 
 pub fn check_indent_size(size: isize, error_at: isize) {

@@ -1,21 +1,5 @@
-|> Paragraph 
+|> Section
 
-    hihihi asdljalskdj  wow
-    $ n $ so this is 
-    |> MathBlock
+    hi
 
-        n + 1
-        |> img
-            we
-|> Paragraph 
-
-    hihihi asdljalskdj  wow
-    $ n $ so this is 
-    |> MathBlock
-
-        n + 1
-        |> img
-            we
-
-    
-
+    __hi__

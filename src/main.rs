@@ -28,31 +28,13 @@ fn main() {
 
     let mut emitter: Emitter = Emitter::new(
         r#"
-|> Section
+|> Exercises
 
-    $
-    $$
-    (v \ra v^2)(10) = 100
-    $$
-    $$
-    (z \ra z^3)(10) + (t \ra t^2)(5) = 1025.
-    $$
+    |> Exercise
 
-    (Etc.) (Indeed, to emphasize again, the variable 
-    denoting the input does not matter: it is just a 
-    placeholder, and you obtain the same output, and 
-    the same <i>function</i>, no matter what symbol 
-    you choose.*) (*As long as you don't collide with 
-    other existing variable names.)
+        |> ImageRight
 
-    is a “rule” for transforming inputs (usually
-    numbers) into outputs (usually numbers as well).
-    One can think of a function as a box with an
-    “input tube” and an “output tube”:
-
-    okhello
-
-    hellos
+         hi
 
     "#
         .to_string(),
@@ -102,7 +84,7 @@ fn main() {
         .remove_empty_line_above(
             vec!["ImageRight", "ImageLeft"],
             Some(("attached", "false")),
-            parser.track_line_delta,
+            &mut parser,
         )
         .pre_process_solutions()
         .auto_increamental_title("Example", "Example", None, None)
@@ -113,6 +95,7 @@ fn main() {
             Some("Solution"),
         );
 
+    println!("emi {}", emitter.elm);
     let leptos_code = parser.transform(emitter.elm, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,

@@ -1,3 +1,5 @@
+use crate::parser::Parser;
+
 use super::helpers::*;
 
 pub struct Emitter {
@@ -66,7 +68,7 @@ impl Emitter {
         &mut self,
         tags: Vec<&str>,
         ignore_prop: Option<(&str, &str)>, // (key, value)
-        mut track_line_delta: isize,
+        parser: &mut Parser,
     ) -> Emitter {
         // Removes empty lines above tags
 
@@ -109,7 +111,7 @@ impl Emitter {
             .for_each(|tag| {
                 lines.remove(tag.0 - 1 - lines_removed);
                 lines_removed += 1;
-                track_line_delta -= 1
+                parser.track_line_delta -= 1
             });
 
         Emitter {

@@ -77,22 +77,9 @@ impl Parser {
                     is_self_closing: self.self_closing_tags.contains(&tag_name.as_str()),
                     in_props: true,
                 });
-
-                if tag_name == "Exercises" {
-                    self.track_line_delta += 1
-                }
-
-                if tag_name == "Example" {
-                    self.track_line_delta += 1
-                }
-
-                if tag_name == "Exercise" {
-                    self.track_line_delta += 3
-                }
-
-                if tag_name == "Solution" {
-                    self.track_line_delta += 1
-                }
+                println!("{}", self.track_line_delta);
+                track_emitter_line_diff(self, &tag_name);
+                println!("{}", self.track_line_delta);
 
                 continue;
             }

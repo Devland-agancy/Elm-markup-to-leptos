@@ -77,9 +77,7 @@ impl Parser {
                     is_self_closing: self.self_closing_tags.contains(&tag_name.as_str()),
                     in_props: true,
                 });
-                println!("{}", self.track_line_delta);
                 track_emitter_line_diff(self, &tag_name);
-                println!("{}", self.track_line_delta);
 
                 continue;
             }

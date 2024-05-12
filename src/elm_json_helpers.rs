@@ -57,6 +57,18 @@ pub fn push_new_cell(parent: &mut DataCell, id: u32, tag_name: &str) {
     }
 }
 
+pub fn push_attribute(cell: &mut DataCell, line: &str) {
+    if let Some(prop_line) = line.split_once(" ") {
+        match cell.cell_type {
+            CellType::Element(ref mut el) => el.props.push(Prop {
+                key: prop_line.0.to_string(),
+                value: prop_line.1.to_string(),
+            }),
+            _ => (),
+        }
+    }
+}
+
 pub fn tag_stack_pop(tag_stack: &mut Vec<TagInfo>, indent: &usize) {
     while let Some(last_tag_info) = tag_stack.last() {
         if *indent <= last_tag_info.indent {

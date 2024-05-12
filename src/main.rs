@@ -27,14 +27,18 @@ fn main() {
     let mut reader = BufReader::new(file);
     let mut contents = r#"
 |> Exercises
+    hi tfoo
 
     |> Exercise
+        hi tfoo
 
         |> 222
+            hi tfoo
 
     |> hihi
 
 |> New
+    hi tfoo
 
     hi
 "#;

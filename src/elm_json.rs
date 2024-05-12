@@ -31,6 +31,7 @@ pub enum CellType {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DataCell {
+    #[serde(skip)]
     pub id: u32,
     #[serde(flatten)]
     pub cell_type: CellType,
@@ -43,8 +44,8 @@ pub struct TextCell {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Prop {
-    key: String,
-    value: String,
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -91,6 +92,7 @@ impl ElmJSON {
         let lines = elm.lines();
         let mut lines_to_skip: u32 = 0;
         let mut track_line_index = 0;
+        let mut curr_el_id: Option<u32> = None;
 
         for (index, line) in lines.clone().enumerate() {
             if lines_to_skip > 0 {
@@ -100,32 +102,22 @@ impl ElmJSON {
 
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line);
+            let current_cell: Option<&mut DataCell>;
 
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
                 tag_stack_pop(&mut tag_stack, &indent);
-                let res = self.result.clone();
 
-                let default = &DataCell {
-                    ..Default::default()
-                };
-
-                let curr_el_id = if let Some(last) = tag_stack.last() {
-                    last.id
+                curr_el_id = if let Some(last) = tag_stack.last() {
+                    Some(last.id)
                 } else {
-                    0
+                    Some(0)
                 };
-                println!("id {}", curr_el_id);
 
-                let res_cloned = &mut self.result.clone();
+                //let res_cloned = &mut self.result.clone();
+                //current_cell = get_cell_by_id(res_cloned, curr_el_id);
 
-                let current_cell: Option<&mut DataCell> = get_cell_by_id(res_cloned, curr_el_id);
-
-                let el = init_element_cell(self.id, tag_name);
-
-                if let Some(current_cell) = current_cell {
-                    Self::add_cell(&mut self.result, curr_el_id, self.id, tag_name);
-                }
+                Self::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, tag_name);
 
                 tag_stack.push(TagInfo {
                     id: self.id,
@@ -160,6 +152,8 @@ impl ElmJSON {
                 ));
                 if last.in_props {
                     // tag props
+                    Self::add_attribute(&mut self.result, last.id, trimmed_line);
+
                     /* output.push_str(&format!("{}\n", line)); */
                     continue;
                 }
@@ -283,6 +277,25 @@ impl ElmJSON {
                 .children
                 .iter_mut()
                 .for_each(|x| Self::add_cell(x, parent_id, id, tag_name)),
+            _ => (),
+        }
+    }
+
+    fn add_attribute(tree: &mut DataCell, cell_id: u32, prop_line: &str) {
+        if tree.id == cell_id {
+            push_attribute(tree, prop_line);
+            return;
+        }
+
+        match &mut tree.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_attribute(x, cell_id, prop_line)),
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_attribute(x, cell_id, prop_line)),
             _ => (),
         }
     }

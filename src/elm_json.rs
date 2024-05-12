@@ -1,56 +1,84 @@
 use std::str::Lines;
+use std::vec;
 
 use super::element_text::ElementText;
+use super::elm_json_helpers::*;
 use super::helpers::*;
-use super::parser::TagInfo;
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
+
+use select::document::Document;
+use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
+use serde_json::*;
 use syn::token::Enum;
 
+pub struct TagInfo {
+    pub id: u32,
+    pub name: String,
+    pub indent: usize,
+    pub is_self_closing: bool,
+    pub in_props: bool,
+}
+
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-enum CellType {
+#[serde(tag = "type")]
+pub enum CellType {
     #[default]
     Default,
     Text(TextCell),
+    #[serde(rename = "node")]
     Element(ElementCell),
+    Root(Root),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-struct DataCell {
-    cell_type: CellType,
+pub struct DataCell {
+    pub id: u32,
+    #[serde(flatten)]
+    pub cell_type: CellType,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-struct TextCell {
+pub struct TextCell {
     content: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-struct Prop {
+pub struct Prop {
     key: String,
     value: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
-struct ElementCell {
-    name: String,
-    props: Vec<Prop>,
-    children: Vec<DataCell>,
+pub struct ElementCell {
+    #[serde(rename = "tag")]
+    pub name: String,
+    #[serde(rename = "attributes")]
+    pub props: Vec<Prop>,
+    pub children: Vec<DataCell>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Root {
+    pub children: Vec<DataCell>,
 }
 
 #[derive(Debug)]
 pub struct ElmJSON {
     track_line_delta: usize,
-    result: Vec<DataCell>,
+    result: DataCell,
     depth_level: usize,
+    id: u32,
 }
 
 impl ElmJSON {
     pub fn new() -> ElmJSON {
         Self {
             track_line_delta: 0,
-            result: Vec::new(),
+            result: DataCell {
+                id: 0,
+                cell_type: CellType::Root(Root { children: vec![] }),
+            },
             depth_level: 0,
+            id: 1,
         }
     }
 
@@ -75,66 +103,39 @@ impl ElmJSON {
 
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
-                let is_new = Self::is_new_element(&mut tag_stack, &indent);
-
-                if is_new {
-                    self.depth_level -= if self.depth_level == 0 { 0 } else { 1 };
-                } else {
-                    self.depth_level += 1;
-                }
+                tag_stack_pop(&mut tag_stack, &indent);
                 let res = self.result.clone();
-                let mut current_element = res.iter().rev().find(|x| match x.cell_type {
-                    CellType::Element(_) => true,
-                    _ => false,
-                });
 
                 let default = &DataCell {
                     ..Default::default()
                 };
 
-                /*  if let Some(current) = current_element {
-                    for iter in 0..self.depth_level {
-                        // current_element is the last cell of type element in current depth_level
-                        current_element = match &current.cell_type {
-                            CellType::Element(el) => {
-                                (el.children).iter().rev().find(move |x| match x.cell_type {
-                                    CellType::Element(_) => {
-                                        if iter == self.depth_level {
-                                            el.children.push(DataCell {
-                                                cell_type: CellType::Element(ElementCell {
-                                                    name: tag_name.to_string(),
-                                                    ..Default::default()
-                                                }),
-                                            });
-                                        }
-                                        return true;
-                                    }
-                                    _ => false,
-                                })
-                            }
-                            _ => Some(default),
-                        }
-                    }
+                let curr_el_id = if let Some(last) = tag_stack.last() {
+                    last.id
                 } else {
-                    self.result.push(DataCell {
-                        cell_type: CellType::Element(ElementCell {
-                            name: tag_name.to_string(),
-                            ..Default::default()
-                        }),
-                    })
-                } */
+                    0
+                };
+                println!("id {}", curr_el_id);
 
-                /*   println!(
-                    "{:?}",
-                    serde_json::to_string(&current_element).unwrap_or("err".to_string())
-                ); */
+                let res_cloned = &mut self.result.clone();
+
+                let current_cell: Option<&mut DataCell> = get_cell_by_id(res_cloned, curr_el_id);
+
+                let el = init_element_cell(self.id, tag_name);
+
+                if let Some(current_cell) = current_cell {
+                    Self::add_cell(&mut self.result, curr_el_id, self.id, tag_name);
+                }
 
                 tag_stack.push(TagInfo {
+                    id: self.id,
                     name: tag_name.to_string(),
                     indent,
                     is_self_closing: false,
                     in_props: true,
                 });
+                self.id += 1;
+
                 continue;
             }
             if trimmed_line.is_empty() // end of props
@@ -151,7 +152,7 @@ impl ElmJSON {
             }
 
             if !trimmed_line.is_empty() {
-                Self::is_new_element(&mut tag_stack, &indent);
+                tag_stack_pop(&mut tag_stack, &indent);
 
                 let last = tag_stack.last().expect(&format!(
                     "There is no parent tag . line {}",
@@ -264,16 +265,26 @@ impl ElmJSON {
         res.unwrap_or("Something Wrong".to_string())
     }
 
-    pub fn is_new_element(tag_stack: &mut Vec<TagInfo>, indent: &usize) -> bool {
-        while let Some(last_tag_info) = tag_stack.last() {
-            if *indent <= last_tag_info.indent {
-                tag_stack.pop();
-                return true;
-            } else {
-                return false;
-            }
+    fn recursive(&mut self, cell: DataCell) {}
+
+    fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, tag_name: &str) {
+        if add_to.id == parent_id {
+            push_new_cell(add_to, id, tag_name);
+            return;
         }
-        return true;
+
+        match &mut add_to.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_cell(x, parent_id, id, tag_name)),
+
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_cell(x, parent_id, id, tag_name)),
+            _ => (),
+        }
     }
 
     fn handle_inline_element(

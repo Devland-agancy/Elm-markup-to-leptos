@@ -1,9 +1,11 @@
 pub mod element_text;
 pub mod elm_json;
+pub mod elm_json_helpers;
 pub mod emitter;
 pub mod helpers;
 pub mod parser;
 
+use elm_json::ElmJSON;
 use emitter::Emitter;
 use parser::{AutoWrapper, Parser};
 use std::io::prelude::*;
@@ -23,22 +25,22 @@ fn main() {
     };
 
     let mut reader = BufReader::new(file);
-    let mut contents = String::new();
-    let _ = reader.read_to_string(&mut contents);
-
-    let mut emitter: Emitter = Emitter::new(
-        r#"
+    let mut contents = r#"
 |> Exercises
 
     |> Exercise
 
-        |> ImageRight
+        |> 222
 
-         hi
+    |> hihi
 
-    "#
-        .to_string(),
-    );
+|> New
+
+    hi
+"#;
+    let _ = reader.read_to_string(&mut contents.to_string());
+
+    let mut emitter: Emitter = Emitter::new(contents);
     let mut parser: Parser = Parser::new(
         vec!["img", "SectionDivider"],
         vec![
@@ -95,7 +97,6 @@ fn main() {
             Some("Solution"),
         );
 
-    println!("emi {}", emitter.elm);
     let leptos_code = parser.transform(emitter.elm, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
@@ -125,7 +126,7 @@ fn main() {
         Err(error) => println!("Error writing to file: {}", error),
     }
 
-    /*   let mut json_file = match File::create("src/json_output.json") {
+    let mut json_file = match File::create("src/json_output.json") {
         Ok(file) => file,
         Err(error) => {
             println!("Error creating file: {}", error);
@@ -133,12 +134,12 @@ fn main() {
         }
     };
     let mut json = ElmJSON::new();
-    let json_res = json.export_json(&contents);
+    let json_tree = json.export_json(&contents.to_string());
 
-    match file.write_all(json_res.as_bytes()) {
+    match json_file.write_all(json_tree.as_bytes()) {
         Ok(_) => {
             println!("Json written to file successfully");
         }
         Err(error) => println!("Error writing to file: {}", error),
-    } */
+    }
 }

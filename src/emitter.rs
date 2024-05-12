@@ -7,8 +7,10 @@ pub struct Emitter {
 }
 
 impl Emitter {
-    pub fn new(elm: String) -> Emitter {
-        Emitter { elm }
+    pub fn new(elm: &str) -> Emitter {
+        Emitter {
+            elm: elm.to_string(),
+        }
     }
 
     pub fn pre_process_exercises(&mut self) -> Emitter {

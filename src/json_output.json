@@ -1,57 +1,71 @@
 {
+  "id": 0,
   "type": "Root",
   "children": [
     {
-      "type": "node",
+      "id": 1,
+      "type": "element",
       "tag": "Exercises",
-      "attributes": [
-        {
-          "key": "hi",
-          "value": "tfoo"
-        }
-      ],
+      "attributes": [],
       "children": [
         {
-          "type": "node",
+          "id": 2,
+          "type": "element",
           "tag": "Exercise",
+          "attributes": [],
+          "children": [
+            {
+              "id": 3,
+              "type": "Block",
+              "children": [
+                {
+                  "type": "text",
+                  "content": "HIHI"
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "type": "element",
+              "tag": "Img",
+              "attributes": [],
+              "children": []
+            },
+            {
+              "id": 5,
+              "type": "Block",
+              "children": [
+                {
+                  "type": "text",
+                  "content": "Again"
+                }
+              ]
+            },
+            {
+              "id": 6,
+              "type": "Block",
+              "children": [
+                {
+                  "type": "text",
+                  "content": "Hello again again"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "type": "element",
+          "tag": "New",
           "attributes": [
             {
               "key": "hi",
               "value": "tfoo"
             }
           ],
-          "children": [
-            {
-              "type": "node",
-              "tag": "222",
-              "attributes": [
-                {
-                  "key": "hi",
-                  "value": "tfoo"
-                }
-              ],
-              "children": []
-            }
-          ]
-        },
-        {
-          "type": "node",
-          "tag": "hihi",
-          "attributes": [],
           "children": []
         }
       ]
-    },
-    {
-      "type": "node",
-      "tag": "New",
-      "attributes": [
-        {
-          "key": "hi",
-          "value": "tfoo"
-        }
-      ],
-      "children": []
     }
   ]
 }

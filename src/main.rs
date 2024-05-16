@@ -27,18 +27,22 @@ fn main() {
     let mut reader = BufReader::new(file);
     let mut contents = r#"
 |> Exercises
-    hi tfoo
 
     |> Exercise
+
+        HIHI
+        |> Img
+        Again
+
+
+        
+
+        Hello 
+        again
+        again
+
+    |> New
         hi tfoo
-
-        |> 222
-            hi tfoo
-
-    |> hihi
-
-|> New
-    hi tfoo
 
     hi
 "#;
@@ -138,7 +142,7 @@ fn main() {
         }
     };
     let mut json = ElmJSON::new();
-    let json_tree = json.export_json(&contents.to_string());
+    let json_tree = json.export_json(&contents.to_string(), None, false);
 
     match json_file.write_all(json_tree.as_bytes()) {
         Ok(_) => {

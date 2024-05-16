@@ -143,9 +143,9 @@ impl Parser {
                         if text_node != "" {
                             nodes.last_mut().unwrap().push((text_node.clone(), false));
                             text_node = "".to_string();
+                            nodes.push(Vec::new());
                         }
                         lines_to_skip += 1;
-                        nodes.push(Vec::new());
                         continue;
                     }
 

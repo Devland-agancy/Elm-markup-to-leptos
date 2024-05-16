@@ -172,7 +172,7 @@ impl ElmJSON {
                 /* output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n")); */
             }
         }
-        let res = serde_json::to_string(&self.result);
+        let res = serde_json::to_string_pretty(&self.result);
         res.unwrap_or("Something Wrong".to_string())
     }
 

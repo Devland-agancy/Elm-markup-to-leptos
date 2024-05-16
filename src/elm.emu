@@ -1,5 +1,17 @@
-|> Section
+|> Exercises
 
-    hi
+    |> Exercise
 
-    __hi__
+        HIHI
+        |> Img
+        Again
+
+
+
+
+        Hello 
+        __again
+        again__
+
+    |> New
+        hi tfoo

@@ -1,61 +1,58 @@
 {
-  "id": 0,
   "type": "Root",
   "children": [
     {
-      "id": 1,
-      "type": "element",
+      "type": "Element",
       "tag": "Exercises",
       "attributes": [],
       "children": [
         {
-          "id": 2,
-          "type": "element",
+          "type": "Element",
           "tag": "Exercise",
           "attributes": [],
           "children": [
             {
-              "id": 3,
               "type": "Block",
               "children": [
                 {
-                  "type": "text",
+                  "type": "Text",
                   "content": "HIHI"
                 }
               ]
             },
             {
-              "id": 4,
-              "type": "element",
+              "type": "Element",
               "tag": "Img",
               "attributes": [],
               "children": []
             },
             {
-              "id": 5,
               "type": "Block",
               "children": [
                 {
-                  "type": "text",
+                  "type": "Text",
                   "content": "Again"
                 }
               ]
             },
             {
-              "id": 6,
               "type": "Block",
               "children": [
                 {
-                  "type": "text",
-                  "content": "Hello again again"
+                  "type": "Text",
+                  "content": "Hello "
+                },
+                {
+                  "type": "Delimited",
+                  "delimeter": "__",
+                  "terminal": "again again"
                 }
               ]
             }
           ]
         },
         {
-          "id": 7,
-          "type": "element",
+          "type": "Element",
           "tag": "New",
           "attributes": [
             {

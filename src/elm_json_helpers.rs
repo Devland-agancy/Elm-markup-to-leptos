@@ -20,22 +20,20 @@ pub enum CellType {
     #[default]
     Default,
     Root(Root),
-    #[serde(rename = "element")]
     Element(ElementCell),
     Block(BlockCell),
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum BlockChildType {
-    #[default]
-    Default,
-    #[serde(rename = "text")]
     Text(TextCell),
+    Delimited(DelimitedCell),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DataCell {
+    #[serde(skip)]
     pub id: u32,
     #[serde(flatten)]
     pub cell_type: CellType,
@@ -56,6 +54,12 @@ pub struct ElementCell {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Prop {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BlockCell {
     pub children: Vec<BlockChildType>,
 }
@@ -66,20 +70,15 @@ pub struct TextCell {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Prop {
-    pub key: String,
-    pub value: String,
+pub struct DelimitedCell {
+    pub delimeter: String,
+    pub terminal: String,
 }
 
 pub trait Cell<T> {
     fn init_cell(id: u32, s: T) -> DataCell;
     fn push_cell(parent: &mut DataCell, id: u32, s: T);
     fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, text: T);
-}
-
-pub trait BlockChild {
-    fn push_cell(parent: &mut BlockCell, s: &str);
-    //fn add_cell(add_to: &mut BlockCell, parent_id: u32, id: u32, text: &str);
 }
 
 impl ElementCell {
@@ -198,11 +197,14 @@ impl Cell<&BlockCell> for BlockCell {
     }
 }
 
-impl BlockChild for TextCell {
-    fn push_cell(parent: &mut BlockCell, text: &str) {
-        parent.children.push(BlockChildType::Text(TextCell {
-            content: text.to_string(),
-        }))
+pub trait BlockChild<T> {
+    fn push_cell(parent: &mut BlockCell, s: T);
+    //fn add_cell(add_to: &mut BlockCell, parent_id: u32, id: u32, text: &str);
+}
+
+impl BlockChild<BlockChildType> for BlockChildType {
+    fn push_cell(parent: &mut BlockCell, block: BlockChildType) {
+        parent.children.push(block)
     }
 }
 

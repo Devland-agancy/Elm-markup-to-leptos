@@ -1,3 +1,5 @@
+use crate::elm_json_helpers::{BlockCell, BlockChild, BlockChildType, DelimitedCell, TextCell};
+
 pub struct ElementText {
     pub text: String,
 }
@@ -159,8 +161,57 @@ impl ElementText {
         output
     }
 
-    fn get_delimeter(&self, symbol: &str) -> &DelimeterRules {
-        DELIMETERS.iter().find(|d| d.symbol == symbol).unwrap()
+    pub fn split_text(self) -> Vec<BlockChildType> {
+        let mut i = 0;
+        let mut j = 0;
+        let mut output = Vec::<BlockChildType>::new();
+
+        while i <= self.text.len() {
+            let (del, skips, text) = &self.find_next_delimeter(i);
+
+            output.push(BlockChildType::Text(TextCell {
+                content: text.to_string(),
+            }));
+
+            if !del.is_some() {
+                break;
+            }
+
+            i = *skips;
+
+            if i <= self.text.len() {
+                let (found, closing_index, del_content) =
+                    &self.find_closing_delimeter(i, &del.unwrap());
+
+                if !found {
+                    // closing del not found , we push the symbol as normal text and continue
+
+                    let mut last_child = output.pop().unwrap();
+                    match last_child {
+                        BlockChildType::Text(mut t) => {
+                            t.content
+                                .push_str(&format!("{}{}", &del.unwrap().symbol, del_content));
+                            output.push(BlockChildType::Text(t))
+                        }
+                        _ => (),
+                    }
+                    i = *closing_index + 1;
+                    continue;
+                }
+
+                if i <= self.text.len() {
+                    i = closing_index + del.unwrap().end_symbol.len();
+
+                    output.push(BlockChildType::Delimited(DelimitedCell {
+                        terminal: del_content.to_owned(),
+                        delimeter: del.unwrap().symbol.to_string(),
+                    }));
+
+                    i += 1;
+                }
+            }
+        }
+        output
     }
 
     fn find_next_delimeter(&self, mut i: usize) -> (Option<&DelimeterRules>, usize, String) {

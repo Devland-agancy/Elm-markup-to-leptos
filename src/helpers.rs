@@ -1,4 +1,4 @@
-use crate::parser::{Parser, TagInfo};
+use crate::emitter::{Emitter, TagInfo};
 
 pub fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
     let trimmed_content = content.trim_start(); // Remove leading spaces from content
@@ -75,7 +75,7 @@ pub fn get_slice(text: &str, start: usize, end: usize) -> Option<&str> {
     Some(&text[start_pos..*iter.peek()?])
 }
 
-pub fn track_emitter_line_diff(parser: &mut Parser, tag_name: &String) {
+pub fn track_emitter_line_diff(parser: &mut Emitter, tag_name: &String) {
     if tag_name == "Exercises" {
         parser.track_line_delta += 1
     }

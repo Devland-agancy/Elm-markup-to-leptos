@@ -1,185 +1,403 @@
-use crate::parser::Parser;
-
+use super::element_text::ElementText;
 use super::helpers::*;
+use std::str::Lines;
 
+#[derive(Debug, Default)]
+pub struct TagInfo {
+    pub name: String,
+    pub indent: usize,
+    pub is_self_closing: bool,
+    pub in_props: bool,
+}
+
+#[derive(Debug, Default)]
+pub struct AutoWrapper {
+    pub wrap_children_with: &'static str,
+    pub tags: Vec<&'static str>,
+    pub enable_manual_wrap: bool, // do not wrap if child is already wrapped
+}
+
+#[derive(Debug)]
 pub struct Emitter {
-    pub elm: String,
+    pub self_closing_tags: Vec<&'static str>,
+    pub tags_before_non_indents: Vec<&'static str>,
+    pub no_x_padding_tags: Vec<&'static str>,
+    pub tags_with_non_indent_first_child: Vec<&'static str>,
+    pub tags_with_no_indents: Vec<&'static str>,
+    pub auto_wrappers: Vec<AutoWrapper>,
+    pub track_line_delta: isize,
 }
 
 impl Emitter {
-    pub fn new(elm: &str) -> Emitter {
-        Emitter {
-            elm: elm.to_string(),
-        }
-    }
-
-    pub fn pre_process_exercises(&mut self) -> Emitter {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
-        let binding = lines.clone();
-
-        /* Wrap exercises inside Exercises component */
-        /* Right now this works only if there are consuctive exercises */
-        let mut exercises = binding
-            .iter()
-            .enumerate()
-            .filter(|(_, line)| line.trim() == "|> Exercise");
-
-        if let Some(exo) = exercises.nth(0) {
-            // add prop line which is like labels=vec!["0", "1", "2", "3"]
-            let mut props_string = "    labels=vec![\"0\"".to_string();
-            for i in 1..exercises.clone().count() + 1 {
-                props_string += &format!(",\"{}\"", i);
-            }
-            props_string += "]";
-
-            lines.insert(exo.0 - 1, props_string);
-        }
-
-        Emitter {
-            elm: lines.join("\n"),
-        }
-    }
-
-    pub fn pre_process_solutions(&mut self) -> Emitter {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
-        let binding = lines.clone();
-
-        let mut solutions = binding
-            .iter()
-            .enumerate()
-            .filter(|(_, line)| line.trim() == "|> Solution");
-
-        for i in 0..solutions.clone().count() {
-            let solution = solutions.next().unwrap();
-            let solution_tag_line = solution.0 + i;
-
-            let indent = solution.1.len() - solution.1.trim_start().len();
-            let mut indent_string = "    ".to_string();
-            for _ in 0..indent {
-                indent_string += " ";
-            }
-            let props_string = format!("{}solution_number={}", indent_string, i);
-            lines.insert(solution_tag_line + 1, props_string);
-        }
-        Emitter {
-            elm: lines.join("\n"),
-        }
-    }
-
-    pub fn remove_empty_line_above(
-        &mut self,
-        tags: Vec<&str>,
-        ignore_prop: Option<(&str, &str)>, // (key, value)
-        parser: &mut Parser,
+    pub fn new(
+        self_closing_tags: Vec<&'static str>,
+        auto_wrappers: Vec<AutoWrapper>,
+        no_x_padding_tags: Vec<&'static str>,
+        tags_before_non_indents: Vec<&'static str>,
+        tags_with_non_indent_first_child: Vec<&'static str>,
+        tags_with_no_indents: Vec<&'static str>,
     ) -> Emitter {
-        // Removes empty lines above tags
+        Emitter {
+            self_closing_tags,
+            auto_wrappers,
+            tags_with_non_indent_first_child,
+            tags_before_non_indents,
+            no_x_padding_tags,
+            tags_with_no_indents,
+            track_line_delta: 0,
+        }
+    }
 
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
-        let binding = lines.clone();
-        let mut lines_removed = 0;
+    pub fn transform(&mut self, elm: String, start_index: isize) -> String {
+        let mut output = String::new();
+        let mut tag_stack: Vec<TagInfo> = Vec::new();
+        let lines = elm.lines();
+        let mut lines_to_skip: u32 = 0;
+        let mut track_line_index;
 
-        binding
-            .iter()
-            .enumerate()
-            .filter(|(i, line)| {
-                let tag_found = line.trim().starts_with("|> ") && tags.contains(&&line.trim()[3..]);
-                let mut should_ignore = false;
+        for (index, line) in lines.clone().enumerate() {
+            if lines_to_skip > 0 {
+                lines_to_skip = lines_to_skip - 1;
+                continue;
+            }
+            track_line_index = (index as isize) + start_index - self.track_line_delta;
+            let trimmed_line = line.trim_start();
+            let indent = get_line_indent(line);
+            check_indent_size(indent as isize, track_line_index);
+            if let Some(last) = tag_stack.last() {
+                check_extra_spaces(indent, last.indent, track_line_index);
+            }
+            if trimmed_line.starts_with("|> ") {
+                let tag_name = trimmed_line[3..].trim().to_string();
+                tag_loop(&mut tag_stack, &mut output, &indent);
+                output.push_str(&format!("<{}\n", tag_name));
+                tag_stack.push(TagInfo {
+                    name: tag_name.clone(),
+                    indent,
+                    is_self_closing: self.self_closing_tags.contains(&tag_name.as_str()),
+                    in_props: true,
+                });
+                track_emitter_line_diff(self, &tag_name);
 
-                if tag_found && ignore_prop.is_some() {
-                    // search props
-                    let indent = get_line_indent(line);
-                    let mut j = *i + 1;
-                    let next_line = binding.iter().nth(j);
-                    if let Some(mut next_line) = next_line {
-                        let mut next_line_indent = get_line_indent(next_line);
+                continue;
+            }
+            if trimmed_line.is_empty() // end of props
+          && tag_stack
+              .last()
+              .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
+            {
+                output.push_str(">\n\"\" ");
+                if let Some(last) = tag_stack.last_mut() {
+                    last.in_props = false;
+                }
+                continue;
+            }
+            if !trimmed_line.is_empty() {
+                tag_loop(&mut tag_stack, &mut output, &indent);
 
-                        while next_line_indent > indent && !should_ignore {
-                            let prop_key = next_line.trim().split_once(" ");
-                            if let Some(prop_key) = prop_key {
-                                should_ignore = prop_key.0 == ignore_prop.unwrap().0
-                                    && prop_key.1 == ignore_prop.unwrap().1
+                let last = tag_stack.last().expect(&format!(
+                    "There is no parent tag . line {}",
+                    track_line_index
+                ));
+                if last.in_props {
+                    // tag props
+                    output.push_str(&format!("{}\n", Self::handle_prop_line(line)));
+                    continue;
+                }
+                // tag content
+                let mut nodes: Vec<Vec<(String, bool)>> = Vec::new(); // if there is an inline element in the text , the text should be seperated to sub text before the element ( bool is added to know if the node is an element ) and the subtext after the element . it shouldn't be handeled as 1 block ,
+                nodes.push(Vec::new());
+                let mut text_node = String::new();
+                let mut inner_lines_to_skip: u32 = 0;
+
+                for (j, text_line) in lines.clone().skip(index).enumerate() {
+                    if inner_lines_to_skip > 0 {
+                        inner_lines_to_skip = inner_lines_to_skip - 1;
+                        continue;
+                    }
+
+                    let inner_trimmed_line = text_line.trim_start();
+                    let indent = get_line_indent(text_line);
+                    check_indent_size(indent as isize, track_line_index + j as isize);
+                    check_extra_spaces(
+                        indent,
+                        tag_stack.last().unwrap().indent,
+                        track_line_index + j as isize,
+                    );
+                    // break if next line is new ( not nested ) element
+                    if let Some(next_line) = lines.clone().nth(index + j + 1) {
+                        let next_line_trimmed = next_line.trim_start();
+                        let next_line_indent = get_line_indent(next_line);
+
+                        if next_line_indent <= tag_stack.last().unwrap().indent
+                            && next_line_trimmed.starts_with("|>")
+                        {
+                            if text_node != "" {
+                                nodes.last_mut().unwrap().push((text_node.clone(), false));
                             }
-                            j += 1;
-                            if binding.iter().nth(j).is_none() {
-                                break;
-                            }
-                            next_line = binding.iter().nth(j).unwrap();
-                            next_line_indent = get_line_indent(next_line);
+                            break;
                         }
                     }
-                }
-                tag_found && !should_ignore
-            })
-            .for_each(|tag| {
-                lines.remove(tag.0 - 1 - lines_removed);
-                lines_removed += 1;
-                parser.track_line_delta -= 1
-            });
 
-        Emitter {
-            elm: lines.join("\n"),
+                    if inner_trimmed_line.is_empty() {
+                        if text_node != "" {
+                            nodes.last_mut().unwrap().push((text_node.clone(), false));
+                            text_node = "".to_string();
+                            nodes.push(Vec::new());
+                        }
+                        lines_to_skip += 1;
+                        continue;
+                    }
+
+                    if indent < tag_stack.last().unwrap().indent {
+                        if text_node != "" {
+                            nodes.last_mut().unwrap().push((text_node.clone(), false));
+                        }
+                        break;
+                    }
+
+                    if !inner_trimmed_line.starts_with("|>") {
+                        text_node += &format!(" {}", inner_trimmed_line);
+                        lines_to_skip += 1;
+                        continue;
+                    }
+                    if text_node != "" {
+                        nodes.last_mut().unwrap().push((text_node, false));
+                        text_node = "".to_string();
+                    }
+
+                    // handle inline element that can't be handled by delimiters ( they need props )
+                    let (element, skips) =
+                        self.handle_inline_element(lines.clone(), j + index, indent);
+
+                    inner_lines_to_skip += skips;
+                    lines_to_skip += skips + 1;
+
+                    nodes
+                        .last_mut()
+                        .unwrap()
+                        .push((format!("\"#{}r#\"", element), true));
+                }
+                let mut processed_text = String::new();
+                for (node_idx, sub_nodes) in nodes.iter().enumerate() {
+                    if sub_nodes.len() == 0 {
+                        continue;
+                    }
+                    // subnodes are seperated with empty line
+                    let mut sub_node_text = "".to_string();
+
+                    for (sub_node_idx, (text, is_element)) in sub_nodes.iter().enumerate() {
+                        if *is_element {
+                            sub_node_text += &text;
+                            continue;
+                        }
+
+                        let no_paragraph_indent = self.handle_paragraph_indent(
+                            &tag_stack,
+                            &nodes,
+                            &sub_nodes,
+                            node_idx,
+                            sub_node_idx,
+                            &text,
+                        );
+
+                        if no_paragraph_indent {
+                            sub_node_text += &ElementText::new(&text).handle_delimeters();
+                        } else {
+                            let handled_text = &format!(
+                                "\"#<Indent>r#\"{}\"#</Indent>r#\"",
+                                &ElementText::new(&text).handle_delimeters()
+                            );
+                            sub_node_text += handled_text;
+                        }
+                    }
+
+                    let auto_wrapper = self.auto_wrappers.iter().find(|wrapper| {
+                        wrapper
+                            .tags
+                            .contains(&tag_stack.last().unwrap().name.as_str())
+                    });
+
+                    if let Some(a_w) = auto_wrapper {
+                        if a_w.enable_manual_wrap
+                            && get_tag_from_string(&sub_node_text) == a_w.wrap_children_with
+                        {
+                            processed_text += sub_node_text.as_str();
+                            continue;
+                        }
+
+                        let no_padding = self
+                            .no_x_padding_tags
+                            .contains(&tag_stack.last().unwrap().name.as_str());
+
+                        processed_text += &format!(
+                            "\"#<{} {}>r#\"{}\"#</{}>r#\"",
+                            a_w.wrap_children_with,
+                            if no_padding { "no_padding = true" } else { "" },
+                            sub_node_text,
+                            a_w.wrap_children_with
+                        );
+                        continue;
+                    }
+                    processed_text += sub_node_text.as_str();
+                }
+                nodes = vec![];
+                output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n"));
+            }
         }
+
+        while let Some(last_tag_info) = tag_stack.pop() {
+            if last_tag_info.is_self_closing {
+                output.push_str("/>\n");
+                continue;
+            }
+            output.push_str(&format!("</{}>\n", last_tag_info.name));
+        }
+
+        output
+            .replace("\n", " ")
+            .replace("r#\"\"#", "")
+            .replace("r#\" \"#", " ")
     }
 
-    pub fn auto_increamental_title(
+    fn handle_inline_element(
         &mut self,
+        lines: Lines<'_>,
+        start_from: usize,
+        initial_indent: usize,
+    ) -> (String, u32) {
+        let mut element = "".to_string();
+        let mut end_line = start_from;
+        let mut inner_indent = initial_indent + 4;
+        let mut skips: u32 = 0;
+        let mut prev_line = "";
 
-        tag_name: &str,
-        title_label: &str,
-        wrapper: Option<&str>,
-        wrapper_break_on: Option<&str>,
-    ) -> Emitter {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
-        let binding = lines.clone();
-        let mut jump = 2;
+        while inner_indent > initial_indent
+            || lines.clone().nth(end_line).unwrap().is_empty()
+            || lines
+                .clone()
+                .nth(end_line)
+                .unwrap()
+                .chars()
+                .all(char::is_whitespace)
+        {
+            if lines.clone().nth(end_line + 1).is_none() {
+                break;
+            }
 
-        let _ = binding
-            .iter()
-            .enumerate()
-            .filter(|(_, line)| line.trim() == format!("|> {}", tag_name))
-            .enumerate()
-            .for_each(|(idx, ex)| {
-                // Suppose there are not props for Example , we add title at 3rd line
-                let indent = ex.1.len() - ex.1.trim_start().len();
-                let mut indent_string = "    ".to_string();
-                for _ in 0..indent {
-                    indent_string += " ";
-                }
-                if let Some(wrapper) = wrapper {
-                    lines.insert(
-                        ex.0 + jump + idx,
-                        format!("{}|> {}", indent_string, wrapper),
-                    );
-                    lines.insert(ex.0 + jump + 1 + idx, "".to_string());
-                    indent_string += "    ";
-                    jump += 2;
+            let inner_line = lines.clone().nth(end_line + 1).unwrap();
+            inner_indent = get_line_indent(inner_line);
 
-                    let mut i = ex.0 + jump + idx;
-
-                    while i < lines.len()
-                        && lines[i].trim() != format!("|> {}", wrapper_break_on.unwrap())
-                        && (lines[i].is_empty()
-                            || lines[i].chars().all(char::is_whitespace)
-                            || lines[i].len() - lines[i].trim_start().len() > indent)
-                    {
-                        i += 1;
-                    }
-
-                    for i in ex.0 + jump + idx..i {
-                        if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
-                            continue;
-                        };
-                        lines[i] = format!("    {}", lines[i]);
-                    }
-                }
-                lines.insert(
-                    ex.0 + jump + idx,
-                    format!("{}*{} {}.*", indent_string, title_label, idx + 1),
-                );
-            });
-
-        Emitter {
-            elm: lines.join("\n"),
+            if inner_indent > initial_indent
+                || inner_line.is_empty()
+                || inner_line.chars().all(char::is_whitespace)
+            {
+                end_line += 1;
+                skips += 1;
+                continue;
+            }
+            break;
         }
+        // do not skip empty line at the end
+        let prev_line = lines.clone().nth(end_line).unwrap();
+
+        if prev_line.is_empty() || prev_line.chars().all(char::is_whitespace) {
+            skips -= 1
+        }
+
+        let mut i = start_from;
+        for i in start_from..=end_line {
+            element += &(lines.clone().nth(i).unwrap().to_string() + "\n");
+        }
+        element += &("".to_string() + "\n");
+        element = self.transform(element, start_from as isize);
+        (element, skips)
+    }
+
+    fn handle_paragraph_indent(
+        &self,
+        tag_stack: &Vec<TagInfo>,
+        nodes: &Vec<Vec<(String, bool)>>,
+        sub_nodes: &Vec<(String, bool)>,
+        node_idx: usize,
+        sub_node_idx: usize,
+        text: &str,
+    ) -> bool {
+        // For |> Indent the emitter’s rule is that a paragraph has an indent by default except:
+        /* ------------- */
+        // the first paragraph of every section, exercise, or example does not have an indent
+        if self
+            .tags_with_no_indents
+            .contains(&tag_stack.last().unwrap().name.as_str())
+        {
+            return true;
+        }
+        if node_idx == 0
+            && sub_node_idx == 0
+            && self
+                .tags_with_non_indent_first_child
+                .contains(&tag_stack.last().unwrap().name.as_str())
+        {
+            return true;
+        }
+        // paragraph starting with xx. ( a note or point in a list )
+        // deprecated , Use |> Pause before the paragraph
+        /* let re = Regex::new(r"^ *\w+(\.|[\s_*])").unwrap();
+        if re.is_match(text) {
+            return true;
+        } */
+
+        // $$, __,  |_ paragraphs
+        let centering_delimiters = vec!["$$", "__", "|_", "_|"];
+        if text.len() > 4 && centering_delimiters.contains(&&get_slice(text, 1, 3).unwrap()) {
+            return true;
+        }
+
+        // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeter does not have an indent
+        if node_idx > 0 {
+            if let Some(first_prev_sub_node) = nodes[node_idx - 1].first() {
+                let prev_text = &first_prev_sub_node.0;
+                if prev_text.len() > 1
+                    && centering_delimiters
+                        .contains(&prev_text.chars().rev().take(2).collect::<String>().as_str())
+                {
+                    return true;
+                }
+            }
+        }
+        // a paragraph that follows tags defined in tags_before_non_indents
+        let mut prev_tag = "".to_string();
+        if sub_node_idx > 0 {
+            prev_tag = get_tag_from_string(sub_nodes[sub_node_idx - 1].0.as_str());
+        }
+        if node_idx > 0 {
+            prev_tag = get_tag_from_string(nodes[node_idx - 1].last().unwrap().0.as_str());
+        }
+        if self.tags_before_non_indents.contains(&prev_tag.as_str()) {
+            return true;
+        }
+
+        false
+    }
+
+    fn handle_prop_line(line: &str) -> String {
+        let mut prop_line = line.trim().to_string();
+        // add quotes to prop value if it's a string
+        let prop_value = prop_line.split_once(" ");
+        if let Some((prop_key, prop_value)) = prop_value {
+            let is_number = prop_value.trim().parse::<f32>();
+            let is_bool = prop_value.trim() == "false" || prop_value.trim() == "true";
+            let is_vec = prop_value.trim().starts_with("vec![");
+
+            if is_number.is_err() && !is_bool && !is_vec {
+                prop_line = match prop_key {
+                    "src" => format!("{}=\"/{}\"", prop_key.trim(), prop_value.trim()),
+                    _ => format!("{}=\"{}\"", prop_key.trim(), prop_value.trim()),
+                }
+            } else {
+                prop_line = format!("{}={}", prop_key.trim(), prop_value.trim())
+            }
+        }
+        prop_line
     }
 }

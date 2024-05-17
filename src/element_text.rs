@@ -1,4 +1,4 @@
-use crate::elm_json_helpers::{BlockCell, BlockChild, BlockChildType, DelimitedCell, TextCell};
+use crate::parser_helpers::{BlockCell, BlockChild, BlockChildType, DelimitedCell, TextCell};
 
 pub struct ElementText {
     pub text: String,

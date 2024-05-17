@@ -1,13 +1,13 @@
+pub mod desugarer;
 pub mod element_text;
-pub mod elm_json;
-pub mod elm_json_helpers;
 pub mod emitter;
 pub mod helpers;
 pub mod parser;
+pub mod parser_helpers;
 
-use elm_json::ElmJSON;
-use emitter::Emitter;
-use parser::{AutoWrapper, Parser};
+use desugarer::Desugarer;
+use emitter::{AutoWrapper, Emitter};
+use parser::Parser;
 use std::env;
 use std::io::prelude::*;
 use std::path::Path;
@@ -37,8 +37,8 @@ fn main() {
         Ok(_) => println!("File contents:\n{}", contents),
     }
 
-    let mut emitter: Emitter = Emitter::new(contents.as_str());
-    let mut parser: Parser = Parser::new(
+    let mut desugarer: Desugarer = Desugarer::new(contents.as_str());
+    let mut emitter: Emitter = Emitter::new(
         vec!["img", "SectionDivider"],
         vec![
             AutoWrapper {
@@ -78,12 +78,12 @@ fn main() {
         vec!["Grid", "List"],
     );
 
-    emitter = emitter
+    desugarer = desugarer
         .pre_process_exercises()
         .remove_empty_line_above(
             vec!["ImageRight", "ImageLeft"],
             Some(("attached", "false")),
-            &mut parser,
+            &mut emitter,
         )
         .pre_process_solutions()
         .auto_increamental_title("Example", "Example", None, None)
@@ -94,7 +94,7 @@ fn main() {
             Some("Solution"),
         );
 
-    let leptos_code = parser.transform(emitter.elm, 0);
+    let leptos_code = emitter.transform(desugarer.elm, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
         Err(error) => {
@@ -130,7 +130,7 @@ fn main() {
             return;
         }
     };
-    let mut json = ElmJSON::new();
+    let mut json = Parser::new();
     let json_tree = json.export_json(&contents.to_string(), None, false);
 
     match json_file.write_all(json_tree.as_bytes()) {

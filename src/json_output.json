@@ -18,7 +18,7 @@
         {
           "id": 3,
           "type": "Element",
-          "tag": "Exercise",
+          "tag": "Solution",
           "attributes": [],
           "children": []
         },
@@ -59,13 +59,13 @@
     {
       "id": 8,
       "type": "Element",
-      "tag": "Exercises",
+      "tag": "Solution",
       "attributes": [],
       "children": [
         {
           "id": 9,
           "type": "Element",
-          "tag": "Exercise",
+          "tag": "Solution",
           "attributes": [],
           "children": [
             {

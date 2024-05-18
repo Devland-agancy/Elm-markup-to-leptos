@@ -82,7 +82,7 @@ fn main() {
         vec!["Grid", "List"],
     );
 
-    json_desugarer = json_desugarer.pre();
+    json_desugarer = json_desugarer.pre().pre_solutions();
 
     desugarer = desugarer
         .pre_process_exercises()

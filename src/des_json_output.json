@@ -9,7 +9,7 @@
       "attributes": [
         {
           "key": "labels",
-          "value": "vec![\"0\",\"1\",\"2\",\"3\",\"4\"]"
+          "value": "vec![\"0\",\"1\",\"2\",\"3\"]"
         }
       ],
       "children": [
@@ -23,8 +23,13 @@
         {
           "id": 3,
           "type": "Element",
-          "tag": "Exercise",
-          "attributes": [],
+          "tag": "Solution",
+          "attributes": [
+            {
+              "key": "solution_number",
+              "value": "0"
+            }
+          ],
           "children": []
         },
         {
@@ -69,18 +74,18 @@
     {
       "id": 8,
       "type": "Element",
-      "tag": "Exercises",
+      "tag": "Solution",
       "attributes": [
         {
-          "key": "labels",
-          "value": "vec![\"0\",\"1\",\"2\",\"3\"]"
+          "key": "solution_number",
+          "value": "1"
         }
       ],
       "children": [
         {
           "id": 9,
           "type": "Element",
-          "tag": "Exercise",
+          "tag": "Solution",
           "attributes": [],
           "children": [
             {

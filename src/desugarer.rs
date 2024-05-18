@@ -64,7 +64,7 @@ impl Desugarer {
         let binding = root.clone();
         self.find_cell(&binding, "Exercises", &mut exercises);
 
-        for exercises_cell in exercises.iter_mut() {
+        for exercises_cell in exercises.iter() {
             let mut count: usize = 0;
             self.count_element(exercises_cell, "Exercise", &mut count);
 
@@ -75,6 +75,23 @@ impl Desugarer {
             prop_line += "]";
 
             ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+        }
+    }
+
+    pub fn pre_solutions(&mut self) -> Desugarer {
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        let mut solutions: Vec<&DataCell> = Vec::new();
+        let binding = root.clone();
+        self.find_cell(&binding, "Solution", &mut solutions);
+
+        for (i, solution_cell) in solutions.iter().enumerate() {
+            let prop_line = format!("solution_number {}", i);
+
+            ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
         }
 
         Desugarer {

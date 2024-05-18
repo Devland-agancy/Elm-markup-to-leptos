@@ -6,7 +6,12 @@
       "id": 1,
       "type": "Element",
       "tag": "Exercises",
-      "attributes": [],
+      "attributes": [
+        {
+          "key": "labels",
+          "value": "vec![\"0\",\"1\",\"2\",\"3\",\"4\"]"
+        }
+      ],
       "children": [
         {
           "id": 2,
@@ -42,7 +47,12 @@
       "id": 6,
       "type": "Element",
       "tag": "Exercises",
-      "attributes": [],
+      "attributes": [
+        {
+          "key": "labels",
+          "value": "vec![\"0\"]"
+        }
+      ],
       "children": [
         {
           "id": 7,
@@ -60,7 +70,12 @@
       "id": 8,
       "type": "Element",
       "tag": "Exercises",
-      "attributes": [],
+      "attributes": [
+        {
+          "key": "labels",
+          "value": "vec![\"0\",\"1\",\"2\",\"3\"]"
+        }
+      ],
       "children": [
         {
           "id": 9,

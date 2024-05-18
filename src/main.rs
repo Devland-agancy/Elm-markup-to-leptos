@@ -37,7 +37,11 @@ fn main() {
         Ok(_) => println!("File contents:\n{}", contents),
     }
 
-    let mut desugarer: Desugarer = Desugarer::new(contents.as_str());
+    let mut json = Parser::new();
+    let json_tree = json.export_json(&contents.to_string(), None, false);
+
+    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str());
+    let mut desugarer: Desugarer = Desugarer::new(&contents.as_str());
     let mut emitter: Emitter = Emitter::new(
         vec!["img", "SectionDivider"],
         vec![
@@ -78,6 +82,8 @@ fn main() {
         vec!["Grid", "List"],
     );
 
+    json_desugarer = json_desugarer.pre();
+
     desugarer = desugarer
         .pre_process_exercises()
         .remove_empty_line_above(
@@ -94,7 +100,7 @@ fn main() {
             Some("Solution"),
         );
 
-    let leptos_code = emitter.transform(desugarer.elm, 0);
+    let leptos_code = emitter.transform(desugarer.json, 0);
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
         Err(error) => {
@@ -130,10 +136,24 @@ fn main() {
             return;
         }
     };
-    let mut json = Parser::new();
-    let json_tree = json.export_json(&contents.to_string(), None, false);
 
     match json_file.write_all(json_tree.as_bytes()) {
+        Ok(_) => {
+            println!("Json written to file successfully");
+        }
+        Err(error) => println!("Error writing to file: {}", error),
+    }
+
+    let mut desagurer_json_file = match File::create("src/des_json_output.json") {
+        Ok(file) => file,
+        Err(error) => {
+            println!("Error creating file: {}", error);
+            return;
+        }
+    };
+
+    let desagurer_json_tree = serde_json::to_string_pretty(&json_desugarer.json).unwrap();
+    match desagurer_json_file.write_all(json_desugarer.json.as_bytes()) {
         Ok(_) => {
             println!("Json written to file successfully");
         }

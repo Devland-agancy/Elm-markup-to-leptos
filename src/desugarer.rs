@@ -1,20 +1,89 @@
-use crate::emitter::Emitter;
+use leptos::html::Data;
+
+use crate::{
+    emitter::Emitter,
+    parser_helpers::{CellType, DataCell, ElementCell, Prop},
+};
 
 use super::helpers::*;
 
 pub struct Desugarer {
-    pub elm: String,
+    pub json: String,
 }
 
 impl Desugarer {
-    pub fn new(elm: &str) -> Desugarer {
+    pub fn new(json: &str) -> Desugarer {
         Desugarer {
-            elm: elm.to_string(),
+            json: json.to_string(),
+        }
+    }
+
+    fn count_element(&mut self, root: &DataCell, tag_name: &str, count: &mut usize) {
+        match &root.cell_type {
+            CellType::Element(el) => {
+                if el.name == tag_name {
+                    *count += 1;
+                } else {
+                    el.children
+                        .iter()
+                        .for_each(|child| self.count_element(child, tag_name, count))
+                }
+            }
+            CellType::Root(el) => el
+                .children
+                .iter()
+                .for_each(|child| self.count_element(child, tag_name, count)),
+
+            _ => (),
+        }
+    }
+
+    fn find_cell<'a>(&self, root: &'a DataCell, tag_name: &str, cells: &mut Vec<&'a DataCell>) {
+        match &root.cell_type {
+            CellType::Element(el) => {
+                if el.name == tag_name {
+                    cells.push(root)
+                } else {
+                    el.children
+                        .iter()
+                        .for_each(|child| self.find_cell(child, tag_name, cells))
+                }
+            }
+            CellType::Root(el) => el
+                .children
+                .iter()
+                .for_each(|child| self.find_cell(child, tag_name, cells)),
+
+            _ => (),
+        }
+    }
+
+    pub fn pre(&mut self) -> Desugarer {
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        let mut exercises: Vec<&DataCell> = Vec::new();
+        let binding = root.clone();
+        self.find_cell(&binding, "Exercises", &mut exercises);
+
+        for exercises_cell in exercises.iter_mut() {
+            let mut count: usize = 0;
+            self.count_element(exercises_cell, "Exercise", &mut count);
+
+            let mut prop_line = "labels vec![\"0\"".to_string();
+            for i in 1..=count {
+                prop_line += &format!(",\"{}\"", i);
+            }
+            prop_line += "]";
+
+            ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
         }
     }
 
     pub fn pre_process_exercises(&mut self) -> Desugarer {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
+        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
 
         /* Wrap exercises inside Exercises component */
@@ -36,12 +105,12 @@ impl Desugarer {
         }
 
         Desugarer {
-            elm: lines.join("\n"),
+            json: lines.join("\n"),
         }
     }
 
     pub fn pre_process_solutions(&mut self) -> Desugarer {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
+        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
 
         let mut solutions = binding
@@ -62,7 +131,7 @@ impl Desugarer {
             lines.insert(solution_tag_line + 1, props_string);
         }
         Desugarer {
-            elm: lines.join("\n"),
+            json: lines.join("\n"),
         }
     }
 
@@ -74,7 +143,7 @@ impl Desugarer {
     ) -> Desugarer {
         // Removes empty lines above tags
 
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
+        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
         let mut lines_removed = 0;
 
@@ -117,7 +186,7 @@ impl Desugarer {
             });
 
         Desugarer {
-            elm: lines.join("\n"),
+            json: lines.join("\n"),
         }
     }
 
@@ -129,7 +198,7 @@ impl Desugarer {
         wrapper: Option<&str>,
         wrapper_break_on: Option<&str>,
     ) -> Desugarer {
-        let mut lines: Vec<String> = self.elm.lines().map(|s| s.to_string()).collect();
+        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
         let binding = lines.clone();
         let mut jump = 2;
 
@@ -179,7 +248,7 @@ impl Desugarer {
             });
 
         Desugarer {
-            elm: lines.join("\n"),
+            json: lines.join("\n"),
         }
     }
 }

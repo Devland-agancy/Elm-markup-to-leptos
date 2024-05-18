@@ -33,7 +33,6 @@ pub enum BlockChildType {
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DataCell {
-    #[serde(skip)]
     pub id: u32,
     #[serde(flatten)]
     pub cell_type: CellType,

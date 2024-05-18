@@ -18,7 +18,7 @@
     |> Solution
 
         HIHI
-        |> Img
+        |> img
         Again
 
     |> Exercise
@@ -26,8 +26,9 @@
 
 
         Hello 
-        __again
-        again__
+        $$again
+        again$$asd
+        cchk
 
     |> Exercise
 

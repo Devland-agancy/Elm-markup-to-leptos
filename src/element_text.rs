@@ -81,7 +81,7 @@ impl ElementText {
             let (del, skips, text) = &self.find_next_delimeter(i);
 
             if text == " " {
-                output += "r#\" \"#"
+                //output += "r#\" \"#"
             } else {
                 output += text;
             }
@@ -116,12 +116,12 @@ impl ElementText {
                         && char_after_closing_del != ""
                         && del.unwrap().no_break
                     {
-                        output.push_str("\"#<span class=\"nobreak\">");
+                        output.push_str("\"<span class=\"nobreak\">");
                     } else {
-                        output.push_str("\"#");
+                        output.push_str("\"");
                     }
                     output.push_str(del.unwrap().left_replacement);
-                    output.push_str("r#\"");
+                    output.push_str("\"");
 
                     if del.unwrap().keep_delimiter {
                         output.push_str(&del.unwrap().symbol);
@@ -132,13 +132,13 @@ impl ElementText {
                     if del.unwrap().keep_delimiter {
                         output.push_str(&del.unwrap().end_symbol);
                     }
-                    output.push_str("\"#");
+                    output.push_str("\"");
                     output.push_str(del.unwrap().right_replacement);
                     if del.unwrap().no_break
                         && char_after_closing_del != " "
                         && char_after_closing_del != ""
                     {
-                        output.push_str("r#\"");
+                        output.push_str("\"");
                         let mut string = "".to_string();
                         while i < self.text.len()
                             && self.get_char(i) != " "
@@ -150,9 +150,9 @@ impl ElementText {
                         let handled_string = self::ElementText::new(&string).handle_delimeters();
                         i += 1;
                         output.push_str(&handled_string);
-                        output.push_str("\"#</span>r#\"");
+                        output.push_str("\"</span>\"");
                     } else {
-                        output.push_str("r#\"");
+                        output.push_str("\"");
                         i += 1;
                     }
                 }

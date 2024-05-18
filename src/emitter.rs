@@ -1,3 +1,5 @@
+use crate::parser_helpers::{BlockChildType, CellType, DataCell};
+
 use super::element_text::ElementText;
 use super::helpers::*;
 use std::str::Lines;
@@ -46,6 +48,61 @@ impl Emitter {
             tags_with_no_indents,
             track_line_delta: 0,
         }
+    }
+
+    pub fn emit_json(&self, data_cell: &DataCell) -> String {
+        let mut output = String::new();
+        /* let json_tree: DataCell = serde_json::from_str(json).unwrap(); */
+
+        match &data_cell.cell_type {
+            CellType::Root(root) => {
+                root.children.iter().for_each(|child| {
+                    output.push_str(&self.emit_json(child));
+                });
+            }
+            CellType::Element(el) => {
+                output.push_str(&format!("<{} ", el.name));
+                el.props.iter().for_each(|prop| {
+                    output.push_str(&Self::handle_prop_line(&format!(
+                        "{} {}",
+                        prop.key, prop.value
+                    )));
+                });
+                if self.self_closing_tags.contains(&el.name.as_str()) {
+                    output.push_str(" />");
+                } else {
+                    output.push_str(" >");
+
+                    el.children.iter().for_each(|child| {
+                        output.push_str(&self.emit_json(child));
+                    });
+                    if el.children.is_empty() {
+                        output.push_str("\"\"");
+                    }
+                    output.push_str(&format!("</{}>", el.name));
+                }
+            }
+            CellType::Block(block) => {
+                output.push_str("<Paragraph>");
+                let mut text_block = String::new();
+                block.children.iter().for_each(|child| match child {
+                    BlockChildType::Text(text) => {
+                        text_block.push_str(&text.content);
+                        //output.push_str(&format!("\"{}\"", text.content));
+                    }
+                    BlockChildType::Delimited(dl) => {
+                        text_block
+                            .push_str(&format!("{}{}{}", dl.delimeter, dl.terminal, dl.delimeter));
+                    }
+                });
+                let text_el = ElementText::new(&text_block);
+                output.push_str(&format!("\"{}\"", text_el.handle_delimeters()));
+                output.push_str("</Paragraph>");
+            }
+            _ => {}
+        }
+
+        output
     }
 
     pub fn transform(&mut self, elm: String, start_index: isize) -> String {

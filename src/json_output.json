@@ -81,7 +81,7 @@
             {
               "id": 11,
               "type": "Element",
-              "tag": "Img",
+              "tag": "img",
               "attributes": [],
               "children": []
             },
@@ -113,8 +113,12 @@
                 },
                 {
                   "type": "Delimited",
-                  "delimeter": "__",
+                  "delimeter": "$$",
                   "terminal": "again again"
+                },
+                {
+                  "type": "Text",
+                  "content": "asd cchk"
                 }
               ]
             }

@@ -8,6 +8,7 @@ pub mod parser_helpers;
 use desugarer::Desugarer;
 use emitter::{AutoWrapper, Emitter};
 use parser::Parser;
+use parser_helpers::DataCell;
 use std::env;
 use std::io::prelude::*;
 use std::path::Path;
@@ -100,7 +101,10 @@ fn main() {
             Some("Solution"),
         );
 
-    let leptos_code = emitter.transform(desugarer.json, 0);
+    //let leptos_code = emitter.transform(desugarer.json, 0);
+    let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let leptos_code = emitter.emit_json(&json_value);
+
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,
         Err(error) => {

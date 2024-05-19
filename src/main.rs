@@ -41,8 +41,9 @@ fn main() {
     let mut json = Parser::new();
     let json_tree = json.export_json(&contents.to_string(), None, false);
 
-    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str());
-    let mut desugarer: Desugarer = Desugarer::new(&contents.as_str());
+    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
+    let mut desugarer: Desugarer = Desugarer::new(&contents.as_str(), json.id);
+
     let mut emitter: Emitter = Emitter::new(
         vec!["img", "SectionDivider"],
         vec![
@@ -83,23 +84,28 @@ fn main() {
         vec!["Grid", "List"],
     );
 
-    json_desugarer = json_desugarer.pre().pre_solutions();
+    json_desugarer = json_desugarer
+        .pre()
+        .pre_solutions()
+        .wrap_children(vec!["Section", "Solution", "Example"], "Paragraph")
+        .wrap_children(vec!["Grid"], "Span")
+        .wrap_children(vec!["List"], "Item");
 
-    desugarer = desugarer
-        .pre_process_exercises()
-        .remove_empty_line_above(
-            vec!["ImageRight", "ImageLeft"],
-            Some(("attached", "false")),
-            &mut emitter,
-        )
-        .pre_process_solutions()
-        .auto_increamental_title("Example", "Example", None, None)
-        .auto_increamental_title(
-            "Exercise",
-            "Exercise",
-            Some("ExerciseQuestion"),
-            Some("Solution"),
-        );
+    /* desugarer = desugarer
+    .pre_process_exercises()
+    .remove_empty_line_above(
+        vec!["ImageRight", "ImageLeft"],
+        Some(("attached", "false")),
+        &mut emitter,
+    )
+    .pre_process_solutions()
+    .auto_increamental_title("Example", "Example", None, None)
+    .auto_increamental_title(
+        "Exercise",
+        "Exercise",
+        Some("ExerciseQuestion"),
+        Some("Solution"),
+    ); */
 
     //let leptos_code = emitter.transform(desugarer.json, 0);
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();

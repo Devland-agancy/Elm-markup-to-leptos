@@ -111,6 +111,67 @@ impl ElementCell {
             _ => (),
         }
     }
+
+    fn add_existing_cell(add_to: &mut DataCell, parent_id: u32, cell: &DataCell) {
+        if add_to.id == parent_id {
+            match add_to.cell_type {
+                CellType::Element(ref mut el) => el.children.push(cell.to_owned()),
+                CellType::Root(ref mut el) => el.children.push(cell.to_owned()),
+                _ => (),
+            }
+            return;
+        }
+
+        match &mut add_to.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_existing_cell(x, parent_id, cell)),
+
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_existing_cell(x, parent_id, cell)),
+            _ => (),
+        }
+    }
+
+    pub fn move_cell(
+        tree: &mut DataCell,
+        (cell_to_move_parent, cell_to_move_id): (u32, u32),
+        move_to: u32,
+    ) {
+        if tree.id == cell_to_move_parent {
+            if let CellType::Element(ref mut el) = tree.cell_type {
+                // Get a mutable reference to `el`
+                let (child_to_move, remaining_children): (Vec<_>, Vec<_>) = el
+                    .children // Split children into two vecs
+                    .iter()
+                    .cloned() // Clone to avoid ownership issues
+                    .partition(|child| child.id == cell_to_move_id);
+
+                el.children = remaining_children;
+                if let Some(child_to_move) = child_to_move.first() {
+                    // Use if let to unwrap the child
+                    Self::add_existing_cell(tree, move_to, child_to_move);
+                }
+            }
+
+            return;
+        }
+
+        match &mut tree.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::move_cell(x, (cell_to_move_parent, cell_to_move_id), move_to)),
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::move_cell(x, (cell_to_move_parent, cell_to_move_id), move_to)),
+            _ => (),
+        }
+    }
 }
 
 impl Cell<&str> for ElementCell {

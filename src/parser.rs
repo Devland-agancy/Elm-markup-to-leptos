@@ -9,8 +9,7 @@ use super::parser_helpers::*;
 pub struct Parser {
     track_line_delta: usize,
     result: DataCell,
-    depth_level: usize,
-    id: u32,
+    pub id: u32,
 }
 
 impl Parser {
@@ -21,7 +20,6 @@ impl Parser {
                 id: 0,
                 cell_type: CellType::Root(Root { children: vec![] }),
             },
-            depth_level: 0,
             id: 1,
         }
     }

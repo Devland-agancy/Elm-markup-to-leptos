@@ -4,42 +4,42 @@
   "children": [
     {
       "id": 1,
-      "type": "Element",
+      "type": "~element~",
       "tag": "Section",
       "attributes": [],
       "children": [
         {
           "id": 2,
-          "type": "Block",
+          "type": "~block~",
           "children": [
             {
-              "type": "Text",
+              "type": "~text~",
               "content": "eljlk"
             }
           ]
         },
         {
           "id": 3,
-          "type": "Element",
+          "type": "~element~",
           "tag": "Grid",
           "attributes": [],
           "children": [
             {
               "id": 4,
-              "type": "Block",
+              "type": "~block~",
               "children": [
                 {
-                  "type": "Text",
+                  "type": "~text~",
                   "content": "discriminate"
                 }
               ]
             },
             {
               "id": 5,
-              "type": "Block",
+              "type": "~block~",
               "children": [
                 {
-                  "type": "Text",
+                  "type": "~text~",
                   "content": "again"
                 }
               ]

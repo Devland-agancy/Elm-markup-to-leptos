@@ -20,14 +20,18 @@ pub enum CellType {
     #[default]
     Default,
     Root(Root),
+    #[serde(rename = "~element~")]
     Element(ElementCell),
+    #[serde(rename = "~block~")]
     Block(BlockCell),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum BlockChildType {
+    #[serde(rename = "~text~")]
     Text(TextCell),
+    #[serde(rename = "~delimited~")]
     Delimited(DelimitedCell),
 }
 

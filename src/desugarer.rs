@@ -71,7 +71,7 @@ impl Desugarer {
         }
     }
 
-    pub fn pre(&mut self) -> Desugarer {
+    pub fn pre_process_exercises(&mut self) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut exercises: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
@@ -96,7 +96,7 @@ impl Desugarer {
         }
     }
 
-    pub fn pre_solutions(&mut self) -> Desugarer {
+    pub fn pre_process_solutions(&mut self) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut solutions: Vec<&DataCell> = Vec::new();
         let binding = root.clone();

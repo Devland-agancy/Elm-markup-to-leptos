@@ -85,8 +85,8 @@ fn main() {
     );
 
     json_desugarer = json_desugarer
-        .pre()
-        .pre_solutions()
+        .pre_process_exercises()
+        .pre_process_solutions()
         .wrap_children(vec!["Section", "Solution", "Example"], "Paragraph", None)
         .wrap_children(vec!["Grid"], "Span", None)
         .wrap_children(vec!["List"], "Item", None)

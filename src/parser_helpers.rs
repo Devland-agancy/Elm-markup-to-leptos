@@ -38,8 +38,39 @@ pub enum BlockChildType {
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DataCell {
     pub id: u32,
+    pub parent_id: u32,
     #[serde(flatten)]
     pub cell_type: CellType,
+}
+
+impl DataCell {
+    pub fn get_cell_by_id(cell: &mut DataCell, id: u32) -> Option<&mut DataCell> {
+        if cell.id == id {
+            return Some(cell);
+        };
+
+        match &mut cell.cell_type {
+            CellType::Element(ref mut el) => el.children.iter_mut().find_map(|x| {
+                if let Some(child) = Self::get_cell_by_id(x, id) {
+                    Some(child)
+                } else {
+                    None
+                }
+            }),
+
+            CellType::Root(ref mut el) => {
+                let res = el.children.iter_mut().find_map(|x| {
+                    if let Some(child) = Self::get_cell_by_id(x, id) {
+                        Some(child)
+                    } else {
+                        None
+                    }
+                });
+                res
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -79,7 +110,7 @@ pub struct DelimitedCell {
 }
 
 pub trait Cell<T> {
-    fn init_cell(id: u32, s: T) -> DataCell;
+    fn init_cell(id: u32, parent_id: u32, s: T) -> DataCell;
     fn push_cell(parent: &mut DataCell, id: u32, s: T);
     fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, text: T);
 }
@@ -119,8 +150,14 @@ impl ElementCell {
     fn add_existing_cell(add_to: &mut DataCell, parent_id: u32, cell: &DataCell) {
         if add_to.id == parent_id {
             match add_to.cell_type {
-                CellType::Element(ref mut el) => el.children.push(cell.to_owned()),
-                CellType::Root(ref mut el) => el.children.push(cell.to_owned()),
+                CellType::Element(ref mut el) => el.children.push(DataCell {
+                    parent_id,
+                    ..cell.to_owned()
+                }),
+                CellType::Root(ref mut el) => el.children.push(DataCell {
+                    parent_id,
+                    ..cell.to_owned()
+                }),
                 _ => (),
             }
             return;
@@ -176,12 +213,44 @@ impl ElementCell {
             _ => (),
         }
     }
+
+    pub fn move_children(tree: &mut DataCell, cell: u32, move_to: u32) {
+        if tree.id == cell {
+            let mut cloned_tree = tree.clone();
+            if let CellType::Element(ref mut el) = &mut tree.cell_type {
+                let move_to_cell = DataCell::get_cell_by_id(&mut cloned_tree, move_to);
+                //let mut root = tree.to_owned();
+                if let Some(move_to_cell) = move_to_cell {
+                    if let CellType::Element(ref mut move_to_el) = move_to_cell.cell_type {
+                        move_to_el.children = el.children.to_owned();
+                        el.children.clear();
+                        el.children.push(move_to_cell.to_owned())
+                    }
+                }
+            }
+
+            return;
+        }
+
+        match &mut tree.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::move_children(x, cell, move_to)),
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::move_children(x, cell, move_to)),
+            _ => (),
+        }
+    }
 }
 
 impl Cell<&str> for ElementCell {
-    fn init_cell(id: u32, tag_name: &str) -> DataCell {
+    fn init_cell(id: u32, parent_id: u32, tag_name: &str) -> DataCell {
         DataCell {
             id,
+            parent_id,
             cell_type: CellType::Element(ElementCell {
                 name: tag_name.to_string(),
                 ..Default::default()
@@ -191,8 +260,12 @@ impl Cell<&str> for ElementCell {
 
     fn push_cell(parent: &mut DataCell, id: u32, tag_name: &str) {
         match parent.cell_type {
-            CellType::Element(ref mut el) => el.children.push(Self::init_cell(id, tag_name)),
-            CellType::Root(ref mut el) => el.children.push(Self::init_cell(id, tag_name)),
+            CellType::Element(ref mut el) => {
+                el.children.push(Self::init_cell(id, parent.id, tag_name))
+            }
+            CellType::Root(ref mut el) => {
+                el.children.push(Self::init_cell(id, parent.id, tag_name))
+            }
             _ => (),
         }
     }
@@ -227,16 +300,19 @@ impl BlockCell {
 }
 
 impl Cell<&BlockCell> for BlockCell {
-    fn init_cell(id: u32, block: &BlockCell) -> DataCell {
+    fn init_cell(id: u32, parent_id: u32, block: &BlockCell) -> DataCell {
         DataCell {
             id,
+            parent_id,
             cell_type: CellType::Block(block.to_owned()),
         }
     }
 
     fn push_cell(parent: &mut DataCell, id: u32, block: &BlockCell) {
         match parent.cell_type {
-            CellType::Element(ref mut el) => el.children.push(Self::init_cell(id, block)),
+            CellType::Element(ref mut el) => {
+                el.children.push(Self::init_cell(id, parent.id, block))
+            }
             _ => (),
         }
     }
@@ -275,34 +351,6 @@ impl BlockChild<BlockChildType> for BlockChildType {
 pub fn as_root(cell: &DataCell) -> Option<&Root> {
     match &cell.cell_type {
         CellType::Root(root) => Some(root),
-        _ => None,
-    }
-}
-
-pub fn get_cell_by_id(cell: &mut DataCell, id: u32) -> Option<&mut DataCell> {
-    if cell.id == id {
-        return Some(cell);
-    };
-
-    match &mut cell.cell_type {
-        CellType::Element(ref mut el) => el.children.iter_mut().find_map(|x| {
-            if let Some(child) = get_cell_by_id(x, id) {
-                Some(child)
-            } else {
-                None
-            }
-        }),
-
-        CellType::Root(ref mut el) => {
-            let res = el.children.iter_mut().find_map(|x| {
-                if let Some(child) = get_cell_by_id(x, id) {
-                    Some(child)
-                } else {
-                    None
-                }
-            });
-            res
-        }
         _ => None,
     }
 }

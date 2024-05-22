@@ -1,25 +1,29 @@
 {
   "id": 0,
+  "parent_id": 0,
   "type": "Root",
   "children": [
     {
       "id": 1,
-      "type": "Element",
+      "parent_id": 0,
+      "type": "~element~",
       "tag": "Section",
       "attributes": [],
       "children": [
         {
-          "id": 7,
-          "type": "Element",
+          "id": 9,
+          "parent_id": 1,
+          "type": "~element~",
           "tag": "Paragraph",
           "attributes": [],
           "children": [
             {
               "id": 2,
-              "type": "Block",
+              "parent_id": 9,
+              "type": "~block~",
               "children": [
                 {
-                  "type": "Text",
+                  "type": "~text~",
                   "content": "eljlk"
                 }
               ]
@@ -27,52 +31,151 @@
           ]
         },
         {
-          "id": 8,
-          "type": "Element",
+          "id": 10,
+          "parent_id": 1,
+          "type": "~element~",
           "tag": "Paragraph",
           "attributes": [],
           "children": [
             {
-              "id": 3,
-              "type": "Element",
-              "tag": "Grid",
+              "id": 15,
+              "parent_id": 10,
+              "type": "~element~",
+              "tag": "Indent",
               "attributes": [],
               "children": [
                 {
-                  "id": 9,
-                  "type": "Element",
-                  "tag": "Span",
+                  "id": 3,
+                  "parent_id": 10,
+                  "type": "~block~",
+                  "children": [
+                    {
+                      "type": "~text~",
+                      "content": ""
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "_",
+                      "terminal": "qwejwqkl"
+                    }
+                  ]
+                },
+                {
+                  "id": 15,
+                  "parent_id": 10,
+                  "type": "~element~",
+                  "tag": "Indent",
+                  "attributes": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Paragraph",
+          "attributes": [],
+          "children": [
+            {
+              "id": 16,
+              "parent_id": 11,
+              "type": "~element~",
+              "tag": "Indent",
+              "attributes": [],
+              "children": [
+                {
+                  "id": 4,
+                  "parent_id": 11,
+                  "type": "~element~",
+                  "tag": "mm",
+                  "attributes": [],
+                  "children": []
+                },
+                {
+                  "id": 16,
+                  "parent_id": 11,
+                  "type": "~element~",
+                  "tag": "Indent",
+                  "attributes": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Paragraph",
+          "attributes": [],
+          "children": [
+            {
+              "id": 17,
+              "parent_id": 12,
+              "type": "~element~",
+              "tag": "Indent",
+              "attributes": [],
+              "children": [
+                {
+                  "id": 5,
+                  "parent_id": 12,
+                  "type": "~element~",
+                  "tag": "Grid",
                   "attributes": [],
                   "children": [
                     {
-                      "id": 4,
-                      "type": "Block",
+                      "id": 13,
+                      "parent_id": 5,
+                      "type": "~element~",
+                      "tag": "Span",
+                      "attributes": [],
                       "children": [
                         {
-                          "type": "Text",
-                          "content": "discriminate"
+                          "id": 6,
+                          "parent_id": 13,
+                          "type": "~block~",
+                          "children": [
+                            {
+                              "type": "~text~",
+                              "content": "discriminate"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": 14,
+                      "parent_id": 5,
+                      "type": "~element~",
+                      "tag": "Span",
+                      "attributes": [],
+                      "children": [
+                        {
+                          "id": 7,
+                          "parent_id": 14,
+                          "type": "~block~",
+                          "children": [
+                            {
+                              "type": "~text~",
+                              "content": "again"
+                            }
+                          ]
                         }
                       ]
                     }
                   ]
                 },
                 {
-                  "id": 10,
-                  "type": "Element",
-                  "tag": "Span",
+                  "id": 17,
+                  "parent_id": 12,
+                  "type": "~element~",
+                  "tag": "Indent",
                   "attributes": [],
-                  "children": [
-                    {
-                      "id": 5,
-                      "type": "Block",
-                      "children": [
-                        {
-                          "type": "Text",
-                          "content": "again"
-                        }
-                      ]
-                    }
-                  ]
+                  "children": []
                 }
               ]
             }

@@ -12,6 +12,12 @@ pub struct Desugarer {
     pub last_id: u32,
 }
 
+pub struct ParagraphIndentOptions {
+    pub tags_before_non_indents: Vec<&'static str>,
+    pub tags_with_non_indent_first_child: Vec<&'static str>,
+    pub tags_with_no_indents: Vec<&'static str>,
+}
+
 impl Desugarer {
     pub fn new(json: &str, last_id: u32) -> Desugarer {
         Desugarer {
@@ -40,21 +46,26 @@ impl Desugarer {
         }
     }
 
-    fn find_cell<'a>(&self, root: &'a DataCell, tag_name: &str, cells: &mut Vec<&'a DataCell>) {
+    fn find_cell<'a>(
+        &self,
+        root: &'a DataCell,
+        tag_names: &Vec<&str>,
+        cells: &mut Vec<&'a DataCell>,
+    ) {
         match &root.cell_type {
             CellType::Element(el) => {
-                if el.name == tag_name {
+                if tag_names.is_empty() || tag_names.contains(&el.name.as_str()) {
                     cells.push(root)
                 } else {
                     el.children
                         .iter()
-                        .for_each(|child| self.find_cell(child, tag_name, cells))
+                        .for_each(|child| self.find_cell(child, tag_names, cells))
                 }
             }
             CellType::Root(el) => el
                 .children
                 .iter()
-                .for_each(|child| self.find_cell(child, tag_name, cells)),
+                .for_each(|child| self.find_cell(child, tag_names, cells)),
 
             _ => (),
         }
@@ -64,7 +75,7 @@ impl Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut exercises: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, "Exercises", &mut exercises);
+        self.find_cell(&binding, &vec!["Exercises"], &mut exercises);
 
         for exercises_cell in exercises.iter() {
             let mut count: usize = 0;
@@ -89,7 +100,7 @@ impl Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut solutions: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, "Solution", &mut solutions);
+        self.find_cell(&binding, &vec!["Solution"], &mut solutions);
 
         for (i, solution_cell) in solutions.iter().enumerate() {
             let prop_line = format!("solution_number {}", i);
@@ -103,21 +114,32 @@ impl Desugarer {
         }
     }
 
-    pub fn wrap_children(&mut self, elements: Vec<&str>, wrap_with: &str) -> Desugarer {
+    pub fn wrap_children(
+        &mut self,
+        elements: Vec<&str>,
+        wrap_with: &str,
+        options: Option<&ParagraphIndentOptions>,
+    ) -> Desugarer {
         // elements are what we want to wrap it's children with wrap_with
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
-        elements.iter().for_each(|el| {
-            self.find_cell(&binding, el, &mut _elements);
-        });
+        self.find_cell(&binding, &elements, &mut _elements);
 
         for (i, element) in _elements.iter().enumerate() {
             //let prop_line = format!("solution_number {}", i);
             if let CellType::Element(el) = &element.cell_type {
                 el.children.iter().for_each(|child| {
                     self.last_id += 1;
+                    // Custom handling for Paragraph - paragraphs that do not meet conditions are wrapped inside Indent
+                    //if options.is_some() && self.add_indent(options.unwrap()) {
+                    //    ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
+                    //    ElementCell::add_cell(&mut root, self.last_id, self.last_id + 1, "Indent");
+                    //    self.last_id += 1;
+                    //} else {
+                    //    ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
+                    //}
                     ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
                     ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id)
                 });
@@ -128,6 +150,58 @@ impl Desugarer {
             json: serde_json::to_string_pretty(&root).unwrap(),
             last_id: self.last_id,
         }
+    }
+
+    pub fn add_indent(&mut self, options: &ParagraphIndentOptions) -> Desugarer {
+        // A paragraph has an indent by default except:
+
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        let mut _elements: Vec<&DataCell> = Vec::new();
+        let binding = root.clone();
+        /*  let mut tags_to_find = vec!["Paragraph"];
+        tags_to_find.extend(options.tags_with_non_indent_first_child); */
+
+        self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
+
+        for (i, element) in _elements.iter().enumerate() {
+            if let CellType::Element(el) = &element.cell_type {
+                let parent: Option<&mut DataCell> =
+                    DataCell::get_cell_by_id(&mut root, element.parent_id);
+
+                // the first paragraph of every section, exercise, or example does not have an indent
+                if Self::is_first_child(element.id, parent, options) {
+                    continue;
+                }
+
+                self.last_id += 1;
+                ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
+                ElementCell::move_children(&mut root, element.id, self.last_id);
+            }
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
+    }
+
+    pub fn is_first_child(
+        element_id: u32,
+        parent: Option<&mut DataCell>,
+        options: &ParagraphIndentOptions,
+    ) -> bool {
+        if let Some(parent) = parent {
+            if let CellType::Element(parent) = &parent.cell_type {
+                if options
+                    .tags_with_non_indent_first_child
+                    .contains(&parent.name.as_str())
+                    && parent.children.first().is_some_and(|c| c.id == element_id)
+                {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     /*    pub fn pre_process_exercises(&mut self) -> Desugarer {

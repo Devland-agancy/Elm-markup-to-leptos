@@ -17,6 +17,7 @@ impl Parser {
         Self {
             track_line_delta: 0,
             result: DataCell {
+                parent_id: 0,
                 id: 0,
                 cell_type: CellType::Root(Root { children: vec![] }),
             },
@@ -48,7 +49,6 @@ impl Parser {
 
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line);
-            let current_cell: Option<&mut DataCell>;
 
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
@@ -62,9 +62,6 @@ impl Parser {
                 } else {
                     Some(0)
                 };
-
-                //let res_cloned = &mut self.result.clone();
-                //current_cell = get_cell_by_id(res_cloned, curr_el_id);
 
                 ElementCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, tag_name);
 
@@ -117,8 +114,8 @@ impl Parser {
                 }
 
                 // tag content
-                let mut inner_lines_to_skip: u32 = 0;
-                /*
+                /*let mut inner_lines_to_skip: u32 = 0;
+
                 check_indent_size(indent as isize, track_line_index + j as isize);
                 check_extra_spaces(
                     indent,
@@ -153,7 +150,6 @@ impl Parser {
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
                     self.id += 1;
 
-                    /*  output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n")); */
                     text_node = "".to_string();
                     continue;
                 }
@@ -164,10 +160,6 @@ impl Parser {
                     if text_node == "" { "" } else { " " },
                     trimmed_line.trim_end()
                 );
-
-                // println!("noes {:#?}", nodes);
-
-                /* output.push_str(&concat_ignore_spaces("r#\"", &processed_text, "\"#\n")); */
             }
         }
         let res = serde_json::to_string_pretty(&self.result);

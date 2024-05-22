@@ -5,7 +5,7 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
-use desugarer::Desugarer;
+use desugarer::{Desugarer, ParagraphIndentOptions};
 use emitter::{AutoWrapper, Emitter};
 use parser::Parser;
 use parser_helpers::DataCell;
@@ -87,9 +87,29 @@ fn main() {
     json_desugarer = json_desugarer
         .pre()
         .pre_solutions()
-        .wrap_children(vec!["Section", "Solution", "Example"], "Paragraph")
-        .wrap_children(vec!["Grid"], "Span")
-        .wrap_children(vec!["List"], "Item");
+        .wrap_children(vec!["Section", "Solution", "Example"], "Paragraph", None)
+        .wrap_children(vec!["Grid"], "Span", None)
+        .wrap_children(vec!["List"], "Item", None)
+        .add_indent(&ParagraphIndentOptions {
+            tags_before_non_indents: vec![
+                "Image",
+                "DisplayImage",
+                "Pause",
+                "InlineImage",
+                "MathBlock",
+                "Table",
+            ],
+            tags_with_non_indent_first_child: vec![
+                "Paragraphs",
+                "Paragraph",
+                "Example",
+                "Section",
+                "tr",
+                "Table",
+                "Solution",
+            ],
+            tags_with_no_indents: vec!["Grid", "List"],
+        });
 
     /* desugarer = desugarer
     .pre_process_exercises()
@@ -107,9 +127,9 @@ fn main() {
         Some("Solution"),
     ); */
 
-    //let leptos_code = emitter.transform(desugarer.json, 0);
+    let leptos_code = emitter.transform(desugarer.json, 0);
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
-    let leptos_code = emitter.emit_json(&json_value);
+    //let leptos_code = emitter.emit_json(&json_value);
 
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,

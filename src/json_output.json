@@ -1,15 +1,18 @@
 {
   "id": 0,
+  "parent_id": 0,
   "type": "Root",
   "children": [
     {
       "id": 1,
+      "parent_id": 0,
       "type": "~element~",
       "tag": "Section",
       "attributes": [],
       "children": [
         {
           "id": 2,
+          "parent_id": 1,
           "type": "~block~",
           "children": [
             {
@@ -20,12 +23,38 @@
         },
         {
           "id": 3,
+          "parent_id": 1,
+          "type": "~block~",
+          "children": [
+            {
+              "type": "~text~",
+              "content": ""
+            },
+            {
+              "type": "~delimited~",
+              "delimeter": "_",
+              "terminal": "qwejwqkl"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "mm",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "id": 5,
+          "parent_id": 1,
           "type": "~element~",
           "tag": "Grid",
           "attributes": [],
           "children": [
             {
-              "id": 4,
+              "id": 6,
+              "parent_id": 5,
               "type": "~block~",
               "children": [
                 {
@@ -35,7 +64,8 @@
               ]
             },
             {
-              "id": 5,
+              "id": 7,
+              "parent_id": 5,
               "type": "~block~",
               "children": [
                 {

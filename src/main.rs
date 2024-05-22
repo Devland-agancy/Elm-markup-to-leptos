@@ -11,12 +11,18 @@ use parser::{AutoWrapper, Parser};
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
-use std::{fs::File, io::BufReader};
-
+use std::{env, fs::File, io::BufReader};
 fn main() {
-    let path = Path::new("src/elm.emu");
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 2 {
+        println!("Usage: cargo run <file path>");
+        return;
+    }
+
+    let path = Path::new(&args[1]);
     // Open the file
-    let file = match File::open(&path) {
+    let mut file = match File::open(&path) {
         Ok(file) => file,
         Err(error) => {
             println!("Failed to open file: {}", error);
@@ -24,33 +30,15 @@ fn main() {
         }
     };
 
-    let mut reader = BufReader::new(file);
-    let mut contents = r#"
-|> Exercises
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Could not read {}: {}", path.display(), why),
+        Ok(_) => println!("File contents:\n{}", contents),
+    }
 
-    |> Exercise
-
-        HIHI
-        |> Img
-        Again
-
-
-        
-
-        Hello 
-        again
-        again
-
-    |> New
-        hi tfoo
-
-    hi
-"#;
-    let _ = reader.read_to_string(&mut contents.to_string());
-
-    let mut emitter: Emitter = Emitter::new(contents);
+    let mut emitter: Emitter = Emitter::new(&contents);
     let mut parser: Parser = Parser::new(
-        vec!["img", "SectionDivider"],
+        vec!["img", "SectionDivider", "InlineImage"],
         vec![
             AutoWrapper {
                 tags: vec!["Paragraphs", "Example", "Section", "Solution"],

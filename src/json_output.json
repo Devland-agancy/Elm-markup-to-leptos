@@ -16,8 +16,9 @@
           "type": "~block~",
           "children": [
             {
-              "type": "~text~",
-              "content": "eljlk"
+              "type": "~delimited~",
+              "delimeter": "$$",
+              "terminal": "eljlk"
             }
           ]
         },
@@ -28,12 +29,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": ""
-            },
-            {
-              "type": "~delimited~",
-              "delimeter": "_",
-              "terminal": "qwejwqkl"
+              "content": "qwejwqkl"
             }
           ]
         },

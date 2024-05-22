@@ -2,7 +2,7 @@ use leptos::html::Data;
 
 use crate::{
     emitter::Emitter,
-    parser_helpers::{Cell, CellType, DataCell, ElementCell, Prop},
+    parser_helpers::{BlockChildType, Cell, CellType, DataCell, ElementCell, Prop},
 };
 
 use super::helpers::*;
@@ -169,9 +169,18 @@ impl Desugarer {
                     DataCell::get_cell_by_id(&mut root, element.parent_id);
 
                 // the first paragraph of every section, exercise, or example does not have an indent
-                if Self::is_first_child(element.id, parent, options) {
+                if Self::is_first_child(element.id, &parent, options) {
                     continue;
                 }
+                // $$, __,  |_ paragraphs
+                if Self::is_delimited(element) {
+                    continue;
+                }
+                // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
+                if Self::prev_is_delimited(element.id, &parent) {
+                    continue;
+                }
+                // a paragraph that follows tags defined in tags_before_non_indents
 
                 self.last_id += 1;
                 ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
@@ -187,7 +196,7 @@ impl Desugarer {
 
     pub fn is_first_child(
         element_id: u32,
-        parent: Option<&mut DataCell>,
+        parent: &Option<&mut DataCell>,
         options: &ParagraphIndentOptions,
     ) -> bool {
         if let Some(parent) = parent {
@@ -198,6 +207,42 @@ impl Desugarer {
                     && parent.children.first().is_some_and(|c| c.id == element_id)
                 {
                     return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn is_delimited(element: &DataCell) -> bool {
+        if let CellType::Element(element) = &element.cell_type {
+            if let Some(block) = element.children.first() {
+                if let CellType::Block(block) = &block.cell_type {
+                    if let Some(block) = block.children.first() {
+                        if let BlockChildType::Delimited(b) = &block {
+                            return b.delimeter == "&&"
+                                || b.delimeter == "__"
+                                || b.delimeter == "_|";
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    pub fn prev_is_delimited(element_id: u32, parent: &Option<&mut DataCell>) -> bool {
+        if let Some(parent) = parent {
+            if let CellType::Element(parent) = &parent.cell_type {
+                let mut prev_el: Option<&DataCell> = None;
+                for child in &parent.children {
+                    if child.id == element_id {
+                        break;
+                    }
+                    prev_el = Some(&child)
+                }
+                if prev_el.is_some_and(|p| Self::is_delimited(p)) {
+                    println!("{:#?}", prev_el);
+                    true;
                 }
             }
         }

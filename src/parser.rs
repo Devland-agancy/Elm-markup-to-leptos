@@ -144,7 +144,13 @@ impl Parser {
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
                     block_children.iter().for_each(|child| {
-                        BlockChildType::push_cell(&mut block, child.to_owned());
+                        if let BlockChildType::Text(text) = &child {
+                            if text.content != "" {
+                                BlockChildType::push_cell(&mut block, child.to_owned());
+                            }
+                        } else {
+                            BlockChildType::push_cell(&mut block, child.to_owned());
+                        }
                     });
 
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);

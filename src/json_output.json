@@ -25,6 +25,14 @@
         {
           "id": 3,
           "parent_id": 1,
+          "type": "~element~",
+          "tag": "Image",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "id": 4,
+          "parent_id": 1,
           "type": "~block~",
           "children": [
             {
@@ -34,7 +42,7 @@
           ]
         },
         {
-          "id": 4,
+          "id": 5,
           "parent_id": 1,
           "type": "~element~",
           "tag": "mm",
@@ -42,15 +50,15 @@
           "children": []
         },
         {
-          "id": 5,
+          "id": 6,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Grid",
           "attributes": [],
           "children": [
             {
-              "id": 6,
-              "parent_id": 5,
+              "id": 7,
+              "parent_id": 6,
               "type": "~block~",
               "children": [
                 {
@@ -60,8 +68,8 @@
               ]
             },
             {
-              "id": 7,
-              "parent_id": 5,
+              "id": 8,
+              "parent_id": 6,
               "type": "~block~",
               "children": [
                 {

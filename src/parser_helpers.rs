@@ -71,6 +71,13 @@ impl DataCell {
             _ => None,
         }
     }
+
+    pub fn into_el(&self) -> Option<&ElementCell> {
+        if let CellType::Element(el) = &self.cell_type {
+            return Some(el);
+        }
+        None
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -222,7 +229,12 @@ impl ElementCell {
                 //let mut root = tree.to_owned();
                 if let Some(move_to_cell) = move_to_cell {
                     if let CellType::Element(ref mut move_to_el) = move_to_cell.cell_type {
-                        move_to_el.children = el.children.to_owned();
+                        move_to_el.children = el
+                            .children
+                            .iter()
+                            .cloned()
+                            .partition(|child| child.id != move_to)
+                            .0;
                         el.children.clear();
                         el.children.push(move_to_cell.to_owned())
                     }

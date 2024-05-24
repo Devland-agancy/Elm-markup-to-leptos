@@ -2,7 +2,7 @@ use leptos::html::Data;
 
 use crate::{
     emitter::Emitter,
-    parser_helpers::{BlockChildType, Cell, CellType, DataCell, ElementCell, Prop},
+    parser_helpers::{BlockCell, BlockChildType, Cell, CellType, DataCell, ElementCell, Prop},
 };
 
 use super::helpers::*;
@@ -15,7 +15,6 @@ pub struct Desugarer {
 pub struct ParagraphIndentOptions {
     pub tags_before_non_indents: Vec<&'static str>,
     pub tags_with_non_indent_first_child: Vec<&'static str>,
-    pub tags_with_no_indents: Vec<&'static str>,
 }
 
 impl Desugarer {
@@ -168,6 +167,10 @@ impl Desugarer {
                 let parent: Option<&mut DataCell> =
                     DataCell::get_cell_by_id(&mut root, element.parent_id);
 
+                // only paragraph elements that have block cell
+                if Self::paragraph_of_blocks(element) {
+                    continue;
+                }
                 // the first paragraph of every section, exercise, or example does not have an indent
                 if Self::is_first_child(element.id, &parent, options) {
                     continue;
@@ -180,8 +183,10 @@ impl Desugarer {
                 if Self::prev_is_delimited(element.id, &parent) {
                     continue;
                 }
-                // a paragraph that follows tags defined in tags_before_non_indents
-
+                // a paragraph that follows tags defined in
+                if Self::tags_before_non_indents(element.id, &parent, &options) {
+                    continue;
+                }
                 self.last_id += 1;
                 ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
                 ElementCell::move_children(&mut root, element.id, self.last_id);
@@ -192,6 +197,21 @@ impl Desugarer {
             json: serde_json::to_string_pretty(&root).unwrap(),
             last_id: self.last_id,
         }
+    }
+
+    pub fn paragraph_of_blocks(element: &DataCell) -> bool {
+        if let CellType::Element(el) = &element.cell_type {
+            if el.children.first().is_some_and(|c| {
+                if let CellType::Block(_) = &c.cell_type {
+                    false
+                } else {
+                    true
+                }
+            }) {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn is_first_child(
@@ -241,7 +261,39 @@ impl Desugarer {
                     prev_el = Some(&child)
                 }
                 if prev_el.is_some_and(|p| Self::is_delimited(p)) {
-                    true;
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn tags_before_non_indents(
+        element_id: u32,
+        parent: &Option<&mut DataCell>,
+        option: &ParagraphIndentOptions,
+    ) -> bool {
+        if let Some(parent) = parent {
+            if let CellType::Element(parent) = &parent.cell_type {
+                let mut prev_el: Option<&DataCell> = None;
+                for child in &parent.children {
+                    if child.id == element_id {
+                        break;
+                    }
+                    prev_el = Some(&child)
+                }
+                if let Some(prev_el) = prev_el {
+                    if let CellType::Element(prev_el) = &prev_el.cell_type {
+                        if prev_el.children.first().is_some_and(|p| {
+                            if let CellType::Element(el) = &p.cell_type {
+                                return option.tags_before_non_indents.contains(&el.name.as_str());
+                            } else {
+                                false
+                            }
+                        }) {
+                            return true;
+                        }
+                    }
                 }
             }
         }

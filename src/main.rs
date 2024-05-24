@@ -108,7 +108,6 @@ fn main() {
                 "Table",
                 "Solution",
             ],
-            tags_with_no_indents: vec!["Grid", "List"],
         });
 
     /* desugarer = desugarer

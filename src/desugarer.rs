@@ -219,7 +219,7 @@ impl Desugarer {
                 if let CellType::Block(block) = &block.cell_type {
                     if let Some(block) = block.children.first() {
                         if let BlockChildType::Delimited(b) = &block {
-                            return b.delimeter == "&&"
+                            return b.delimeter == "$$"
                                 || b.delimeter == "__"
                                 || b.delimeter == "_|";
                         }
@@ -241,7 +241,6 @@ impl Desugarer {
                     prev_el = Some(&child)
                 }
                 if prev_el.is_some_and(|p| Self::is_delimited(p)) {
-                    println!("{:#?}", prev_el);
                     true;
                 }
             }

@@ -91,8 +91,14 @@ impl Emitter {
                         //output.push_str(&format!("\"{}\"", text.content));
                     }
                     BlockChildType::Delimited(dl) => {
-                        text_block
-                            .push_str(&format!("{}{}{}", dl.delimeter, dl.terminal, dl.delimeter));
+                        if dl.delimeter == "_|" {
+                            text_block.push_str(&format!("_|{}|_", dl.terminal));
+                        } else {
+                            text_block.push_str(&format!(
+                                "{}{}{}",
+                                dl.delimeter, dl.terminal, dl.delimeter
+                            ));
+                        }
                     }
                 });
                 let text_el = ElementText::new(&text_block);

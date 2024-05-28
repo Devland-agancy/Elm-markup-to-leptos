@@ -162,35 +162,33 @@ impl Desugarer {
 
         self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
 
-        for (i, element) in _elements.iter().enumerate() {
-            if let CellType::Element(el) = &element.cell_type {
-                let parent: Option<&mut DataCell> =
-                    DataCell::get_cell_by_id(&mut root, element.parent_id);
+        for (element) in _elements.iter() {
+            let parent: Option<&mut DataCell> =
+                DataCell::get_cell_by_id(&mut root, element.parent_id);
 
-                // only paragraph elements that have block cell
-                if Self::paragraph_of_blocks(element) {
-                    continue;
-                }
-                // the first paragraph of every section, exercise, or example does not have an indent
-                if Self::is_first_child(element.id, &parent, options) {
-                    continue;
-                }
-                // $$, __,  |_ paragraphs
-                if Self::is_delimited(element) {
-                    continue;
-                }
-                // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
-                if Self::prev_is_delimited(element.id, &parent) {
-                    continue;
-                }
-                // a paragraph that follows tags defined in
-                if Self::tags_before_non_indents(element.id, &parent, &options) {
-                    continue;
-                }
-                self.last_id += 1;
-                ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
-                ElementCell::move_children(&mut root, element.id, self.last_id);
+            // only paragraph elements that have block cell
+            if Self::paragraph_of_blocks(element) {
+                continue;
             }
+            // the first paragraph of every section, exercise, or example does not have an indent
+            if Self::is_first_child(element.id, &parent, options) {
+                continue;
+            }
+            // $$, __,  |_ paragraphs
+            if Self::is_delimited(element) {
+                continue;
+            }
+            // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
+            if Self::prev_is_delimited(element.id, &parent) {
+                continue;
+            }
+            // a paragraph that follows tags defined in
+            if Self::tags_before_non_indents(element.id, &parent, &options) {
+                continue;
+            }
+            self.last_id += 1;
+            ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
+            ElementCell::move_children(&mut root, element.id, self.last_id);
         }
 
         Desugarer {

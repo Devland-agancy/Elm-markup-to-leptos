@@ -454,11 +454,11 @@ impl Emitter {
 
             if is_number.is_err() && !is_bool && !is_vec {
                 prop_line = match prop_key {
-                    "src" => format!("{}=\"/{}\"", prop_key.trim(), prop_value.trim()),
-                    _ => format!("{}=\"{}\"", prop_key.trim(), prop_value.trim()),
+                    "src" => format!(" {}=\"/{}\"", prop_key.trim(), prop_value.trim()),
+                    _ => format!(" {}=\"{}\"", prop_key.trim(), prop_value.trim()),
                 }
             } else {
-                prop_line = format!("{}={}", prop_key.trim(), prop_value.trim())
+                prop_line = format!(" {}={}", prop_key.trim(), prop_value.trim())
             }
         }
         prop_line

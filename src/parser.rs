@@ -102,8 +102,8 @@ impl Parser {
                 };
 
                 let last = tag_stack.last().expect(&format!(
-                    "There is no parent tag . line {}",
-                    track_line_index
+                    "There is no parent tag . line \n {}: {}",
+                    track_line_index, line
                 ));
                 if last.in_props {
                     // tag props

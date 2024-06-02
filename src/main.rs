@@ -6,7 +6,7 @@ pub mod parser;
 pub mod parser_helpers;
 
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
-use emitter::{AutoWrapper, Emitter};
+use emitter::Emitter;
 use parser::Parser;
 use parser_helpers::DataCell;
 use std::env;
@@ -44,45 +44,7 @@ fn main() {
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
     let mut desugarer: Desugarer = Desugarer::new(&contents.as_str(), json.id);
 
-    let mut emitter: Emitter = Emitter::new(
-        vec!["img", "SectionDivider"],
-        vec![
-            AutoWrapper {
-                tags: vec!["Paragraphs", "Example", "Section", "Solution"],
-                wrap_children_with: "Paragraph",
-                enable_manual_wrap: true,
-            },
-            AutoWrapper {
-                tags: vec!["Grid"],
-                wrap_children_with: "Span",
-                enable_manual_wrap: true,
-            },
-            AutoWrapper {
-                tags: vec!["List"],
-                wrap_children_with: "Item",
-                enable_manual_wrap: true,
-            },
-        ],
-        vec!["Example"],
-        vec![
-            "Image",
-            "DisplayImage",
-            "Pause",
-            "InlineImage",
-            "MathBlock",
-            "Table",
-        ],
-        vec![
-            "Paragraphs",
-            "Paragraph",
-            "Example",
-            "Section",
-            "tr",
-            "Table",
-            "Solution",
-        ],
-        vec!["Grid", "List"],
-    );
+    let mut emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
 
     json_desugarer = json_desugarer
         .pre_process_exercises()

@@ -126,15 +126,13 @@ fn main() {
     );
     match file.write_all(file_content.as_bytes()) {
         Ok(_) => {
-            println!(
-            "Data written to file successfully , use leptosfmt to format leptos for better view"
-        );
+            println!("Data written to output.rs successfully");
             let _ = Command::new("leptosfmt")
                 .arg("src/output.rs")
                 .output()
                 .expect("Failed to execute command");
         }
-        Err(error) => println!("Error writing to file: {}", error),
+        Err(error) => println!("Error writing to output.rs: {}", error),
     }
 
     let mut json_file = match File::create("src/json_output.json") {
@@ -147,9 +145,9 @@ fn main() {
 
     match json_file.write_all(json_tree.as_bytes()) {
         Ok(_) => {
-            println!("Json written to file successfully");
+            println!("Json written to json_output.json successfully");
         }
-        Err(error) => println!("Error writing to file: {}", error),
+        Err(error) => println!("Error writing to json_output.json: {}", error),
     }
 
     let mut desagurer_json_file = match File::create("src/des_json_output.json") {
@@ -163,8 +161,8 @@ fn main() {
     let desagurer_json_tree = serde_json::to_string_pretty(&json_desugarer.json).unwrap();
     match desagurer_json_file.write_all(json_desugarer.json.as_bytes()) {
         Ok(_) => {
-            println!("Json written to file successfully");
+            println!("Json written to des_json_output.json successfully");
         }
-        Err(error) => println!("Error writing to file: {}", error),
+        Err(error) => println!("Error writing to des_json_output.json: {}", error),
     }
 }

@@ -124,7 +124,8 @@ impl Parser {
                 ); */
 
                 let next_line = lines.clone().nth(index + 1);
-                let next_line_empty = next_line.is_some() && next_line.unwrap().is_empty();
+                let next_line_empty =
+                    next_line.is_none() || (next_line.is_some() && next_line.unwrap().is_empty());
                 let next_line_is_element =
                     next_line.is_some() && next_line.unwrap().trim_start().starts_with("|> ");
                 // break if next line is empty

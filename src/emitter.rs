@@ -83,7 +83,6 @@ impl Emitter {
                 }
             }
             CellType::Block(block) => {
-                output.push_str("<Paragraph>");
                 let mut text_block = String::new();
                 block.children.iter().for_each(|child| match child {
                     BlockChildType::Text(text) => {
@@ -103,7 +102,6 @@ impl Emitter {
                 });
                 let text_el = ElementText::new(&text_block);
                 output.push_str(&format!("\"{}\"", text_el.handle_delimeters()));
-                output.push_str("</Paragraph>");
             }
             _ => {}
         }

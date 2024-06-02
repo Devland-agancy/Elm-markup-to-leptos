@@ -17,6 +17,16 @@ pub struct ParagraphIndentOptions {
     pub tags_with_non_indent_first_child: Vec<&'static str>,
 }
 
+pub enum AttachToEnum {
+    BEFORE,
+    AFTER,
+    BOTH,
+}
+pub struct IgnoreOptions {
+    pub element: &'static str,
+    pub attach_to: AttachToEnum,
+}
+
 impl Desugarer {
     pub fn new(json: &str, last_id: u32) -> Desugarer {
         Desugarer {
@@ -117,7 +127,7 @@ impl Desugarer {
         &mut self,
         elements: Vec<&str>,
         wrap_with: &str,
-        options: Option<&ParagraphIndentOptions>,
+        ignore_elements: &Option<Vec<IgnoreOptions>>,
     ) -> Desugarer {
         // elements are what we want to wrap it's children with wrap_with
 
@@ -129,18 +139,84 @@ impl Desugarer {
         for (i, element) in _elements.iter().enumerate() {
             //let prop_line = format!("solution_number {}", i);
             if let CellType::Element(el) = &element.cell_type {
-                el.children.iter().for_each(|child| {
-                    self.last_id += 1;
-                    // Custom handling for Paragraph - paragraphs that do not meet conditions are wrapped inside Indent
-                    //if options.is_some() && self.add_indent(options.unwrap()) {
-                    //    ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
-                    //    ElementCell::add_cell(&mut root, self.last_id, self.last_id + 1, "Indent");
-                    //    self.last_id += 1;
-                    //} else {
-                    //    ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
-                    //}
-                    ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
-                    ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id)
+                let mut include_prev_child = false;
+                let mut include_in_prev_wrapper = false;
+                let mut add_wrapper = true;
+
+                el.children.iter().enumerate().for_each(|(idx, child)| {
+                    let mut element_ignored = None;
+                    if let Some(ignore_options) = ignore_elements {
+                        ignore_options.iter().any(|option| {
+                            if let CellType::Element(child_el) = &child.cell_type {
+                                if option.element == child_el.name {
+                                    element_ignored = Some(option);
+                                    add_wrapper = false;
+                                    return true;
+                                }
+                            }
+                            add_wrapper = true;
+                            false
+                        });
+                    }
+
+                    if let Some(el_ignored) = element_ignored {
+                        match el_ignored.attach_to {
+                            AttachToEnum::BEFORE => {
+                                // move to previous added wrapper if there is one
+                                if idx == 0 {
+                                    add_wrapper = true;
+                                } else {
+                                    ElementCell::move_cell(
+                                        &mut root,
+                                        (element.id, child.id),
+                                        self.last_id,
+                                    );
+                                }
+                            }
+                            AttachToEnum::AFTER => {
+                                // move to next wrapper
+                                include_prev_child = true
+                            }
+                            _ => {
+                                // this and next block should be in previous added wrapper
+                                if idx == 0 {
+                                    self.last_id += 1;
+                                    ElementCell::add_cell(
+                                        &mut root,
+                                        element.id,
+                                        self.last_id,
+                                        wrap_with,
+                                    );
+                                }
+                                ElementCell::move_cell(
+                                    &mut root,
+                                    (element.id, child.id),
+                                    self.last_id,
+                                );
+                                include_in_prev_wrapper = true
+                            }
+                        }
+                    } else if include_in_prev_wrapper {
+                        ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
+                        include_in_prev_wrapper = false;
+
+                        add_wrapper = false
+                    }
+
+                    if add_wrapper {
+                        self.last_id += 1;
+                        ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
+
+                        if include_prev_child {
+                            ElementCell::move_cell(
+                                &mut root,
+                                (element.id, el.children[idx - 1].id),
+                                self.last_id,
+                            );
+                            include_prev_child = false
+                        }
+                        ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
+                    }
                 });
             }
         }
@@ -157,8 +233,6 @@ impl Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
-        /*  let mut tags_to_find = vec!["Paragraph"];
-        tags_to_find.extend(options.tags_with_non_indent_first_child); */
 
         self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
 

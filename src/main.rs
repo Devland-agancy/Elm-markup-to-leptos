@@ -5,7 +5,7 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
-use desugarer::{Desugarer, ParagraphIndentOptions};
+use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
 use emitter::{AutoWrapper, Emitter};
 use parser::Parser;
 use parser_helpers::DataCell;
@@ -35,7 +35,7 @@ fn main() {
     let mut contents = String::new();
     match file.read_to_string(&mut contents) {
         Err(why) => panic!("Could not read {}: {}", path.display(), why),
-        Ok(_) => println!("File contents:\n{}", contents),
+        Ok(_) => (),
     }
 
     let mut json = Parser::new();
@@ -87,9 +87,26 @@ fn main() {
     json_desugarer = json_desugarer
         .pre_process_exercises()
         .pre_process_solutions()
-        .wrap_children(vec!["Section", "Solution", "Example"], "Paragraph", None)
-        .wrap_children(vec!["Grid"], "Span", None)
-        .wrap_children(vec!["List"], "Item", None)
+        .wrap_children(
+            vec!["Section", "Solution", "Example"],
+            "Paragraph",
+            &Some(vec![
+                IgnoreOptions {
+                    element: "InlineImage",
+                    attach_to: AttachToEnum::BOTH,
+                },
+                IgnoreOptions {
+                    element: "ImageRight",
+                    attach_to: AttachToEnum::BEFORE,
+                },
+                IgnoreOptions {
+                    element: "ImageLeft",
+                    attach_to: AttachToEnum::BEFORE,
+                },
+            ]),
+        )
+        .wrap_children(vec!["Grid"], "Span", &None)
+        .wrap_children(vec!["List"], "Item", &None)
         .add_indent(&ParagraphIndentOptions {
             tags_before_non_indents: vec![
                 "Image",
@@ -126,9 +143,9 @@ fn main() {
         Some("Solution"),
     ); */
 
-    let leptos_code = emitter.transform(desugarer.json, 0);
+    //let leptos_code = emitter.transform(desugarer.json, 0);
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
-    //let leptos_code = emitter.emit_json(&json_value);
+    let leptos_code = emitter.emit_json(&json_value);
 
     let mut file = match File::create("src/output.rs") {
         Ok(file) => file,

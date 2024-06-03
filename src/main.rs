@@ -50,7 +50,7 @@ fn main() {
         .pre_process_exercises()
         .pre_process_solutions()
         .wrap_children(
-            vec!["Section", "Solution", "Example"],
+            vec!["Section", "Solution", "Example", "Exercise"],
             "Paragraph",
             &Some(vec![
                 IgnoreOptions {
@@ -86,6 +86,7 @@ fn main() {
                 "tr",
                 "Table",
                 "Solution",
+                "Exercise",
             ],
         });
 

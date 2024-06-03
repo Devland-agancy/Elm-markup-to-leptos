@@ -89,9 +89,8 @@ impl Desugarer {
         for exercises_cell in exercises.iter() {
             let mut count: usize = 0;
             self.count_element(exercises_cell, "Exercise", &mut count);
-
             let mut prop_line = "labels vec![\"0\"".to_string();
-            for i in 1..=count {
+            for i in 1..=count - 1 {
                 prop_line += &format!(",\"{}\"", i);
             }
             prop_line += "]";

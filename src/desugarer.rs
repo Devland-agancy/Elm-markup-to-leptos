@@ -65,17 +65,15 @@ impl Desugarer {
             CellType::Element(el) => {
                 if tag_names.is_empty() || tag_names.contains(&el.name.as_str()) {
                     cells.push(root)
-                } else {
-                    el.children
-                        .iter()
-                        .for_each(|child| self.find_cell(child, tag_names, cells))
                 }
+                el.children
+                    .iter()
+                    .for_each(|child| self.find_cell(child, tag_names, cells))
             }
             CellType::Root(el) => el
                 .children
                 .iter()
                 .for_each(|child| self.find_cell(child, tag_names, cells)),
-
             _ => (),
         }
     }

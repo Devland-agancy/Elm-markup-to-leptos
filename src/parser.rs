@@ -140,21 +140,38 @@ impl Parser {
                         trimmed_line.trim_end()
                     );
 
-                    let mut block = BlockCell::new();
+                    let mut blocks = vec![BlockCell::new()];
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
+                    let mut del_type_is_block = false;
+
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
-                            if text.content != "" {
-                                BlockChildType::push_cell(&mut block, child.to_owned());
+                            if del_type_is_block {
+                                blocks.push(BlockCell::new());
+                                del_type_is_block = false
                             }
-                        } else {
-                            BlockChildType::push_cell(&mut block, child.to_owned());
+
+                            if text.content != "" {
+                                BlockChildType::push_cell(
+                                    blocks.last_mut().unwrap(),
+                                    child.to_owned(),
+                                );
+                            }
+                        } else if let BlockChildType::Delimited(del) = &child {
+                            if del.display_type == DelimitedDisplayType::BLOCK {
+                                blocks.push(BlockCell::new());
+                                del_type_is_block = true
+                            }
+
+                            BlockChildType::push_cell(blocks.last_mut().unwrap(), child.to_owned());
                         }
                     });
 
-                    BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
-                    self.id += 1;
+                    for block in blocks {
+                        BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
+                        self.id += 1;
+                    }
 
                     text_node = "".to_string();
                     continue;
@@ -170,63 +187,5 @@ impl Parser {
         }
         let res = serde_json::to_string_pretty(&self.result);
         res.unwrap_or("Something Wrong".to_string())
-    }
-
-    fn handle_inline_element(
-        &mut self,
-        lines: Lines<'_>,
-        start_from: usize,
-        initial_indent: usize,
-        mut curr_el_id: Option<u32>,
-    ) -> (String, u32) {
-        let mut element = "".to_string();
-        let mut end_line = start_from;
-        let mut inner_indent = initial_indent + 4;
-        let mut skips: u32 = 0;
-        let mut prev_line = "";
-
-        while inner_indent > initial_indent
-            || lines.clone().nth(end_line).unwrap().is_empty()
-            || lines
-                .clone()
-                .nth(end_line)
-                .unwrap()
-                .chars()
-                .all(char::is_whitespace)
-        {
-            if lines.clone().nth(end_line + 1).is_none() {
-                break;
-            }
-
-            let inner_line = lines.clone().nth(end_line + 1).unwrap();
-            let inner_trimmed_line = inner_line.trim_start();
-            inner_indent = get_line_indent(inner_line);
-
-            if inner_indent > initial_indent
-                || inner_line.is_empty()
-                || inner_line.chars().all(char::is_whitespace)
-            {
-                end_line += 1;
-                skips += 1;
-                continue;
-            }
-            break;
-        }
-        // do not skip empty line at the end
-        let prev_line = lines.clone().nth(end_line).unwrap();
-
-        if prev_line.is_empty() || prev_line.chars().all(char::is_whitespace) {
-            skips -= 1
-        }
-
-        let mut i = start_from;
-        for i in start_from..=end_line {
-            element += &(lines.clone().nth(i).unwrap().to_string() + "\n");
-        }
-        element += &("".to_string() + "\n");
-        //let save_id = curr_el_id;
-        element = self.export_json(&element, curr_el_id, true);
-        //curr_el_id = save_id;
-        (element, skips)
     }
 }

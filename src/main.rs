@@ -42,9 +42,8 @@ fn main() {
     let json_tree = json.export_json(&contents.to_string(), None, false);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
-    let mut desugarer: Desugarer = Desugarer::new(&contents.as_str(), json.id);
 
-    let mut emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
+    let emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
 
     json_desugarer = json_desugarer
         .pre_process_exercises()
@@ -90,23 +89,6 @@ fn main() {
             ],
         });
 
-    /* desugarer = desugarer
-    .pre_process_exercises()
-    .remove_empty_line_above(
-        vec!["ImageRight", "ImageLeft"],
-        Some(("attached", "false")),
-        &mut emitter,
-    )
-    .pre_process_solutions()
-    .auto_increamental_title("Example", "Example", None, None)
-    .auto_increamental_title(
-        "Exercise",
-        "Exercise",
-        Some("ExerciseQuestion"),
-        Some("Solution"),
-    ); */
-
-    //let leptos_code = emitter.transform(desugarer.json, 0);
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
     let leptos_code = emitter.emit_json(&json_value);
 
@@ -159,7 +141,6 @@ fn main() {
         }
     };
 
-    let desagurer_json_tree = serde_json::to_string_pretty(&json_desugarer.json).unwrap();
     match desagurer_json_file.write_all(json_desugarer.json.as_bytes()) {
         Ok(_) => {
             println!("Json written to des_json_output.json successfully");

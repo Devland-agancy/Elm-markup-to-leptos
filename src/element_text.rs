@@ -1,4 +1,4 @@
-use crate::parser_helpers::{BlockCell, BlockChild, BlockChildType, DelimitedCell, TextCell};
+use crate::parser_helpers::{BlockChildType, DelimitedCell, DelimitedDisplayType, TextCell};
 
 pub struct ElementText {
     pub text: String,
@@ -26,16 +26,16 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "__",
         end_symbol: "__",
-        left_replacement: "<Span italic=true align=Align::Center>",
-        right_replacement: "</Span>",
+        left_replacement: "<Span italic=true align=Align::Center>r#",
+        right_replacement: "#</Span>",
         no_break: false,
         keep_delimiter: false,
     },
     DelimeterRules {
         symbol: "_|",
         end_symbol: "|_",
-        left_replacement: "<Span align=Align::Center>",
-        right_replacement: "</Span>",
+        left_replacement: "<Span align=Align::Center>r#",
+        right_replacement: "#</Span>",
         no_break: false,
         keep_delimiter: false,
     },
@@ -205,6 +205,11 @@ impl ElementText {
                     output.push(BlockChildType::Delimited(DelimitedCell {
                         terminal: del_content.to_owned(),
                         delimeter: del.unwrap().symbol.to_string(),
+                        display_type: if del.unwrap().symbol.len() > 1 {
+                            DelimitedDisplayType::BLOCK
+                        } else {
+                            DelimitedDisplayType::INLINE
+                        },
                     }));
 
                     i += 1;

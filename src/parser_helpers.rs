@@ -114,6 +114,15 @@ pub struct TextCell {
 pub struct DelimitedCell {
     pub delimeter: String,
     pub terminal: String,
+    pub display_type: DelimitedDisplayType,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub enum DelimitedDisplayType {
+    #[default]
+    Default,
+    INLINE,
+    BLOCK,
 }
 
 pub trait Cell<T> {

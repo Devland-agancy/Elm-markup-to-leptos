@@ -38,7 +38,6 @@ impl Parser {
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
         let mut lines_to_skip: u32 = 0;
-        let mut track_line_index = 0;
         let mut text_node = String::new();
 
         for (index, line) in lines.clone().enumerate() {
@@ -101,15 +100,12 @@ impl Parser {
                     Some(0)
                 };
 
-                let last = tag_stack.last().expect(&format!(
-                    "There is no parent tag . line \n {}: {}",
-                    track_line_index, line
-                ));
+                let last = tag_stack
+                    .last()
+                    .expect(&format!("There is no parent tag . line \n {}", line));
                 if last.in_props {
                     // tag props
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);
-
-                    /* output.push_str(&format!("{}\n", line)); */
                     continue;
                 }
 
@@ -140,38 +136,32 @@ impl Parser {
                         trimmed_line.trim_end()
                     );
 
-                    let mut blocks = vec![BlockCell::new()];
+                    let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
-                    let mut del_type_is_block = false;
 
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
-                            if del_type_is_block {
-                                blocks.push(BlockCell::new());
-                                del_type_is_block = false
-                            }
+                            // if del_type_is_block {
+                            //     blocks.push(BlockCell::new());
+                            //     del_type_is_block = false
+                            // }
 
                             if text.content != "" {
-                                BlockChildType::push_cell(
-                                    blocks.last_mut().unwrap(),
-                                    child.to_owned(),
-                                );
+                                BlockChildType::push_cell(&mut block, child.to_owned());
                             }
-                        } else if let BlockChildType::Delimited(del) = &child {
-                            if del.display_type == DelimitedDisplayType::BLOCK {
-                                blocks.push(BlockCell::new());
-                                del_type_is_block = true
-                            }
+                        } else {
+                            // if del.display_type == DelimitedDisplayType::BLOCK {
+                            //     blocks.push(BlockCell::new());
+                            //     del_type_is_block = true
+                            // }
 
-                            BlockChildType::push_cell(blocks.last_mut().unwrap(), child.to_owned());
+                            BlockChildType::push_cell(&mut block, child.to_owned());
                         }
                     });
 
-                    for block in blocks {
-                        BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
-                        self.id += 1;
-                    }
+                    BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
+                    self.id += 1;
 
                     text_node = "".to_string();
                     continue;

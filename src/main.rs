@@ -10,10 +10,10 @@ use emitter::Emitter;
 use parser::Parser;
 use parser_helpers::DataCell;
 use std::env;
+use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
-use std::{fs::File, io::BufReader};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -48,6 +48,7 @@ fn main() {
     json_desugarer = json_desugarer
         .pre_process_exercises()
         .pre_process_solutions()
+        .wrap_block_delimited("InnerParagraph")
         .wrap_children(
             vec!["Section", "Solution", "Example", "Exercise"],
             "Paragraph",

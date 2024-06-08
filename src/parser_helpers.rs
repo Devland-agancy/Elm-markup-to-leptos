@@ -108,6 +108,7 @@ pub struct BlockCell {
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct TextCell {
     pub content: String,
+    pub wrapped_with: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -115,6 +116,7 @@ pub struct DelimitedCell {
     pub delimeter: String,
     pub terminal: String,
     pub display_type: DelimitedDisplayType,
+    pub wrapped_with: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
@@ -195,10 +197,10 @@ impl ElementCell {
 
     pub fn move_cell(
         tree: &mut DataCell,
-        (cell_to_move_parent, cell_to_move_id): (u32, u32),
+        (cell_to_move_parent_id, cell_to_move_id): (u32, u32),
         move_to: u32,
     ) {
-        if tree.id == cell_to_move_parent {
+        if tree.id == cell_to_move_parent_id {
             if let CellType::Element(ref mut el) = tree.cell_type {
                 // Get a mutable reference to `el`
                 let (child_to_move, remaining_children): (Vec<_>, Vec<_>) = el
@@ -218,14 +220,12 @@ impl ElementCell {
         }
 
         match &mut tree.cell_type {
-            CellType::Element(ref mut el) => el
-                .children
-                .iter_mut()
-                .for_each(|x| Self::move_cell(x, (cell_to_move_parent, cell_to_move_id), move_to)),
-            CellType::Root(ref mut el) => el
-                .children
-                .iter_mut()
-                .for_each(|x| Self::move_cell(x, (cell_to_move_parent, cell_to_move_id), move_to)),
+            CellType::Element(ref mut el) => el.children.iter_mut().for_each(|x| {
+                Self::move_cell(x, (cell_to_move_parent_id, cell_to_move_id), move_to)
+            }),
+            CellType::Root(ref mut el) => el.children.iter_mut().for_each(|x| {
+                Self::move_cell(x, (cell_to_move_parent_id, cell_to_move_id), move_to)
+            }),
             _ => (),
         }
     }

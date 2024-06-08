@@ -1,4 +1,4 @@
-use crate::parser_helpers::{BlockChildType, CellType, DataCell};
+use crate::parser_helpers::{BlockChildType, CellType, DataCell, DelimitedDisplayType};
 
 use super::element_text::ElementText;
 use super::helpers::*;
@@ -15,15 +15,11 @@ pub struct TagInfo {
 #[derive(Debug)]
 pub struct Emitter {
     pub self_closing_tags: Vec<&'static str>,
-    pub track_line_delta: isize,
 }
 
 impl Emitter {
     pub fn new(self_closing_tags: Vec<&'static str>) -> Emitter {
-        Emitter {
-            self_closing_tags,
-            track_line_delta: 0,
-        }
+        Emitter { self_closing_tags }
     }
 
     pub fn emit_json(&self, data_cell: &DataCell) -> String {
@@ -63,21 +59,25 @@ impl Emitter {
                 block.children.iter().for_each(|child| match child {
                     BlockChildType::Text(text) => {
                         text_block.push_str(&text.content);
-                        //output.push_str(&format!("\"{}\"", text.content));
                     }
                     BlockChildType::Delimited(dl) => {
+                        if let Some(wrap_with) = &dl.wrapped_with {
+                            text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
+                        }
+                        text_block.push_str(&dl.delimeter);
+                        text_block.push_str(&dl.terminal);
                         if dl.delimeter == "_|" {
-                            text_block.push_str(&format!("_|{}|_", dl.terminal));
+                            text_block.push_str("|_");
                         } else {
-                            text_block.push_str(&format!(
-                                "{}{}{}",
-                                dl.delimeter, dl.terminal, dl.delimeter
-                            ));
+                            text_block.push_str(&dl.delimeter);
+                        }
+                        if let Some(wrap_with) = &dl.wrapped_with {
+                            text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
                         }
                     }
                 });
                 let text_el = ElementText::new(&text_block);
-                output.push_str(&format!("\"{}\"", text_el.handle_delimeters()));
+                output.push_str(&format!("r#\"{}\"#", text_el.handle_delimeters()));
             }
             _ => {}
         }

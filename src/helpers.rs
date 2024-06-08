@@ -75,20 +75,20 @@ pub fn get_slice(text: &str, start: usize, end: usize) -> Option<&str> {
     Some(&text[start_pos..*iter.peek()?])
 }
 
-pub fn track_emitter_line_diff(parser: &mut Emitter, tag_name: &String) {
-    if tag_name == "Exercises" {
-        parser.track_line_delta += 1
-    }
-
-    if tag_name == "Example" {
-        parser.track_line_delta += 1
-    }
-
-    if tag_name == "Exercise" {
-        parser.track_line_delta += 3
-    }
-
-    if tag_name == "Solution" {
-        parser.track_line_delta += 1
-    }
-}
+//pub fn track_emitter_line_diff(parser: &mut Emitter, tag_name: &String) {
+//    if tag_name == "Exercises" {
+//        parser.track_line_delta += 1
+//    }
+//
+//if tag_name         == "Example" {
+//        parser.track_line_delta += 1
+//    }
+//
+//    if tag_name == "Exercise" {
+//        parser.track_line_delta += 3
+//    }
+//
+//    if tag_name == "Solution" {
+//        parser.track_line_delta += 1
+//    }
+//}

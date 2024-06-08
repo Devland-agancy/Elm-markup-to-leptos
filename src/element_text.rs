@@ -2,7 +2,6 @@ use crate::parser_helpers::{BlockChildType, DelimitedCell, DelimitedDisplayType,
 
 pub struct ElementText {
     pub text: String,
-    ignore_delimeters: Option<Vec<&'static str>>,
 }
 
 #[derive(Debug)]
@@ -13,7 +12,7 @@ struct DelimeterRules {
     right_replacement: &'static str,
     no_break: bool,
     keep_delimiter: bool,
-    ignore_nested_delimeters: [&'static str; 6],
+    ignore_nested_delimeters: bool,
 }
 
 const DELIMETERS: [DelimeterRules; 6] = [
@@ -24,7 +23,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
-        ignore_nested_delimeters: ["", "", "", "", "", ""],
+        ignore_nested_delimeters: false,
     },
     DelimeterRules {
         symbol: "__",
@@ -33,7 +32,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
-        ignore_nested_delimeters: ["", "", "", "", "", ""],
+        ignore_nested_delimeters: false,
     },
     DelimeterRules {
         symbol: "_|",
@@ -42,7 +41,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
-        ignore_nested_delimeters: ["", "", "", "", "", ""],
+        ignore_nested_delimeters: false,
     },
     DelimeterRules {
         symbol: "_",
@@ -51,7 +50,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
-        ignore_nested_delimeters: ["", "", "", "", "", ""],
+        ignore_nested_delimeters: false,
     },
     DelimeterRules {
         symbol: "$$",
@@ -60,7 +59,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</MathBlock>",
         no_break: false,
         keep_delimiter: true,
-        ignore_nested_delimeters: ["$", "_", "*", "", "", ""],
+        ignore_nested_delimeters: true,
     },
     DelimeterRules {
         symbol: "$",
@@ -69,15 +68,14 @@ const DELIMETERS: [DelimeterRules; 6] = [
         right_replacement: "</Math>",
         no_break: true,
         keep_delimiter: true,
-        ignore_nested_delimeters: ["", "", "", "", "", ""],
+        ignore_nested_delimeters: true,
     },
 ];
 
 impl ElementText {
-    pub fn new(text: &str, ignore_delimeters: Option<Vec<&'static str>>) -> ElementText {
+    pub fn new(text: &str) -> ElementText {
         ElementText {
             text: text.to_string(),
-            ignore_delimeters,
         }
     }
 
@@ -109,18 +107,18 @@ impl ElementText {
                     // closing del not found , we push the symbol as normal text and continue
 
                     output.push_str(&del.unwrap().symbol);
-                    let nested_content = ElementText::new(&del_content, None).handle_delimeters();
+                    let nested_content = ElementText::new(&del_content).handle_delimeters();
 
                     output.push_str(nested_content.as_str());
                     i = *closing_index + 1;
                     continue;
                 }
 
-                let nested_content = ElementText::new(
-                    &del_content,
-                    Some(del.unwrap().ignore_nested_delimeters.to_vec()),
-                )
-                .handle_delimeters();
+                let nested_content = if !del.unwrap().ignore_nested_delimeters {
+                    ElementText::new(&del_content).handle_delimeters()
+                } else {
+                    del_content.to_string()
+                };
 
                 if i <= self.text.len() {
                     i = closing_index + del.unwrap().end_symbol.len();
@@ -164,8 +162,7 @@ impl ElementText {
                             string.push_str(self.get_char(i).as_str());
                             i += 1;
                         }
-                        let handled_string =
-                            self::ElementText::new(&string, None).handle_delimeters();
+                        let handled_string = self::ElementText::new(&string).handle_delimeters();
                         i += 1;
                         output.push_str(&handled_string);
                         output.push_str("\"#</span>r#\"");
@@ -247,13 +244,7 @@ impl ElementText {
 
         while i <= self.text.len() {
             let _del = DELIMETERS.iter().find(|d| {
-                let mut ignore = vec![];
-                if let Some(ignore_dels) = &self.ignore_delimeters {
-                    ignore = ignore_dels.clone();
-                }
-                if i.checked_sub(d.symbol.len()).is_some()
-                    && !ignore.contains(&d.symbol.to_string().as_str())
-                {
+                if i.checked_sub(d.symbol.len()).is_some() {
                     d.symbol
                         == &self
                             .text

@@ -1,10 +1,9 @@
-use leptos::html::Data;
-
 use crate::{
+    element_text,
     emitter::Emitter,
     parser_helpers::{
-        BlockCell, BlockChildType, Cell, CellType, DataCell, DelimitedDisplayType, ElementCell,
-        Prop,
+        BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
+        ElementCell,
     },
 };
 
@@ -115,6 +114,37 @@ impl Desugarer {
             let prop_line = format!("solution_number {}", i);
 
             ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
+    }
+
+    pub fn auto_increamental_title(
+        &mut self,
+        tag_name: &str,
+        title_label: &str,
+        // wrapper: Option<&str>,
+        // wrapper_break_on: Option<&str>,
+    ) -> Desugarer {
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        let mut elements: Vec<&DataCell> = Vec::new();
+        let binding = root.clone();
+        self.find_cell(&binding, &vec![tag_name], &mut elements);
+
+        for (i, element) in elements.clone().iter().enumerate() {
+            let new_block_child = BlockChildType::Delimited(DelimitedCell {
+                delimeter: "*".to_string(),
+                terminal: title_label.to_string() + " " + (i + 1).to_string().as_str() + ". ",
+                display_type: DelimitedDisplayType::INLINE,
+                wrapped_with: None,
+            });
+
+            BlockChildType::add_block_at_first(&mut root, element.id, &new_block_child);
+
+            //BlockCell::add_cell_at_first(&mut root, element.id, self.last_id, &new_block);
         }
 
         Desugarer {
@@ -354,7 +384,8 @@ impl Desugarer {
                         if let BlockChildType::Delimited(b) = &block {
                             return b.delimeter == "$$"
                                 || b.delimeter == "__"
-                                || b.delimeter == "_|";
+                                || b.delimeter == "_|"
+                                || b.delimeter == "*";
                         }
                     }
                 }
@@ -411,6 +442,31 @@ impl Desugarer {
             }
         }
         false
+    }
+
+    pub fn add_attribute(&mut self, tag_names: Vec<&str>, attribute: (&str, &str)) -> Desugarer {
+        // elements are what we want to wrap it's children with wrap_with
+
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        let mut _elements: Vec<&DataCell> = Vec::new();
+        let binding = root.clone();
+        self.find_cell(&binding, &tag_names, &mut _elements);
+
+        for (_, element) in _elements.iter().enumerate() {
+            //let prop_line = format!("solution_number {}", i);
+            if let CellType::Element(_) = &element.cell_type {
+                ElementCell::add_attribute(
+                    &mut root,
+                    element.parent_id,
+                    &format!("{} {}", attribute.0, attribute.1),
+                )
+            }
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
     }
 
     // /*    pub fn pre_process_exercises(&mut self) -> Desugarer {

@@ -318,6 +318,34 @@ impl BlockCell {
             children: Vec::new(),
         }
     }
+
+    fn insert_cell(parent: &mut DataCell, id: u32, block: &BlockCell) {
+        match parent.cell_type {
+            CellType::Element(ref mut el) => {
+                el.children.insert(0, Self::init_cell(id, parent.id, block))
+            }
+            _ => (),
+        }
+    }
+
+    pub fn add_cell_at_first(add_to: &mut DataCell, parent_id: u32, id: u32, block: &BlockCell) {
+        if add_to.id == parent_id {
+            Self::insert_cell(add_to, id, block);
+            return;
+        }
+
+        match &mut add_to.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_cell_at_first(x, parent_id, id, block)),
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_cell_at_first(x, parent_id, id, block)),
+            _ => (),
+        }
+    }
 }
 
 impl Cell<&BlockCell> for BlockCell {
@@ -360,12 +388,42 @@ impl Cell<&BlockCell> for BlockCell {
 
 pub trait BlockChild<T> {
     fn push_cell(parent: &mut BlockCell, s: T);
-    //fn add_cell(add_to: &mut BlockCell, parent_id: u32, id: u32, text: &str);
+    fn insert_block(parent: &mut DataCell, s: T);
+    fn add_block_at_first(add_to: &mut DataCell, parent_id: u32, block: &T);
 }
 
 impl BlockChild<BlockChildType> for BlockChildType {
     fn push_cell(parent: &mut BlockCell, block: BlockChildType) {
         parent.children.push(block)
+    }
+
+    fn insert_block(parent: &mut DataCell, block_child: BlockChildType) {
+        if let CellType::Element(el) = &mut parent.cell_type {
+            println!("el {}", el.children.first_mut().unwrap().id);
+
+            if let CellType::Block(block) = &mut el.children.first_mut().unwrap().cell_type {
+                block.children.insert(0, block_child);
+            }
+        }
+    }
+
+    fn add_block_at_first(add_to: &mut DataCell, block_id: u32, block_child: &BlockChildType) {
+        if add_to.id == block_id {
+            Self::insert_block(add_to, block_child.to_owned());
+            return;
+        }
+
+        match &mut add_to.cell_type {
+            CellType::Element(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_block_at_first(x, block_id, block_child)),
+            CellType::Root(ref mut el) => el
+                .children
+                .iter_mut()
+                .for_each(|x| Self::add_block_at_first(x, block_id, block_child)),
+            _ => (),
+        }
     }
 }
 

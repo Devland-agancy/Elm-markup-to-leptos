@@ -832,7 +832,12 @@
           "parent_id": 14,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 31,
@@ -853,6 +858,13 @@
                       "parent_id": 958,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 1. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "A line that passes through the points",
@@ -3761,7 +3773,12 @@
           "parent_id": 145,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 161,
@@ -3782,6 +3799,13 @@
                       "parent_id": 1040,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 2. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "The equation",
@@ -5043,7 +5067,12 @@
           "parent_id": 179,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 203,
@@ -5064,6 +5093,13 @@
                       "parent_id": 1068,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 3. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "The increase in height of the above balloon over a period of 5 seconds is",
@@ -5194,7 +5230,12 @@
           "parent_id": 179,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 209,
@@ -5215,6 +5256,13 @@
                       "parent_id": 1073,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 4. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "The amount of time required for the balloon to go up by (say) ",
@@ -5763,6 +5811,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 1. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "True or false: Lines of slope ",
                       "wrapped_with": null
@@ -5800,7 +5855,12 @@
               "parent_id": 232,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 234,
@@ -6241,6 +6301,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 2. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Find the general equation of a line of slope ",
                       "wrapped_with": null
@@ -6278,7 +6345,12 @@
               "parent_id": 248,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 250,
@@ -7175,6 +7247,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 3. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Plot the vertical velocity of an object a mosquito whose height over time is given by this graph (use the same time interval as the graph):",
                       "wrapped_with": null
@@ -7218,7 +7297,12 @@
               "parent_id": 280,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 283,
@@ -7751,6 +7835,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 4. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Digressing on the second-to-last equation in the solution to Exercise 2, explain why",
                       "wrapped_with": null
@@ -7844,7 +7935,12 @@
               "parent_id": 299,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 303,
@@ -9708,7 +9804,12 @@
           "parent_id": 357,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 363,
@@ -9729,6 +9830,13 @@
                       "parent_id": 1210,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 5. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "If VX-11/78A (don't mind the weird name, chosen at random) is the function defined by",
@@ -9955,35 +10063,26 @@
           "attributes": [],
           "children": [
             {
-              "id": 1711,
+              "id": 373,
               "parent_id": 1218,
-              "type": "~element~",
-              "tag": "Indent",
-              "attributes": [],
+              "type": "~block~",
               "children": [
                 {
-                  "id": 373,
-                  "parent_id": 1218,
-                  "type": "~block~",
-                  "children": [
-                    {
-                      "type": "~text~",
-                      "content": "In fact, there are only two “ground rules” to respect in order for something to qualify as a function: ",
-                      "wrapped_with": null
-                    },
-                    {
-                      "type": "~delimited~",
-                      "delimeter": "*",
-                      "terminal": "(i)",
-                      "display_type": "INLINE",
-                      "wrapped_with": null
-                    },
-                    {
-                      "type": "~text~",
-                      "content": " to output    ",
-                      "wrapped_with": null
-                    }
-                  ]
+                  "type": "~text~",
+                  "content": "In fact, there are only two “ground rules” to respect in order for something to qualify as a function: ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "delimeter": "*",
+                  "terminal": "(i)",
+                  "display_type": "INLINE",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": " to output    ",
+                  "wrapped_with": null
                 }
               ]
             }
@@ -10258,7 +10357,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1712,
+              "id": 1711,
               "parent_id": 1228,
               "type": "~element~",
               "tag": "Indent",
@@ -10486,7 +10585,12 @@
           "parent_id": 380,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 391,
@@ -10507,6 +10611,13 @@
                       "parent_id": 1236,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 6. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "Here is a graph of ",
@@ -10845,7 +10956,12 @@
           "parent_id": 398,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 402,
@@ -10866,6 +10982,13 @@
                       "parent_id": 1248,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 7. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "We have",
@@ -10964,7 +11087,12 @@
           "parent_id": 398,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 406,
@@ -10985,6 +11113,13 @@
                       "parent_id": 1251,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 8. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "If DM-1700 (another weirdly named function) is defined by",
@@ -11115,7 +11250,12 @@
           "parent_id": 398,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 412,
@@ -11136,6 +11276,13 @@
                       "parent_id": 1256,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 9. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "If ",
@@ -11302,7 +11449,12 @@
           "parent_id": 398,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 418,
@@ -11323,6 +11475,13 @@
                       "parent_id": 1261,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 10. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "If ",
@@ -11717,7 +11876,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1713,
+              "id": 1712,
               "parent_id": 1275,
               "type": "~element~",
               "tag": "Indent",
@@ -12008,7 +12167,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1714,
+              "id": 1713,
               "parent_id": 1285,
               "type": "~element~",
               "tag": "Indent",
@@ -12130,7 +12289,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1715,
+              "id": 1714,
               "parent_id": 1288,
               "type": "~element~",
               "tag": "Indent",
@@ -12259,7 +12418,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1716,
+              "id": 1715,
               "parent_id": 1293,
               "type": "~element~",
               "tag": "Indent",
@@ -12345,7 +12504,12 @@
           "parent_id": 441,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 457,
@@ -12366,6 +12530,13 @@
                       "parent_id": 1298,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 11. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "This ",
@@ -12439,7 +12610,12 @@
           "parent_id": 441,
           "type": "~element~",
           "tag": "Paragraph",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "no_padding",
+              "value": "true"
+            }
+          ],
           "children": [
             {
               "id": 461,
@@ -12460,6 +12636,13 @@
                       "parent_id": 1301,
                       "type": "~block~",
                       "children": [
+                        {
+                          "type": "~delimited~",
+                          "delimeter": "*",
+                          "terminal": "Example 12. ",
+                          "display_type": "INLINE",
+                          "wrapped_with": null
+                        },
                         {
                           "type": "~text~",
                           "content": "This graph defines a function...",
@@ -12628,23 +12811,14 @@
           "attributes": [],
           "children": [
             {
-              "id": 1717,
+              "id": 469,
               "parent_id": 1307,
-              "type": "~element~",
-              "tag": "Indent",
-              "attributes": [],
+              "type": "~block~",
               "children": [
                 {
-                  "id": 469,
-                  "parent_id": 1307,
-                  "type": "~block~",
-                  "children": [
-                    {
-                      "type": "~text~",
-                      "content": "For a famous example of a “naturally” occurring discontinuity (that we feel compelled to mention, for some reason) we need look no further than the function    ",
-                      "wrapped_with": null
-                    }
-                  ]
+                  "type": "~text~",
+                  "content": "For a famous example of a “naturally” occurring discontinuity (that we feel compelled to mention, for some reason) we need look no further than the function    ",
+                  "wrapped_with": null
                 }
               ]
             }
@@ -13578,7 +13752,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1718,
+              "id": 1716,
               "parent_id": 1342,
               "type": "~element~",
               "tag": "Indent",
@@ -13700,7 +13874,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1719,
+              "id": 1717,
               "parent_id": 1345,
               "type": "~element~",
               "tag": "Indent",
@@ -14535,7 +14709,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1720,
+              "id": 1718,
               "parent_id": 1376,
               "type": "~element~",
               "tag": "Indent",
@@ -14657,7 +14831,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1721,
+              "id": 1719,
               "parent_id": 1379,
               "type": "~element~",
               "tag": "Indent",
@@ -14824,7 +14998,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1722,
+              "id": 1720,
               "parent_id": 1385,
               "type": "~element~",
               "tag": "Indent",
@@ -14946,7 +15120,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1723,
+              "id": 1721,
               "parent_id": 1388,
               "type": "~element~",
               "tag": "Indent",
@@ -15241,7 +15415,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1724,
+              "id": 1722,
               "parent_id": 1396,
               "type": "~element~",
               "tag": "Indent",
@@ -15403,7 +15577,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1725,
+              "id": 1723,
               "parent_id": 1403,
               "type": "~element~",
               "tag": "Indent",
@@ -15845,7 +16019,7 @@
           "attributes": [],
           "children": [
             {
-              "id": 1726,
+              "id": 1724,
               "parent_id": 1416,
               "type": "~element~",
               "tag": "Indent",
@@ -16075,6 +16249,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 5. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "How can you define the absolute value function using “definition by cases”?    ",
                       "wrapped_with": null
@@ -16088,7 +16269,12 @@
               "parent_id": 594,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 596,
@@ -16217,6 +16403,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 6. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "How can you define the absolute value function using an “ordinary” algebraic formula?    ",
                       "wrapped_with": null
@@ -16230,7 +16423,12 @@
               "parent_id": 600,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 602,
@@ -16404,6 +16602,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 7. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Evaluate:",
                       "wrapped_with": null
@@ -16568,7 +16773,12 @@
               "parent_id": 608,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 615,
@@ -16780,6 +16990,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 8. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "The ",
                       "wrapped_with": null
@@ -16912,7 +17129,7 @@
               "attributes": [],
               "children": [
                 {
-                  "id": 1727,
+                  "id": 1725,
                   "parent_id": 1441,
                   "type": "~element~",
                   "tag": "Indent",
@@ -16954,7 +17171,7 @@
               "attributes": [],
               "children": [
                 {
-                  "id": 1728,
+                  "id": 1726,
                   "parent_id": 1442,
                   "type": "~element~",
                   "tag": "Indent",
@@ -17015,7 +17232,12 @@
               "parent_id": 622,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 629,
@@ -17221,7 +17443,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1729,
+                          "id": 1727,
                           "parent_id": 1448,
                           "type": "~element~",
                           "tag": "Indent",
@@ -17408,6 +17630,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 9. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Find the formula for a function whose graph looks like this, again using the floor function ‘",
                       "wrapped_with": null
@@ -17455,7 +17684,12 @@
               "parent_id": 636,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 639,
@@ -18102,7 +18336,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1730,
+                          "id": 1728,
                           "parent_id": 1472,
                           "type": "~element~",
                           "tag": "Indent",
@@ -18591,6 +18825,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 10. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Find formulas for functions whose graphs look like these:",
                       "wrapped_with": null
@@ -18626,7 +18867,12 @@
               "parent_id": 667,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 670,
@@ -18686,7 +18932,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1731,
+                          "id": 1729,
                           "parent_id": 1486,
                           "type": "~element~",
                           "tag": "Indent",
@@ -18752,7 +18998,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1732,
+                          "id": 1730,
                           "parent_id": 1487,
                           "type": "~element~",
                           "tag": "Indent",
@@ -18806,7 +19052,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1733,
+                          "id": 1731,
                           "parent_id": 1488,
                           "type": "~element~",
                           "tag": "Indent",
@@ -19114,6 +19360,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 11. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "If ",
                       "wrapped_with": null
@@ -19218,7 +19471,12 @@
               "parent_id": 684,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 688,
@@ -19507,6 +19765,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 12. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Rewrite",
                       "wrapped_with": null
@@ -19704,7 +19969,12 @@
               "parent_id": 696,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 702,
@@ -19957,6 +20227,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 13. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Same question as Exercise 17, but for “",
                       "wrapped_with": null
@@ -19994,7 +20271,12 @@
               "parent_id": 709,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 711,
@@ -21224,7 +21506,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1734,
+                          "id": 1732,
                           "parent_id": 1547,
                           "type": "~element~",
                           "tag": "Indent",
@@ -21432,7 +21714,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1735,
+                          "id": 1733,
                           "parent_id": 1549,
                           "type": "~element~",
                           "tag": "Indent",
@@ -21552,7 +21834,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1736,
+                          "id": 1734,
                           "parent_id": 1550,
                           "type": "~element~",
                           "tag": "Indent",
@@ -21921,7 +22203,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1737,
+                          "id": 1735,
                           "parent_id": 1561,
                           "type": "~element~",
                           "tag": "Indent",
@@ -22172,7 +22454,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1738,
+                          "id": 1736,
                           "parent_id": 1569,
                           "type": "~element~",
                           "tag": "Indent",
@@ -22219,6 +22501,13 @@
                   "parent_id": 1570,
                   "type": "~block~",
                   "children": [
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 14. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
                     {
                       "type": "~text~",
                       "content": "Show that ",
@@ -22281,7 +22570,12 @@
               "parent_id": 783,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 785,
@@ -22390,6 +22684,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 15. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Solve Exercise 10 using algebra ",
                       "wrapped_with": null
@@ -22415,7 +22716,12 @@
               "parent_id": 787,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 789,
@@ -22776,6 +23082,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 16. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Show that ",
                       "wrapped_with": null
@@ -22825,7 +23138,12 @@
               "parent_id": 791,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 793,
@@ -22910,6 +23228,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 17. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Show that ",
                       "wrapped_with": null
@@ -22947,7 +23272,12 @@
               "parent_id": 795,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 797,
@@ -23092,6 +23422,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 18. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "What sequence of geometric transformations (rotations, translations, scalings, etc) maps the curve ",
                       "wrapped_with": null
@@ -23165,7 +23502,12 @@
               "parent_id": 799,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 801,
@@ -23604,7 +23946,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1739,
+                          "id": 1737,
                           "parent_id": 1591,
                           "type": "~element~",
                           "tag": "Indent",
@@ -23958,7 +24300,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1740,
+                          "id": 1738,
                           "parent_id": 1598,
                           "type": "~element~",
                           "tag": "Indent",
@@ -24261,6 +24603,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 19. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Let ",
                       "wrapped_with": null
@@ -24439,7 +24788,7 @@
               "attributes": [],
               "children": [
                 {
-                  "id": 1741,
+                  "id": 1739,
                   "parent_id": 1604,
                   "type": "~element~",
                   "tag": "Indent",
@@ -24514,7 +24863,12 @@
               "parent_id": 823,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 830,
@@ -24919,6 +25273,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 20. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Use the results of the previous two exercises to find the value(s) of ",
                       "wrapped_with": null
@@ -24992,7 +25353,12 @@
               "parent_id": 840,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 842,
@@ -25239,7 +25605,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1742,
+                          "id": 1740,
                           "parent_id": 1618,
                           "type": "~element~",
                           "tag": "Indent",
@@ -25293,7 +25659,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1743,
+                          "id": 1741,
                           "parent_id": 1619,
                           "type": "~element~",
                           "tag": "Indent",
@@ -25461,7 +25827,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1744,
+                          "id": 1742,
                           "parent_id": 1621,
                           "type": "~element~",
                           "tag": "Indent",
@@ -25677,6 +26043,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 21. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "True or false (",
                       "wrapped_with": null
@@ -25871,7 +26244,12 @@
               "parent_id": 851,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 864,
@@ -25979,6 +26357,13 @@
                   "parent_id": 1626,
                   "type": "~block~",
                   "children": [
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 22. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
                     {
                       "type": "~text~",
                       "content": "If ",
@@ -26212,102 +26597,93 @@
               "attributes": [],
               "children": [
                 {
-                  "id": 1745,
+                  "id": 868,
                   "parent_id": 1627,
-                  "type": "~element~",
-                  "tag": "Indent",
-                  "attributes": [],
+                  "type": "~block~",
                   "children": [
                     {
-                      "id": 868,
-                      "parent_id": 1627,
-                      "type": "~block~",
-                      "children": [
-                        {
-                          "type": "~text~",
-                          "content": "Given these definitions, which of the following equalities hold, in general for all functions ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$",
-                          "terminal": "f",
-                          "display_type": "INLINE",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~text~",
-                          "content": ", ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$",
-                          "terminal": "g",
-                          "display_type": "INLINE",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~text~",
-                          "content": " and ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$",
-                          "terminal": "h",
-                          "display_type": "INLINE",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~text~",
-                          "content": "? ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$$",
-                          "terminal": "f \\circ (g + h) = (x \\ra f(g(x)) + f(h(x)))",
-                          "display_type": "BLOCK",
-                          "wrapped_with": "InnerParagraph"
-                        },
-                        {
-                          "type": "~text~",
-                          "content": " ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$$",
-                          "terminal": "f \\circ (g + h) = (x \\ra f(g(x) + h(x)))",
-                          "display_type": "BLOCK",
-                          "wrapped_with": "InnerParagraph"
-                        },
-                        {
-                          "type": "~text~",
-                          "content": " ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$$",
-                          "terminal": "(g + h) \\circ f = (x \\ra h(f(x)) + g(f(x)))",
-                          "display_type": "BLOCK",
-                          "wrapped_with": "InnerParagraph"
-                        },
-                        {
-                          "type": "~text~",
-                          "content": " ",
-                          "wrapped_with": null
-                        },
-                        {
-                          "type": "~delimited~",
-                          "delimeter": "$$",
-                          "terminal": "(g + h) \\circ f = (x \\ra (g + h)(f(x)))",
-                          "display_type": "BLOCK",
-                          "wrapped_with": "InnerParagraph"
-                        }
-                      ]
+                      "type": "~text~",
+                      "content": "Given these definitions, which of the following equalities hold, in general for all functions ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$",
+                      "terminal": "f",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~text~",
+                      "content": ", ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$",
+                      "terminal": "g",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~text~",
+                      "content": " and ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$",
+                      "terminal": "h",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~text~",
+                      "content": "? ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$$",
+                      "terminal": "f \\circ (g + h) = (x \\ra f(g(x)) + f(h(x)))",
+                      "display_type": "BLOCK",
+                      "wrapped_with": "InnerParagraph"
+                    },
+                    {
+                      "type": "~text~",
+                      "content": " ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$$",
+                      "terminal": "f \\circ (g + h) = (x \\ra f(g(x) + h(x)))",
+                      "display_type": "BLOCK",
+                      "wrapped_with": "InnerParagraph"
+                    },
+                    {
+                      "type": "~text~",
+                      "content": " ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$$",
+                      "terminal": "(g + h) \\circ f = (x \\ra h(f(x)) + g(f(x)))",
+                      "display_type": "BLOCK",
+                      "wrapped_with": "InnerParagraph"
+                    },
+                    {
+                      "type": "~text~",
+                      "content": " ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "$$",
+                      "terminal": "(g + h) \\circ f = (x \\ra (g + h)(f(x)))",
+                      "display_type": "BLOCK",
+                      "wrapped_with": "InnerParagraph"
                     }
                   ]
                 }
@@ -26318,7 +26694,12 @@
               "parent_id": 866,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 869,
@@ -26451,6 +26832,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 23. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "What sequence of geometric transformations of length no more than 3 maps ",
                       "wrapped_with": null
@@ -26536,7 +26924,12 @@
               "parent_id": 871,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 873,
@@ -26675,7 +27068,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1746,
+                          "id": 1743,
                           "parent_id": 1633,
                           "type": "~element~",
                           "tag": "Indent",
@@ -26807,7 +27200,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1747,
+                          "id": 1744,
                           "parent_id": 1635,
                           "type": "~element~",
                           "tag": "Indent",
@@ -26939,7 +27332,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1748,
+                          "id": 1745,
                           "parent_id": 1637,
                           "type": "~element~",
                           "tag": "Indent",
@@ -26986,6 +27379,13 @@
                   "parent_id": 1638,
                   "type": "~block~",
                   "children": [
+                    {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 24. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
                     {
                       "type": "~text~",
                       "content": "What are the roots (i.e., solutions) ",
@@ -27072,7 +27472,12 @@
               "parent_id": 886,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 888,
@@ -27301,7 +27706,7 @@
                       "attributes": [],
                       "children": [
                         {
-                          "id": 1749,
+                          "id": 1746,
                           "parent_id": 1644,
                           "type": "~element~",
                           "tag": "Indent",
@@ -27614,6 +28019,13 @@
                   "type": "~block~",
                   "children": [
                     {
+                      "type": "~delimited~",
+                      "delimeter": "*",
+                      "terminal": "Exercise 25. ",
+                      "display_type": "INLINE",
+                      "wrapped_with": null
+                    },
+                    {
                       "type": "~text~",
                       "content": "Summon your senses of extrapolation ",
                       "wrapped_with": null
@@ -27651,7 +28063,12 @@
               "parent_id": 899,
               "type": "~element~",
               "tag": "Paragraph",
-              "attributes": [],
+              "attributes": [
+                {
+                  "key": "no_padding",
+                  "value": "true"
+                }
+              ],
               "children": [
                 {
                   "id": 901,

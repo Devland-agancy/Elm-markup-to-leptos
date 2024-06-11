@@ -399,8 +399,6 @@ impl BlockChild<BlockChildType> for BlockChildType {
 
     fn insert_block(parent: &mut DataCell, block_child: BlockChildType) {
         if let CellType::Element(el) = &mut parent.cell_type {
-            println!("el {}", el.children.first_mut().unwrap().id);
-
             if let CellType::Block(block) = &mut el.children.first_mut().unwrap().cell_type {
                 block.children.insert(0, block_child);
             }

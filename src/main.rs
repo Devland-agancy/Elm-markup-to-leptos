@@ -67,6 +67,10 @@ fn main() {
                     element: "ImageLeft",
                     attach_to: AttachToEnum::BEFORE,
                 },
+                IgnoreOptions {
+                    element: "del",
+                    attach_to: AttachToEnum::BOTH,
+                },
             ]),
         )
         .wrap_children(vec!["Grid"], "Span", &None)

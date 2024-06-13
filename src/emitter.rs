@@ -56,26 +56,71 @@ impl Emitter {
             }
             CellType::Block(block) => {
                 let mut text_block = String::new();
-                block.children.iter().for_each(|child| match child {
-                    BlockChildType::Text(text) => {
-                        text_block.push_str(&text.content);
-                    }
-                    BlockChildType::Delimited(dl) => {
-                        if let Some(wrap_with) = &dl.wrapped_with {
-                            text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
+                let mut sub_text_block = String::new();
+
+                block
+                    .children
+                    .iter()
+                    .enumerate()
+                    .for_each(|(i, child)| match child {
+                        BlockChildType::Text(text) => {
+                            // let mut prev_child = None;
+                            // if i > 0 {
+                            //     prev_child = block.children.iter().nth(i - 1);
+                            // }
+
+                            // let mut prev_is_block = false;
+                            // if let Some(prev_child) = prev_child {
+                            //     if let BlockChildType::Delimited(dl) = prev_child {
+                            //         prev_is_block = dl.display_type == DelimitedDisplayType::BLOCK
+                            //     }
+                            // }
+                            // if prev_is_block {
+                            //     text_block.push_str(&format!("\"#<{}>r#\"", "p"));
+                            // }
+                            if !text.content.trim().is_empty() {
+                                sub_text_block.push_str(&format!("\"#<{}>r#\"", "span"));
+                                sub_text_block.push_str(&text.content);
+                                sub_text_block.push_str(&format!("\"#</{}>r#\"", "span"));
+                            } else {
+                                sub_text_block.push_str(&text.content);
+                            }
+                            // if prev_is_block {
+                            //     text_block.push_str(&format!("\"#</{}>r#\"", "p"));
+                            // }
                         }
-                        text_block.push_str(&dl.delimeter);
-                        text_block.push_str(&dl.terminal);
-                        if dl.delimeter == "_|" {
-                            text_block.push_str("|_");
-                        } else {
-                            text_block.push_str(&dl.delimeter);
+                        BlockChildType::Delimited(dl) => {
+                            if let Some(wrap_with) = &dl.wrapped_with {
+                                if !sub_text_block.trim().is_empty() {
+                                    text_block
+                                        .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
+                                    text_block.push_str(&sub_text_block);
+                                    text_block.push_str(&format!("\"#</{}>r#\"", "span"));
+                                }
+
+                                sub_text_block = "".to_string();
+                                text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
+                                text_block.push_str(&dl.delimeter);
+                                text_block.push_str(&dl.terminal);
+                                if dl.delimeter == "_|" {
+                                    text_block.push_str("|_");
+                                } else {
+                                    text_block.push_str(&dl.delimeter);
+                                }
+                                text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
+                            } else {
+                                sub_text_block.push_str(&dl.delimeter);
+                                sub_text_block.push_str(&dl.terminal);
+                                sub_text_block.push_str(&dl.delimeter);
+                            }
                         }
-                        if let Some(wrap_with) = &dl.wrapped_with {
-                            text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
-                        }
-                    }
-                });
+                    });
+                if !sub_text_block.trim().is_empty() {
+                    text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
+                    text_block.push_str(&sub_text_block);
+                    text_block.push_str(&format!("\"#</{}>r#\"", "span"));
+                }
+
                 let text_el = ElementText::new(&text_block);
                 output.push_str(&format!("r#\"{}\"#", text_el.handle_delimeters()));
             }

@@ -66,7 +66,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         end_symbol: "$",
         left_replacement: "<Math>",
         right_replacement: "</Math>",
-        no_break: true,
+        no_break: false,
         keep_delimiter: true,
         ignore_nested_delimeters: true,
     },

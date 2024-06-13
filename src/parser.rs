@@ -51,6 +51,8 @@ impl Parser {
 
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
+                //println!("line {}", line);
+                //println!("line {:#?}", tag_stack.last());
                 tag_stack_pop(&mut tag_stack, &indent);
 
                 curr_el_id = if let Some(last) = tag_stack.last() {
@@ -80,8 +82,6 @@ impl Parser {
                 .last()
                 .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
             {
-                /* output.push_str(">\n\"\" ") ; */
-
                 if let Some(last) = tag_stack.last_mut() {
                     last.in_props = false;
                 }
@@ -109,16 +109,6 @@ impl Parser {
                     continue;
                 }
 
-                // tag content
-                /*let mut inner_lines_to_skip: u32 = 0;
-
-                check_indent_size(indent as isize, track_line_index + j as isize);
-                check_extra_spaces(
-                    indent,
-                    tag_stack.last().unwrap().indent,
-                    track_line_index + j as isize,
-                ); */
-
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()
                     || (next_line.is_some() && next_line.unwrap().trim().is_empty());
@@ -142,20 +132,10 @@ impl Parser {
 
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
-                            // if del_type_is_block {
-                            //     blocks.push(BlockCell::new());
-                            //     del_type_is_block = false
-                            // }
-
                             if text.content != "" {
                                 BlockChildType::push_cell(&mut block, child.to_owned());
                             }
                         } else {
-                            // if del.display_type == DelimitedDisplayType::BLOCK {
-                            //     blocks.push(BlockCell::new());
-                            //     del_type_is_block = true
-                            // }
-
                             BlockChildType::push_cell(&mut block, child.to_owned());
                         }
                     });
@@ -166,7 +146,8 @@ impl Parser {
                     text_node = "".to_string();
                     continue;
                 }
-
+                //println!("line {}", line);
+                //println!("text_node {:#?}", text_node);
                 text_node = format!(
                     "{}{}{}",
                     text_node,

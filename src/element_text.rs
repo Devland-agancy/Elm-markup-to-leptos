@@ -219,7 +219,8 @@ impl ElementText {
 
                     output.push(BlockChildType::Delimited(DelimitedCell {
                         terminal: del_content.to_owned(),
-                        delimeter: del.unwrap().symbol.to_string(),
+                        open_delimeter: del.unwrap().symbol.to_string(),
+                        close_delimeter: del.unwrap().end_symbol.to_string(),
                         display_type: if del.unwrap().symbol.len() > 1 {
                             DelimitedDisplayType::BLOCK
                         } else {

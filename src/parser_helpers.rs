@@ -113,7 +113,8 @@ pub struct TextCell {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DelimitedCell {
-    pub delimeter: String,
+    pub open_delimeter: String,
+    pub close_delimeter: String,
     pub terminal: String,
     pub display_type: DelimitedDisplayType,
     pub wrapped_with: Option<String>,

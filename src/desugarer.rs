@@ -136,7 +136,8 @@ impl Desugarer {
 
         for (i, element) in elements.clone().iter().enumerate() {
             let new_block_child = BlockChildType::Delimited(DelimitedCell {
-                delimeter: "*".to_string(),
+                open_delimeter: "*".to_string(),
+                close_delimeter: "*".to_string(),
                 terminal: title_label.to_string() + " " + (i + 1).to_string().as_str() + ". ",
                 display_type: DelimitedDisplayType::INLINE,
                 wrapped_with: None,
@@ -382,10 +383,10 @@ impl Desugarer {
                 if let CellType::Block(block) = &block.cell_type {
                     if let Some(block) = block.children.first() {
                         if let BlockChildType::Delimited(b) = &block {
-                            return b.delimeter == "$$"
-                                || b.delimeter == "__"
-                                || b.delimeter == "_|"
-                                || b.delimeter == "*";
+                            return b.open_delimeter == "$$"
+                                || b.open_delimeter == "__"
+                                || b.open_delimeter == "_|"
+                                || b.open_delimeter == "*";
                         }
                     }
                 }

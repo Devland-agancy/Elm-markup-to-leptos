@@ -64,20 +64,6 @@ impl Emitter {
                     .enumerate()
                     .for_each(|(i, child)| match child {
                         BlockChildType::Text(text) => {
-                            // let mut prev_child = None;
-                            // if i > 0 {
-                            //     prev_child = block.children.iter().nth(i - 1);
-                            // }
-
-                            // let mut prev_is_block = false;
-                            // if let Some(prev_child) = prev_child {
-                            //     if let BlockChildType::Delimited(dl) = prev_child {
-                            //         prev_is_block = dl.display_type == DelimitedDisplayType::BLOCK
-                            //     }
-                            // }
-                            // if prev_is_block {
-                            //     text_block.push_str(&format!("\"#<{}>r#\"", "p"));
-                            // }
                             if !text.content.trim().is_empty() {
                                 sub_text_block.push_str(&format!("\"#<{}>r#\"", "span"));
                                 sub_text_block.push_str(&text.content);
@@ -85,9 +71,6 @@ impl Emitter {
                             } else {
                                 sub_text_block.push_str(&text.content);
                             }
-                            // if prev_is_block {
-                            //     text_block.push_str(&format!("\"#</{}>r#\"", "p"));
-                            // }
                         }
                         BlockChildType::Delimited(dl) => {
                             if let Some(wrap_with) = &dl.wrapped_with {
@@ -100,18 +83,15 @@ impl Emitter {
 
                                 sub_text_block = "".to_string();
                                 text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
-                                text_block.push_str(&dl.delimeter);
+                                text_block.push_str(&dl.open_delimeter);
                                 text_block.push_str(&dl.terminal);
-                                if dl.delimeter == "_|" {
-                                    text_block.push_str("|_");
-                                } else {
-                                    text_block.push_str(&dl.delimeter);
-                                }
+
+                                text_block.push_str(&dl.close_delimeter);
                                 text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
                             } else {
-                                sub_text_block.push_str(&dl.delimeter);
+                                sub_text_block.push_str(&dl.open_delimeter);
                                 sub_text_block.push_str(&dl.terminal);
-                                sub_text_block.push_str(&dl.delimeter);
+                                sub_text_block.push_str(&dl.close_delimeter);
                             }
                         }
                     });

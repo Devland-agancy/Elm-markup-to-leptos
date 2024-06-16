@@ -1,3 +1,5 @@
+use regex::Regex;
+
 use crate::parser_helpers::{BlockChildType, CellType, DataCell, DelimitedDisplayType};
 
 use super::element_text::ElementText;
@@ -102,12 +104,12 @@ impl Emitter {
                 }
 
                 let text_el = ElementText::new(&text_block);
-                output.push_str(&format!("r#\"{}\"#", text_el.handle_delimeters()));
+                output.push_str(&format!("r#\"{}\"#", text_el.handle_delimeters()))
             }
             _ => {}
         }
 
-        output
+        output.replace("r#\"\"#", "")
     }
 
     fn handle_prop_line(line: &str) -> String {

@@ -85,7 +85,7 @@ impl ElementText {
         let mut output = String::new();
 
         while i <= self.text.len() {
-            let (del, skips, text) = &self.find_next_delimeter(i);
+            let (del, skips, text) = &self.find_next_delimeter(i, false);
 
             if text == " " {
                 //output += "r#\" \"#"
@@ -101,7 +101,7 @@ impl ElementText {
 
             if i <= self.text.len() {
                 let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap());
+                    &self.find_closing_delimeter(i, &del.unwrap(), false);
 
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
@@ -182,7 +182,7 @@ impl ElementText {
         let mut output = Vec::<BlockChildType>::new();
 
         while i <= self.text.len() {
-            let (del, skips, text) = &self.find_next_delimeter(i);
+            let (del, skips, text) = &self.find_next_delimeter(i, true);
 
             output.push(BlockChildType::Text(TextCell {
                 content: text.to_string(),
@@ -196,7 +196,7 @@ impl ElementText {
 
             if i <= self.text.len() {
                 let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap());
+                    &self.find_closing_delimeter(i, &del.unwrap(), true);
 
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
@@ -211,6 +211,7 @@ impl ElementText {
                         _ => (),
                     }
                     i = *closing_index + 1;
+
                     continue;
                 }
 
@@ -233,10 +234,15 @@ impl ElementText {
                 }
             }
         }
+
         output
     }
 
-    fn find_next_delimeter(&self, mut i: usize) -> (Option<&DelimeterRules>, usize, String) {
+    fn find_next_delimeter(
+        &self,
+        mut i: usize,
+        keep_escape_char: bool,
+    ) -> (Option<&DelimeterRules>, usize, String) {
         let mut found_symbol = "";
         let mut del: Option<&DelimeterRules> = None;
         let mut text = "".to_string();
@@ -282,11 +288,15 @@ impl ElementText {
                         text.pop();
                         nth = text.chars().nth(i);
                     }
-                    // pop the "\"
-                    text.pop();
+
+                    if !keep_escape_char {
+                        // pop the "\"
+                        text.pop();
+                    }
 
                     text.push_str(found_symbol); // push again without "\"
                     i += 1;
+
                     continue;
                 }
                 break;
@@ -304,6 +314,7 @@ impl ElementText {
         &self,
         mut i: usize,
         found_del: &DelimeterRules,
+        keep_escape_char: bool,
     ) -> (bool, usize, String) {
         let end_symbol = found_del.end_symbol;
         let mut found = false;
@@ -346,6 +357,9 @@ impl ElementText {
             }
             found = true;
             if self.is_escaped(i) {
+                if keep_escape_char {
+                    del_content.push_str("\\");
+                }
                 del_content.push_str(end_symbol);
                 found = false;
                 i += end_symbol.len();

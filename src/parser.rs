@@ -102,7 +102,7 @@ impl Parser {
 
                 let last = tag_stack
                     .last()
-                    .expect(&format!("There is no parent tag . line \n {}", line));
+                    .expect(&format!("There is no parent tag . at line \n {:?}", line));
                 if last.in_props {
                     // tag props
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);

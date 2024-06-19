@@ -332,6 +332,7 @@ impl Desugarer {
             if Self::tags_before_non_indents(element.id, &parent, &options) {
                 continue;
             }
+
             self.last_id += 1;
             ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
             ElementCell::move_children(&mut root, element.id, self.last_id);
@@ -381,11 +382,21 @@ impl Desugarer {
         if let CellType::Element(element) = &element.cell_type {
             if let Some(block) = element.children.first() {
                 if let CellType::Block(block) = &block.cell_type {
-                    if let Some(block) = block.children.first() {
+                    let first_child_is_block = block.children.first().is_some_and(|first| {
+                        if let BlockChildType::Delimited(b) = first {
+                            return b.display_type == DelimitedDisplayType::BLOCK;
+                        } else {
+                            false
+                        }
+                    });
+
+                    if block.children.len() > 1 && !first_child_is_block {
+                        return false;
+                    }
+
+                    if let Some(block) = block.children.last() {
                         if let BlockChildType::Delimited(b) = &block {
-                            return b.open_delimeter == "$$"
-                                || b.open_delimeter == "__"
-                                || b.open_delimeter == "_|"
+                            return b.display_type == DelimitedDisplayType::BLOCK
                                 || b.open_delimeter == "*";
                         }
                     }

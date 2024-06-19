@@ -57,7 +57,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         end_symbol: "$$",
         left_replacement: "<MathBlock>",
         right_replacement: "</MathBlock>",
-        no_break: false,
+        no_break: true,
         keep_delimiter: true,
         ignore_nested_delimeters: true,
     },
@@ -66,7 +66,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
         end_symbol: "$",
         left_replacement: "<Math>",
         right_replacement: "</Math>",
-        no_break: false,
+        no_break: true,
         keep_delimiter: true,
         ignore_nested_delimeters: true,
     },
@@ -87,11 +87,7 @@ impl ElementText {
         while i <= self.text.len() {
             let (del, skips, text) = &self.find_next_delimeter(i, false);
 
-            if text == " " {
-                //output += "r#\" \"#"
-            } else {
-                output += text;
-            }
+            output.push_str(text);
 
             if del.is_none() {
                 break;
@@ -160,6 +156,10 @@ impl ElementText {
                             && self.get_char(i) != ""
                         {
                             string.push_str(self.get_char(i).as_str());
+                            i += 1;
+                        }
+                        if self.get_char(i) == " " {
+                            string.push_str(" ");
                             i += 1;
                         }
                         let handled_string = self::ElementText::new(&string).handle_delimeters();

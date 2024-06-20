@@ -7,7 +7,7 @@
       "id": 1,
       "parent_id": 0,
       "type": "~element~",
-      "tag": "Section",
+      "tag": "Solution",
       "attributes": [],
       "children": [
         {
@@ -17,46 +17,39 @@
           "children": [
             {
               "type": "~text~",
-              "content": "and thus describes a line of",
+              "content": "and read",
               "wrapped_with": null
-            },
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "parent_id": 1,
+          "type": "~block~",
+          "children": [
             {
               "type": "~delimited~",
-              "open_delimeter": "$",
-              "close_delimeter": "$",
-              "terminal": "y",
-              "display_type": "INLINE",
+              "open_delimeter": "__",
+              "close_delimeter": "__",
+              "terminal": "“$f$ of $\\hlfbk{}g$”",
+              "display_type": "BLOCK",
               "wrapped_with": null
             },
             {
               "type": "~text~",
-              "content": "-intercept ",
+              "content": "    ",
               "wrapped_with": null
-            },
-            {
-              "type": "~delimited~",
-              "open_delimeter": "$",
-              "close_delimeter": "$",
-              "terminal": "3",
-              "display_type": "INLINE",
-              "wrapped_with": null
-            },
-            {
-              "type": "~text~",
-              "content": " and slope",
-              "wrapped_with": null
-            },
-            {
-              "type": "~delimited~",
-              "open_delimeter": "$",
-              "close_delimeter": "$",
-              "terminal": "-1",
-              "display_type": "INLINE",
-              "wrapped_with": null
-            },
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "parent_id": 1,
+          "type": "~block~",
+          "children": [
             {
               "type": "~text~",
-              "content": ".",
+              "content": "(mathematicians have to invent a notation for",
               "wrapped_with": null
             }
           ]

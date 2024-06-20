@@ -7,11 +7,16 @@
       "id": 1,
       "parent_id": 0,
       "type": "~element~",
-      "tag": "Section",
-      "attributes": [],
+      "tag": "Solution",
+      "attributes": [
+        {
+          "key": "solution_number",
+          "value": "0"
+        }
+      ],
       "children": [
         {
-          "id": 4,
+          "id": 6,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Paragraph",
@@ -19,51 +24,62 @@
           "children": [
             {
               "id": 2,
-              "parent_id": 4,
+              "parent_id": 6,
               "type": "~block~",
               "children": [
                 {
                   "type": "~text~",
-                  "content": "and thus describes a line of",
+                  "content": "and read",
                   "wrapped_with": null
-                },
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Paragraph",
+          "attributes": [],
+          "children": [
+            {
+              "id": 3,
+              "parent_id": 7,
+              "type": "~block~",
+              "children": [
                 {
                   "type": "~delimited~",
-                  "open_delimeter": "$",
-                  "close_delimeter": "$",
-                  "terminal": "y",
-                  "display_type": "INLINE",
+                  "open_delimeter": "__",
+                  "close_delimeter": "__",
+                  "terminal": "“$f$ of $\\hlfbk{}g$”",
+                  "display_type": "BLOCK",
                   "wrapped_with": null
                 },
                 {
                   "type": "~text~",
-                  "content": "-intercept ",
+                  "content": "    ",
                   "wrapped_with": null
-                },
-                {
-                  "type": "~delimited~",
-                  "open_delimeter": "$",
-                  "close_delimeter": "$",
-                  "terminal": "3",
-                  "display_type": "INLINE",
-                  "wrapped_with": null
-                },
-                {
-                  "type": "~text~",
-                  "content": " and slope",
-                  "wrapped_with": null
-                },
-                {
-                  "type": "~delimited~",
-                  "open_delimeter": "$",
-                  "close_delimeter": "$",
-                  "terminal": "-1",
-                  "display_type": "INLINE",
-                  "wrapped_with": null
-                },
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Paragraph",
+          "attributes": [],
+          "children": [
+            {
+              "id": 4,
+              "parent_id": 8,
+              "type": "~block~",
+              "children": [
                 {
                   "type": "~text~",
-                  "content": ".",
+                  "content": "(mathematicians have to invent a notation for",
                   "wrapped_with": null
                 }
               ]

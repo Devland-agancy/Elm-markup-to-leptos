@@ -127,7 +127,14 @@ impl ElementText {
                         && char_after_closing_del != ""
                         && del.unwrap().no_break
                     {
-                        output.push_str("\"#<span class=\"nobreak\">");
+                        // remove prev chars until we hit a space
+                        let mut removed = String::new();
+                        while output.len() > 0 && output.chars().last().unwrap() != ' ' {
+                            removed += output.pop().unwrap().to_string().as_str();
+                        }
+                        output.push_str("\"#<span class=\"nobreak\">r#\"");
+                        output.push_str(removed.as_str());
+                        output.push_str("\"#");
                     } else {
                         output.push_str("\"#");
                     }

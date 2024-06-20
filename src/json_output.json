@@ -17,7 +17,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": "and thus describes a line of ",
+              "content": "and thus describes a line of",
               "wrapped_with": null
             },
             {
@@ -43,7 +43,7 @@
             },
             {
               "type": "~text~",
-              "content": " and slope ",
+              "content": " and slope",
               "wrapped_with": null
             },
             {

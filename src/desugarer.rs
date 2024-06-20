@@ -321,7 +321,7 @@ impl Desugarer {
                 continue;
             }
             // $$, __,  |_ paragraphs
-            if Self::is_delimited(element) {
+            if Self::is_delimited(element, true) {
                 continue;
             }
             // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
@@ -378,7 +378,7 @@ impl Desugarer {
         false
     }
 
-    pub fn is_delimited(element: &DataCell) -> bool {
+    pub fn is_delimited(element: &DataCell, first_should_be_block: bool) -> bool {
         if let CellType::Element(element) = &element.cell_type {
             if let Some(block) = element.children.first() {
                 if let CellType::Block(block) = &block.cell_type {
@@ -390,11 +390,15 @@ impl Desugarer {
                         }
                     });
 
-                    if block.children.len() > 1 && !first_child_is_block {
+                    if block.children.len() > 1 && !first_child_is_block && !first_should_be_block {
                         return false;
                     }
 
-                    if let Some(block) = block.children.last() {
+                    if block.children.len() > 1 && first_child_is_block && first_should_be_block {
+                        return true;
+                    }
+
+                    if let Some(block) = block.children.first() {
                         if let BlockChildType::Delimited(b) = &block {
                             return b.display_type == DelimitedDisplayType::BLOCK
                                 || b.open_delimeter == "*";
@@ -416,7 +420,7 @@ impl Desugarer {
                     }
                     prev_el = Some(&child)
                 }
-                if prev_el.is_some_and(|p| Self::is_delimited(p)) {
+                if prev_el.is_some_and(|p| Self::is_delimited(p, false)) {
                     return true;
                 }
             }

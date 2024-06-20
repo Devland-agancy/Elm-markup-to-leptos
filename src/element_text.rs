@@ -130,7 +130,8 @@ impl ElementText {
                         // remove prev chars until we hit a space
                         let mut removed = String::new();
                         while output.len() > 0 && output.chars().last().unwrap() != ' ' {
-                            removed += output.pop().unwrap().to_string().as_str();
+                            // replace first char of removed
+                            removed = format!("{}{}", output.pop().unwrap(), removed);
                         }
                         output.push_str("\"#<span class=\"nobreak\">r#\"");
                         output.push_str(removed.as_str());

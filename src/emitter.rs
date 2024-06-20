@@ -78,7 +78,7 @@ impl Emitter {
                                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                                 }
                                 sub_text_block = "".to_string();
-                                text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
+                                //text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
 
                                 sub_text_block.push_str(&dl.open_delimeter);
                                 sub_text_block.push_str(&dl.terminal);
@@ -86,7 +86,15 @@ impl Emitter {
 
                                 let text_el = ElementText::new(sub_text_block.as_str());
                                 text_block.push_str(&text_el.handle_delimeters());
-                                text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
+                                //text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
+                                sub_text_block = "".to_string();
+                            } else if dl.display_type == DelimitedDisplayType::BLOCK {
+                                sub_text_block = "".to_string();
+                                sub_text_block.push_str(&dl.open_delimeter);
+                                sub_text_block.push_str(&dl.terminal);
+                                sub_text_block.push_str(&dl.close_delimeter);
+                                let text_el = ElementText::new(sub_text_block.as_str());
+                                text_block.push_str(&text_el.handle_delimeters());
                                 sub_text_block = "".to_string();
                             } else {
                                 sub_text_block.push_str(&dl.open_delimeter);

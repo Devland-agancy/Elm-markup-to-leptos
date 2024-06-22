@@ -208,7 +208,7 @@ impl Desugarer {
                                 // move to next wrapper
                                 include_prev_child = true
                             }
-                            _ => {
+                            AttachToEnum::BOTH => {
                                 // this and next block should be in previous added wrapper
                                 if idx == 0 {
                                     self.last_id += 1;

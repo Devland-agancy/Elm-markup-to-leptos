@@ -114,10 +114,20 @@ impl Parser {
                     || (next_line.is_some() && next_line.unwrap().trim().is_empty());
                 let next_line_is_element =
                     next_line.is_some() && next_line.unwrap().trim_start().starts_with("|> ");
+                let next_line_indent = if let Some(next_line) = next_line {
+                    Some(get_line_indent(next_line))
+                } else {
+                    None
+                };
+
+                let end_of_attached_element =
+                    next_line_indent.is_some_and(|ne| ne > 0 && ne < indent);
+
                 // break if next line is empty
                 if next_line_empty
                     || next_line_is_element
                     || indent < tag_stack.last().unwrap().indent
+                    || end_of_attached_element
                 {
                     text_node = format!(
                         "{}{}{}",
@@ -125,7 +135,9 @@ impl Parser {
                         if text_node == "" { "" } else { " " },
                         trimmed_line.trim_end()
                     );
-
+                    if end_of_attached_element {
+                        println!("line {:#?} {}", next_line_indent, indent);
+                    }
                     let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
@@ -142,12 +154,10 @@ impl Parser {
 
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
                     self.id += 1;
-
                     text_node = "".to_string();
                     continue;
                 }
-                //println!("line {}", line);
-                //println!("text_node {:#?}", text_node);
+
                 text_node = format!(
                     "{}{}{}",
                     text_node,

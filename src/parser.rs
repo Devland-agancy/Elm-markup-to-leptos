@@ -130,14 +130,13 @@ impl Parser {
                     || end_of_attached_element
                 {
                     text_node = format!(
-                        "{}{}{}",
+                        "{}{}{}{}",
                         text_node,
                         if text_node == "" { "" } else { " " },
-                        trimmed_line.trim_end()
+                        trimmed_line.trim_end(),
+                        if end_of_attached_element { " " } else { "" }
                     );
-                    if end_of_attached_element {
-                        println!("line {:#?} {}", next_line_indent, indent);
-                    }
+
                     let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();

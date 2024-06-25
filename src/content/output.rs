@@ -1,24 +1,18 @@
 
     view! {
-        <Section>
+        <Solution solution_number=0>
             <Paragraph>
-                <span class="text">r#"Notation-wise, one writes"#</span>
-            </Paragraph>
-            <Paragraph>
-                <MathBlock>r#"$$ {f(x)} $$"#</MathBlock>
+                <span class="text">r#"view functions as"#</span>
                 <del>
-                    <span class="text">r#"hi"#</span>
+                    <span class="text">r#"long"#</span>
                 </del>
+                <Space>""</Space>
                 <del>
-                    <span class="text">r#"hi"#</span>
+                    <span class="text">r#"lists of"#</span>
                 </del>
-                <span class="text">
-                    r#"(which is read “"# <Math>r#"$f$"#</Math> r#" of "# <span class="nobreak">
-                        <Math>r#"$x$"#</Math>
-                        r#"”,   "#
-                    </span> r#"and that's        "#
-                </span>
+                <Space>""</Space>
+                <span class="text">r#"lists of"#</span>
             </Paragraph>
-        </Section>
+        </Solution>
     }
     

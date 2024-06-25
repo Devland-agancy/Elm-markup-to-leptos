@@ -71,6 +71,10 @@ fn main() {
                     element: "del",
                     attach_to: AttachToEnum::BOTH,
                 },
+                IgnoreOptions {
+                    element: "Space",
+                    attach_to: AttachToEnum::BEFORE,
+                },
             ]),
         )
         .wrap_children(vec!["Grid"], "Span", &None)

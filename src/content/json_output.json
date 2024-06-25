@@ -17,7 +17,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": "and read",
+              "content": "view functions as",
               "wrapped_with": null
             }
           ]
@@ -25,31 +25,69 @@
         {
           "id": 3,
           "parent_id": 1,
-          "type": "~block~",
+          "type": "~element~",
+          "tag": "del",
+          "attributes": [],
           "children": [
             {
-              "type": "~delimited~",
-              "open_delimeter": "__",
-              "close_delimeter": "__",
-              "terminal": "“$f$ of $\\hlfbk{}g$”",
-              "display_type": "BLOCK",
-              "wrapped_with": null
-            },
-            {
-              "type": "~text~",
-              "content": "    ",
-              "wrapped_with": null
+              "id": 4,
+              "parent_id": 3,
+              "type": "~block~",
+              "children": [
+                {
+                  "type": "~text~",
+                  "content": "long",
+                  "wrapped_with": null
+                }
+              ]
             }
           ]
         },
         {
-          "id": 4,
+          "id": 5,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Space",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "id": 6,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "del",
+          "attributes": [],
+          "children": [
+            {
+              "id": 7,
+              "parent_id": 6,
+              "type": "~block~",
+              "children": [
+                {
+                  "type": "~text~",
+                  "content": "lists of",
+                  "wrapped_with": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Space",
+          "attributes": [],
+          "children": []
+        },
+        {
+          "id": 9,
           "parent_id": 1,
           "type": "~block~",
           "children": [
             {
               "type": "~text~",
-              "content": "(mathematicians have to invent a notation for",
+              "content": "lists of",
               "wrapped_with": null
             }
           ]

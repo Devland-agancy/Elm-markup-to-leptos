@@ -130,11 +130,10 @@ impl Parser {
                     || end_of_attached_element
                 {
                     text_node = format!(
-                        "{}{}{}{}",
+                        "{}{}{}",
                         text_node,
                         if text_node == "" { "" } else { " " },
                         trimmed_line.trim_end(),
-                        if end_of_attached_element { " " } else { "" }
                     );
 
                     let mut block = BlockCell::new();
@@ -153,6 +152,23 @@ impl Parser {
 
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
                     self.id += 1;
+
+                    if end_of_attached_element && tag_stack.len() > 1 {
+                        let parent_id =
+                            if let Some(before_last) = tag_stack.get(tag_stack.len() - 2) {
+                                Some(before_last.id)
+                            } else {
+                                None
+                            };
+                        ElementCell::add_cell(
+                            &mut self.result,
+                            parent_id.unwrap(),
+                            self.id,
+                            "Space",
+                        );
+                        self.id += 1;
+                    }
+
                     text_node = "".to_string();
                     continue;
                 }

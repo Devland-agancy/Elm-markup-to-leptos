@@ -47,7 +47,7 @@ fn main() {
 
     json_desugarer = json_desugarer
         .pre_process_exercises()
-        .pre_process_solutions()
+        .add_increamental_attr(vec![("Solution", "solution_number"), ("Grid", "id")])
         .auto_increamental_title("Exercise", "Exercise")
         .auto_increamental_title("Example", "Example")
         .wrap_block_delimited("InnerParagraph")

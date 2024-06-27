@@ -104,16 +104,30 @@ impl Desugarer {
         }
     }
 
-    pub fn pre_process_solutions(&mut self) -> Desugarer {
+    pub fn add_increamental_attr(&mut self, tags_attributes: Vec<(&str, &str)>) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut solutions: Vec<&DataCell> = Vec::new();
+        let mut elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, &vec!["Solution"], &mut solutions);
+        let tag_names: Vec<&str> = tags_attributes.iter().map(|x| x.0).collect();
+        let attribute_names: Vec<&str> = tags_attributes.iter().map(|x| x.1).collect();
+        self.find_cell(&binding, &tag_names, &mut elements);
 
-        for (i, solution_cell) in solutions.iter().enumerate() {
-            let prop_line = format!("solution_number {}", i);
+        let mut counters = vec![0; tag_names.len()];
 
-            ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
+        for solution_cell in elements.iter() {
+            //get element position in tag_names
+            if let CellType::Element(el) = &solution_cell.cell_type {
+                let (tag_index, _) = tag_names
+                    .iter()
+                    .enumerate()
+                    .find(|x| x.1 == &el.name)
+                    .unwrap();
+
+                let prop_line = format!("{} {}", attribute_names[tag_index], counters[tag_index]);
+                counters[tag_index] += 1;
+
+                ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
+            }
         }
 
         Desugarer {
@@ -484,5 +498,4 @@ impl Desugarer {
             last_id: self.last_id,
         }
     }
-
 }

@@ -26,7 +26,7 @@
           "id": 3,
           "parent_id": 1,
           "type": "~element~",
-          "tag": "del",
+          "tag": "Grid",
           "attributes": [],
           "children": [
             {
@@ -55,7 +55,7 @@
           "id": 6,
           "parent_id": 1,
           "type": "~element~",
-          "tag": "del",
+          "tag": "Grid",
           "attributes": [],
           "children": [
             {

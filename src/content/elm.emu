@@ -1,10 +1,10 @@
 |> Solution
 
     view functions as
-    |> del
+    |> Grid
 
         long
-    |> del
+    |> Grid
 
         lists of  
     lists of  

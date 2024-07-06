@@ -40,20 +40,22 @@ pub fn get_line_indent(line: &str) -> usize {
     line.len() - line.trim_start().len()
 }
 
-pub fn check_indent_size(size: isize, error_at: isize) {
+pub fn check_indent_size(size: isize, line: &str) {
     if size % 4 != 0 {
         panic!(
-            "Syntax error at line {}, There must be 4 spaces before each block",
-            error_at + 1
+            "Syntax error: \\n
+            There must be 4*x spaces before line {}",
+            line
         )
     }
 }
 
-pub fn check_extra_spaces(indent: usize, parent_indent: usize, error_at: isize) {
+pub fn check_extra_spaces(indent: usize, parent_indent: usize, line: &str) {
     if indent > parent_indent + 4 {
         panic!(
-            "Syntax error at line {}, There are extra spaces",
-            error_at + 1
+            "Syntax error: \\n
+            There are extra spaces at line {}",
+            line
         )
     }
 }

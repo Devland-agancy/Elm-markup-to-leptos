@@ -49,6 +49,11 @@ impl Parser {
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line);
 
+            check_indent_size(indent as isize, line);
+            if let Some(last) = tag_stack.last() {
+                check_extra_spaces(indent, last.indent, line);
+            }
+
             if trimmed_line.starts_with("|> ") {
                 let tag_name = trimmed_line[3..].trim();
                 //println!("line {}", line);

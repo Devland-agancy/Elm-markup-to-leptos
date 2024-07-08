@@ -498,4 +498,33 @@ impl Desugarer {
             last_id: self.last_id,
         }
     }
+
+    pub fn auto_convert_to_float(&mut self, attrs: Vec<&str>) -> Desugarer {
+        fn convert_recusive(root: &mut DataCell, attrs: &Vec<&str>) {
+            match &mut root.cell_type {
+                CellType::Element(el) => {
+                    el.props.iter_mut().for_each(|prop| {
+                        if attrs.contains(&prop.key.as_str()) && !prop.value.contains('.') {
+                            prop.value = format!("{}.0", prop.value);
+                        }
+                    });
+                    el.children
+                        .iter_mut()
+                        .for_each(|child| convert_recusive(child, attrs))
+                }
+                CellType::Root(el) => el
+                    .children
+                    .iter_mut()
+                    .for_each(|child| convert_recusive(child, attrs)),
+                _ => (),
+            }
+        }
+
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        convert_recusive(&mut root, &attrs);
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
+    }
 }

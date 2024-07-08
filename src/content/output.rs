@@ -1,6 +1,6 @@
 
     view! {
-        <Solution solution_number=0>
+        <Solution line=2.0 solution_number=0>
             <Paragraph>
                 <span class="text">r#"view functions as"#</span>
             </Paragraph>
@@ -9,8 +9,10 @@
                     <Span>
                         <span class="text">r#"long"#</span>
                     </Span>
+                    <Span>
+                        <yoyo line=99.0>""</yoyo>
+                    </Span>
                 </Grid>
-                <Space>""</Space>
             </Paragraph>
             <Paragraph>
                 <Grid id=1>

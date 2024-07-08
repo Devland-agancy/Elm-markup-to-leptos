@@ -8,7 +8,12 @@
       "parent_id": 0,
       "type": "~element~",
       "tag": "Solution",
-      "attributes": [],
+      "attributes": [
+        {
+          "key": "line",
+          "value": "2.0"
+        }
+      ],
       "children": [
         {
           "id": 2,
@@ -40,16 +45,21 @@
                   "wrapped_with": null
                 }
               ]
+            },
+            {
+              "id": 5,
+              "parent_id": 3,
+              "type": "~element~",
+              "tag": "yoyo",
+              "attributes": [
+                {
+                  "key": "line",
+                  "value": "99"
+                }
+              ],
+              "children": []
             }
           ]
-        },
-        {
-          "id": 5,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Space",
-          "attributes": [],
-          "children": []
         },
         {
           "id": 6,

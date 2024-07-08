@@ -1,9 +1,13 @@
 |> Solution
+    line 2.0
 
     view functions as
     |> Grid
 
         long
+
+        |> yoyo
+            line 99
     |> Grid
 
         lists of  

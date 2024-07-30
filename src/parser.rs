@@ -29,6 +29,47 @@ impl Parser {
         json.clone()
     }
 
+    fn handle_tag_line(
+        &mut self,
+        trimmed_line: &str,
+        mut curr_el_id: Option<u32>,
+        mut is_nested: &bool,
+        tag_stack: &mut Vec<TagInfo>,
+        indent: usize,
+    ) {
+        let tag_name = trimmed_line[3..].trim();
+        //println!("line {}", line);
+        //println!("line {:#?}", tag_stack.last());
+        tag_stack_pop(tag_stack, &indent);
+
+        curr_el_id = if let Some(last) = tag_stack.last() {
+            Some(last.id)
+        } else if *is_nested {
+            is_nested = &false;
+            curr_el_id
+        } else {
+            Some(0)
+        };
+
+        ElementCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, tag_name);
+
+        tag_stack.push(TagInfo {
+            id: self.id,
+            name: tag_name.to_string(),
+            indent,
+            is_self_closing: false,
+            in_props: true,
+        });
+        self.id += 1;
+    }
+
+    fn props_end(&mut self, trimmed_line: &str, tag_stack: &Vec<TagInfo>) -> bool {
+        trimmed_line.is_empty() // end of props
+        && tag_stack
+            .last()
+            .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
+    }
+
     pub fn export_json(
         &mut self,
         elm: &String,
@@ -55,38 +96,10 @@ impl Parser {
             }
 
             if trimmed_line.starts_with("|> ") {
-                let tag_name = trimmed_line[3..].trim();
-                //println!("line {}", line);
-                //println!("line {:#?}", tag_stack.last());
-                tag_stack_pop(&mut tag_stack, &indent);
-
-                curr_el_id = if let Some(last) = tag_stack.last() {
-                    Some(last.id)
-                } else if is_nested {
-                    is_nested = false;
-                    curr_el_id
-                } else {
-                    Some(0)
-                };
-
-                ElementCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, tag_name);
-
-                tag_stack.push(TagInfo {
-                    id: self.id,
-                    name: tag_name.to_string(),
-                    indent,
-                    is_self_closing: false,
-                    in_props: true,
-                });
-                self.id += 1;
-
+                self.handle_tag_line(trimmed_line, curr_el_id, &is_nested, &mut tag_stack, indent);
                 continue;
             }
-            if trimmed_line.is_empty() // end of props
-            && tag_stack
-                .last()
-                .map_or(false, |tag| tag.in_props && !tag.is_self_closing)
-            {
+            if self.props_end(trimmed_line, &tag_stack) {
                 if let Some(last) = tag_stack.last_mut() {
                     last.in_props = false;
                 }

@@ -181,7 +181,7 @@ impl Desugarer {
         let binding = root.clone();
         self.find_cell(&binding, &elements, &mut _elements);
 
-        for (i, element) in _elements.iter().enumerate() {
+        for (_, element) in _elements.iter().enumerate() {
             //let prop_line = format!("solution_number {}", i);
             if let CellType::Element(el) = &element.cell_type {
                 let mut include_prev_child = false;

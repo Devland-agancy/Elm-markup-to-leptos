@@ -1,3 +1,4 @@
+pub mod counter;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;

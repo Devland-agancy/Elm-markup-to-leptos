@@ -6,6 +6,7 @@ pub mod parser;
 pub mod parser_helpers;
 
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
+use elm_parser::counter::counters::Counters;
 use emitter::Emitter;
 use parser::Parser;
 use parser_helpers::DataCell;
@@ -38,7 +39,8 @@ fn main() {
         Ok(_) => (),
     }
 
-    let mut json = Parser::new();
+    let mut counters = Counters::new();
+    let mut json = Parser::new(&mut counters);
     let json_tree = json.export_json(&contents.to_string(), None, false);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
@@ -99,7 +101,8 @@ fn main() {
                 "Exercise",
             ],
         })
-        .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"));
+        .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
+        .auto_convert_to_float(vec!["line"]);
 
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
     let leptos_code = emitter.emit_json(&json_value);

@@ -1,27 +1,31 @@
 use std::str::Lines;
 use std::vec;
 
+use crate::counter::counter_instance::CounterInstance;
+use crate::counter::counter_types::CounterType;
+use crate::counter::counters::Counters;
+
 use super::element_text::ElementText;
 use super::helpers::*;
 use super::parser_helpers::*;
 
 #[derive(Debug)]
 pub struct Parser {
-    track_line_delta: usize,
     result: DataCell,
     pub id: u32,
+    pub counters: &'static mut Counters,
 }
 
 impl Parser {
-    pub fn new() -> Parser {
+    pub fn new(counters: &'static mut Counters) -> Parser {
         Self {
-            track_line_delta: 0,
             result: DataCell {
                 parent_id: 0,
                 id: 0,
                 cell_type: CellType::Root(Root { children: vec![] }),
             },
             id: 1,
+            counters,
         }
     }
 
@@ -123,9 +127,20 @@ impl Parser {
                     .expect(&format!("There is no parent tag . at line \n {:?}", line));
                 if last.in_props {
                     // tag props
+                    if let Some(prop_line) = trimmed_line.split_once(" ") {
+                        if CounterType::is_valid(prop_line.0) {
+                            // create new counter
+                            self.counters
+                                .add_counter(CounterInstance::new(prop_line.1, prop_line.0))
+                        }
+                    }
+
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);
                     continue;
                 }
+
+                // counter
+                //handle_counters();
 
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()

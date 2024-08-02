@@ -10,14 +10,14 @@ use super::helpers::*;
 use super::parser_helpers::*;
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct Parser<'a> {
     result: DataCell,
     pub id: u32,
-    pub counters: &'static mut Counters,
+    pub counters: &'a mut Counters,
 }
 
-impl Parser {
-    pub fn new(counters: &'static mut Counters) -> Parser {
+impl<'a> Parser<'a> {
+    pub fn new(counters: &'a mut Counters) -> Self {
         Self {
             result: DataCell {
                 parent_id: 0,

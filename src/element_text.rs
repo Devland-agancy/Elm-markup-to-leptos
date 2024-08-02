@@ -19,7 +19,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "*",
         end_symbol: "*",
-        left_replacement: "<Span bold=true>",
+        left_replacement: "<Span bold={true}>",
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
@@ -28,7 +28,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "__",
         end_symbol: "__",
-        left_replacement: "<Span italic=true align=Align::Center>",
+        left_replacement: "<Span italic={true} class=\"text-center\">",
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
@@ -37,7 +37,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "_|",
         end_symbol: "|_",
-        left_replacement: "<Span align=Align::Center>",
+        left_replacement: "<Span class=\"text-center\">",
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
@@ -46,7 +46,7 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "_",
         end_symbol: "_",
-        left_replacement: "<Span italic=true>",
+        left_replacement: "<Span italic={true}>",
         right_replacement: "</Span>",
         no_break: false,
         keep_delimiter: false,
@@ -55,8 +55,8 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "$$",
         end_symbol: "$$",
-        left_replacement: "<MathBlock>",
-        right_replacement: "</MathBlock>",
+        left_replacement: "<MathBlock>{`",
+        right_replacement: "`}</MathBlock>",
         no_break: true,
         keep_delimiter: true,
         ignore_nested_delimeters: true,
@@ -64,8 +64,8 @@ const DELIMETERS: [DelimeterRules; 6] = [
     DelimeterRules {
         symbol: "$",
         end_symbol: "$",
-        left_replacement: "<Math>",
-        right_replacement: "</Math>",
+        left_replacement: "<Math>{`",
+        right_replacement: "`}</Math>",
         no_break: true,
         keep_delimiter: true,
         ignore_nested_delimeters: true,
@@ -133,14 +133,11 @@ impl ElementText {
                             // replace first char of removed
                             removed = format!("{}{}", output.pop().unwrap(), removed);
                         }
-                        output.push_str("\"#<span class=\"nobreak\">r#\"");
+                        output.push_str("<span class=\"nobreak\">");
                         output.push_str(removed.as_str());
-                        output.push_str("\"#");
-                    } else {
-                        output.push_str("\"#");
                     }
+
                     output.push_str(del.unwrap().left_replacement);
-                    output.push_str("r#\"");
 
                     if del.unwrap().keep_delimiter {
                         output.push_str(&del.unwrap().symbol);
@@ -151,13 +148,11 @@ impl ElementText {
                     if del.unwrap().keep_delimiter {
                         output.push_str(&del.unwrap().end_symbol);
                     }
-                    output.push_str("\"#");
                     output.push_str(del.unwrap().right_replacement);
                     if del.unwrap().no_break
                         && char_after_closing_del != " "
                         && char_after_closing_del != ""
                     {
-                        output.push_str("r#\"");
                         let mut string = "".to_string();
                         while i < self.text.len()
                             && self.get_char(i) != " "
@@ -173,9 +168,8 @@ impl ElementText {
                         let handled_string = self::ElementText::new(&string).handle_delimeters();
                         i += 1;
                         output.push_str(&handled_string);
-                        output.push_str("\"#</span>r#\"");
+                        output.push_str("</span>");
                     } else {
-                        output.push_str("r#\"");
                         i += 1;
                     }
                 }

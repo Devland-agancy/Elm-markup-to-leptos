@@ -50,9 +50,7 @@ impl Emitter {
                     el.children.iter().for_each(|child| {
                         output.push_str(&self.emit_json(child));
                     });
-                    if el.children.is_empty() {
-                        output.push_str("\"\"");
-                    }
+
                     output.push_str(&format!("</{}>", el.name));
                 }
             }
@@ -69,16 +67,14 @@ impl Emitter {
                             sub_text_block.push_str(&text.content);
                         }
                         BlockChildType::Delimited(dl) => {
-                            if let Some(wrap_with) = &dl.wrapped_with {
+                            if let Some(_) = &dl.wrapped_with {
                                 if !sub_text_block.trim().is_empty() {
-                                    text_block
-                                        .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
+                                    text_block.push_str(&format!("<{} class=\"text\">", "span"));
                                     let text_el = ElementText::new(sub_text_block.as_str());
                                     text_block.push_str(&text_el.handle_delimeters());
-                                    text_block.push_str(&format!("\"#</{}>r#\"", "span"));
+                                    text_block.push_str(&format!("</{}>", "span"));
                                 }
                                 sub_text_block = "".to_string();
-                                //text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
 
                                 sub_text_block.push_str(&dl.open_delimeter);
                                 sub_text_block.push_str(&dl.terminal);
@@ -104,18 +100,18 @@ impl Emitter {
                         }
                     });
                 if !sub_text_block.trim().is_empty() {
-                    text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
+                    text_block.push_str(&format!("<{} class=\"text\">", "span"));
                     let text_el = ElementText::new(sub_text_block.as_str());
                     text_block.push_str(&text_el.handle_delimeters());
-                    text_block.push_str(&format!("\"#</{}>r#\"", "span"));
+                    text_block.push_str(&format!("</{}>", "span"));
                 }
 
-                output.push_str(&format!("r#\"{}\"#", text_block))
+                output.push_str(&format!("{}", text_block))
             }
             _ => {}
         }
 
-        output.replace("r#\"\"#", "")
+        output.replace("\"#", "")
     }
 
     fn handle_prop_line(line: &str) -> String {
@@ -133,7 +129,7 @@ impl Emitter {
                     _ => format!(" {}=\"{}\"", prop_key.trim(), prop_value.trim()),
                 }
             } else {
-                prop_line = format!(" {}={}", prop_key.trim(), prop_value.trim())
+                prop_line = format!(" {}={{{}}}", prop_key.trim(), prop_value.trim())
             }
         }
         prop_line

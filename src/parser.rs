@@ -131,8 +131,11 @@ impl<'a> Parser<'a> {
                     if let Some(prop_line) = trimmed_line.split_once(" ") {
                         if CounterType::is_valid(prop_line.0) {
                             // create new counter
-                            self.counters
-                                .add_counter(CounterInstance::new(prop_line.1, prop_line.0))
+                            self.counters.add_counter(CounterInstance::new(
+                                prop_line.1,
+                                prop_line.0,
+                                indent / 4,
+                            ))
                         }
                     }
 

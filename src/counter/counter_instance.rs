@@ -5,6 +5,7 @@ pub struct CounterInstance {
     pub counter_type: CounterType,
     pub name: String,
     pub current_value: CounterValueType,
+    pub scope: usize,
 }
 
 // pub trait AssignType<T>  {
@@ -12,11 +13,12 @@ pub struct CounterInstance {
 // }
 
 impl CounterInstance {
-    pub fn new(name: &str, _type: &str) -> Self {
+    pub fn new(name: &str, _type: &str, scope: usize) -> Self {
         Self {
             name: name.to_string(),
             counter_type: CounterType::from_str(_type).unwrap(),
             current_value: CounterValueType::from_str(_type),
+            scope,
         }
     }
 

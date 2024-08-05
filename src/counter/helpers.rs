@@ -1,13 +1,24 @@
 use super::{counter_instance::CounterInstance, counters::Counters};
 use regex::Regex;
 
-pub fn replace_counter_in_line(mut line: &str, counters: &mut Counters) -> String {
+pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
     // create regex to match this string ""::::CounterName"
     let insert_regex = Regex::new(r"(::|\+\+|--)::\w+").unwrap();
 
     let mut new_line = String::from(line);
 
     let _ = insert_regex.replace_all(line, |caps: &regex::Captures| {
+        let mut counter_names = Vec::new();
+        for counter in counters.counters_list.iter() {
+            counter_names.push(&counter.name)
+        }
+        if !counter_names.contains(&&caps[0][4..].to_string()) {
+            panic!(
+                "Counter {} was used out of scope in line {}",
+                caps[0][4..].to_string(),
+                line
+            );
+        }
         for counter in counters.counters_list.iter_mut() {
             if caps[0] == format!("++::{}", counter.name) {
                 counter.increment();
@@ -31,8 +42,8 @@ pub fn replace_counter_in_line(mut line: &str, counters: &mut Counters) -> Strin
 #[test]
 fn test_replace_counter_in_line() {
     let mut counters = Counters::new();
-    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter"));
-    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter"));
+    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter", 0));
+    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter", 0));
 
     //with text after
     let test1 =
@@ -83,8 +94,7 @@ fn test_replace_counter_in_line() {
 #[should_panic(expected = "Counter TestArabicCounter is decremented while being 0")]
 fn decrement_less_than_0() {
     let mut counters = Counters::new();
-    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter"));
-    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter"));
+    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter", 0));
 
     replace_counter_in_line("--::TestArabicCounter", &mut counters);
 }

@@ -26,7 +26,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": "   view functions as ⅰ  ",
+              "content": "   view functions as ::::NestedCounter",
               "wrapped_with": null
             }
           ]
@@ -36,7 +36,12 @@
           "parent_id": 1,
           "type": "~element~",
           "tag": "Grid",
-          "attributes": [],
+          "attributes": [
+            {
+              "key": "roman_counter",
+              "value": "NestedCounter"
+            }
+          ],
           "children": [
             {
               "id": 4,
@@ -79,7 +84,7 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "       lists of ⅱ         ⅱ    ",
+                  "content": "       lists of j         j",
                   "wrapped_with": null
                 }
               ]
@@ -101,7 +106,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": "   lists of ⅰ  ",
+              "content": "   lists of i",
               "wrapped_with": null
             }
           ]

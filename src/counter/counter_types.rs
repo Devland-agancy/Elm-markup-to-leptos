@@ -32,7 +32,7 @@ impl CounterValueType {
     pub fn from_str(string: &str) -> Self {
         match string {
             "counter" => Self::NUMBER(0),
-            "roman_counter" => Self::STRING('ⅰ'),
+            "roman_counter" => Self::STRING('i'),
             "alphabitical_counter" => Self::STRING('a'),
             _ => Self::NUMBER(0),
         }
@@ -41,7 +41,7 @@ impl CounterValueType {
     pub fn from_type(counter_type: &CounterType) -> Self {
         match counter_type {
             CounterType::ARABIC => Self::NUMBER(0),
-            CounterType::ROMAN => Self::STRING('ⅰ'),
+            CounterType::ROMAN => Self::STRING('i'),
             CounterType::ALPHABITICAL => Self::STRING('a'),
             _ => Self::NUMBER(0),
         }

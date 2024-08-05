@@ -1,7 +1,8 @@
 |> Solution
     line 2.0
+    roman_counter GridC
 
-    view functions as
+    view functions as ::::GridC
     |> Grid
 
         long
@@ -10,7 +11,8 @@
             line 99
     |> Grid
 
-        lists of  
-    lists of  
+        lists of ++::GridC 
+        ::::GridC
+    lists of --::GridC
     
            

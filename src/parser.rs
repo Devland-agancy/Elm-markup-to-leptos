@@ -1,23 +1,24 @@
 use std::str::Lines;
 use std::vec;
 
-use crate::counter::counter_instance::CounterInstance;
-use crate::counter::counter_types::CounterType;
-use crate::counter::counters::Counters;
+use super::counter::counter_instance::CounterInstance;
+use super::counter::counter_types::CounterType;
+use super::counter::counters::Counters;
+use super::counter::helpers::replace_counter_in_line;
 
 use super::element_text::ElementText;
 use super::helpers::*;
 use super::parser_helpers::*;
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct Parser<'a> {
     result: DataCell,
     pub id: u32,
-    pub counters: &'static mut Counters,
+    pub counters: &'a mut Counters,
 }
 
-impl Parser {
-    pub fn new(counters: &'static mut Counters) -> Parser {
+impl<'a> Parser<'a> {
+    pub fn new(counters: &'a mut Counters) -> Parser<'a> {
         Self {
             result: DataCell {
                 parent_id: 0,
@@ -141,6 +142,7 @@ impl Parser {
 
                 // counter
                 //handle_counters();
+                let trimmed_line = replace_counter_in_line(line, self.counters);
 
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()

@@ -1,3 +1,4 @@
+pub mod counter;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;
@@ -5,8 +6,8 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
+use counter::counters::Counters;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
-use elm_parser::counter::counters::Counters;
 use emitter::Emitter;
 use parser::Parser;
 use parser_helpers::DataCell;

@@ -1,7 +1,7 @@
 use super::{counter_instance::CounterInstance, counters::Counters};
 use regex::Regex;
 
-pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
+pub fn replace_counter_in_line(mut line: &str, counters: &mut Counters) -> String {
     // create regex to match this string ""::::CounterName"
     let insert_regex = Regex::new(r"(::|\+\+|--)::\w+").unwrap();
 

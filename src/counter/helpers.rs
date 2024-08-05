@@ -1,33 +1,22 @@
-use crate::counter::counter_types::CounterValueType;
-
 use super::{counter_instance::CounterInstance, counters::Counters};
-use regex::{Captures, Regex};
+use regex::Regex;
 
 pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
     // create regex to match this string ""::::CounterName"
-    let insert_regex = Regex::new(r"::::\w+").unwrap();
-    let insert_inc_reg = Regex::new(r"\+\+::\w+").unwrap();
-    let insert_dec_reg = Regex::new(r"--::\w+").unwrap();
-    //let regex = Regex::new(r"::::\w+").unwrap();
+    let insert_regex = Regex::new(r"(::|\+\+|--)::\w+").unwrap();
 
     let mut new_line = String::from(line);
 
     let _ = insert_regex.replace_all(line, |caps: &regex::Captures| {
-        for counter in counters.counters_list.iter() {
-            if caps[0] == format!("::::{}", counter.name) {
-                new_line = insert_regex
-                    .replace(&new_line, &counter.current_value.to_string())
-                    .to_string()
-            }
-        }
-        ""
-    });
-
-    let _ = insert_inc_reg.replace_all(line, |caps: &regex::Captures| {
         for counter in counters.counters_list.iter_mut() {
             if caps[0] == format!("++::{}", counter.name) {
-                counter.current_value.increment(&counter.counter_type);
-                new_line = insert_inc_reg
+                counter.increment();
+            }
+            if caps[0] == format!("--::{}", counter.name) {
+                counter.decrement();
+            }
+            if caps[0][2..] == format!("::{}", counter.name) {
+                new_line = insert_regex
                     .replace(&new_line, &counter.current_value.to_string())
                     .to_string()
             }
@@ -80,17 +69,22 @@ fn test_replace_counter_in_line() {
         "inc ++::TestRomanCounter another inc ++::TestRomanCounter fix ::::TestRomanCounter",
         &mut counters,
     );
-    assert_eq!(test4, "inc ⅲ another ⅳ fix ⅳ");
+    assert_eq!(test4, "inc ⅲ another inc ⅳ fix ⅳ");
+
+    // test double deccrement than normal
+    let test4 = replace_counter_in_line(
+        "dec --::TestRomanCounter another dec --::TestRomanCounter fix ::::TestRomanCounter dec ar --::TestArabicCounter fix ar ::::TestArabicCounter",
+        &mut counters,
+    );
+    assert_eq!(test4, "dec ⅲ another dec ⅱ fix ⅱ dec ar 0 fix ar 0");
 }
 
-// fn test_increment_counters() {
-//   let mut counters = Counters::new();
-//   counters.add_counter(CounterInstance::new("TestArabicCounter", "counter"));
-//   counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter"));
+#[test]
+#[should_panic(expected = "Counter TestArabicCounter is decremented while being 0")]
+fn decrement_less_than_0() {
+    let mut counters = Counters::new();
+    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter"));
+    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter"));
 
-//   //with text after
-//   let test1 =
-//       replace_counter_in_line("askljdklasj ::::TestArabicCounter qweqweqwe", &mut counters);
-//   assert_eq!(test1, "askljdklasj 0 qweqweqwe");
-
-// }
+    replace_counter_in_line("--::TestArabicCounter", &mut counters);
+}

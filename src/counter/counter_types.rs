@@ -1,3 +1,5 @@
+use super::counter_instance::CounterInstance;
+
 #[derive(Debug, Clone)]
 pub enum CounterType {
     ARABIC,
@@ -49,33 +51,6 @@ impl CounterValueType {
         match self {
             CounterValueType::NUMBER(number) => number.to_string(),
             CounterValueType::STRING(string) => string.to_string(),
-        }
-    }
-
-    pub fn increment(&mut self, counter_type: &CounterType) {
-        match counter_type {
-            CounterType::ARABIC => {
-                *self = match *self {
-                    CounterValueType::NUMBER(i) => CounterValueType::NUMBER(i + 1),
-                    _ => *self,
-                }
-            }
-            CounterType::ROMAN => {
-                *self = match self {
-                    CounterValueType::STRING(roman) => {
-                        let code_point = *roman as u32;
-                        // let start = 0x2170; // ⅰ (Roman Numeral Small One)
-                        // let end = 0x217F;
-
-                        let incremented = std::char::from_u32(code_point + 1).unwrap();
-
-                        CounterValueType::STRING(incremented)
-                    }
-                    _ => *self,
-                }
-            }
-            CounterType::ALPHABITICAL => {}
-            _ => {}
         }
     }
 }

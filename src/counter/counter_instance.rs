@@ -26,17 +26,20 @@ impl CounterInstance {
         match self.counter_type {
             CounterType::ARABIC => {
                 self.current_value = match self.current_value {
-                    CounterValueType::NUMBER(i) => CounterValueType::NUMBER(i + 1),
+                    CounterValueType::ARABIC(i) => CounterValueType::ARABIC(i + 1),
                     _ => self.current_value,
                 }
             }
             CounterType::ROMAN => {
                 self.current_value = match self.current_value {
-                    CounterValueType::STRING(roman) => {
-                        let code_point = roman as u32;
-                        let incremented = std::char::from_u32(code_point + 1).unwrap();
-
-                        CounterValueType::STRING(incremented)
+                    CounterValueType::ROMAN(roman) => {
+                        if roman == '0' {
+                            CounterValueType::ROMAN('ⅰ')
+                        } else {
+                            let code_point = roman as u32;
+                            let incremented = std::char::from_u32(code_point + 1).unwrap();
+                            CounterValueType::ROMAN(incremented)
+                        }
                     }
                     _ => self.current_value,
                 }
@@ -50,23 +53,20 @@ impl CounterInstance {
         match self.counter_type {
             CounterType::ARABIC => {
                 self.current_value = match self.current_value {
-                    CounterValueType::NUMBER(i) => {
-                        let new = i.checked_sub(1);
-                        if new.is_none() {
-                            panic!("Counter {} is decremented while being 0", self.name)
-                        }
-                        CounterValueType::NUMBER(i - 1)
-                    }
+                    CounterValueType::ARABIC(i) => CounterValueType::ARABIC(i - 1),
                     _ => self.current_value,
                 }
             }
             CounterType::ROMAN => {
                 self.current_value = match self.current_value {
-                    CounterValueType::STRING(roman) => {
-                        let code_point = roman as u32;
-                        let incremented = std::char::from_u32(code_point - 1).unwrap();
-
-                        CounterValueType::STRING(incremented)
+                    CounterValueType::ROMAN(roman) => {
+                        if roman == 'i' {
+                            CounterValueType::ROMAN('0')
+                        } else {
+                            let code_point = roman as u32;
+                            let incremented = std::char::from_u32(code_point - 1).unwrap();
+                            CounterValueType::ROMAN(incremented)
+                        }
                     }
                     _ => self.current_value,
                 }

@@ -9,8 +9,9 @@ pub enum CounterType {
 
 #[derive(Debug, Clone, Copy)]
 pub enum CounterValueType {
-    NUMBER(usize),
-    STRING(char),
+    ARABIC(isize),
+    ROMAN(char),
+    ALPHABITICAL(char),
 }
 
 impl CounterType {
@@ -31,26 +32,40 @@ impl CounterType {
 impl CounterValueType {
     pub fn from_str(string: &str) -> Self {
         match string {
-            "counter" => Self::NUMBER(0),
-            "roman_counter" => Self::STRING('i'),
-            "alphabitical_counter" => Self::STRING('a'),
-            _ => Self::NUMBER(0),
+            "counter" => Self::ARABIC(0),
+            "roman_counter" => Self::ROMAN('0'),
+            "alphabitical_counter" => Self::ALPHABITICAL('0'),
+            _ => Self::ARABIC(0),
         }
     }
 
     pub fn from_type(counter_type: &CounterType) -> Self {
         match counter_type {
-            CounterType::ARABIC => Self::NUMBER(0),
-            CounterType::ROMAN => Self::STRING('i'),
-            CounterType::ALPHABITICAL => Self::STRING('a'),
-            _ => Self::NUMBER(0),
+            CounterType::ARABIC => Self::ARABIC(0),
+            CounterType::ROMAN => Self::ROMAN('0'),
+            CounterType::ALPHABITICAL => Self::ALPHABITICAL('0'),
+            _ => Self::ARABIC(0),
         }
     }
 
     pub fn to_string(&self) -> String {
         match self {
-            CounterValueType::NUMBER(number) => number.to_string(),
-            CounterValueType::STRING(string) => string.to_string(),
+            CounterValueType::ARABIC(number) => {
+                if *number < 0 {
+                    "-".to_string()
+                } else {
+                    number.to_string()
+                }
+            }
+            CounterValueType::ROMAN(roman) => {
+                let code_point = *roman as u32;
+                if *roman != '0' && code_point < 8560 {
+                    "-".to_string()
+                } else {
+                    roman.to_string()
+                }
+            }
+            CounterValueType::ALPHABITICAL(string) => string.to_string(),
         }
     }
 }

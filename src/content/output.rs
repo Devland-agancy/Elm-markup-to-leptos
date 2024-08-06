@@ -2,12 +2,9 @@
     view! {
         <Solution line=2.0 roman_counter="GridC" solution_number=0>
             <Paragraph>
-                <span class="text">r#"  view functions as ::::NestedCounter"#</span>
-            </Paragraph>
-            <Paragraph>
                 <Grid roman_counter="NestedCounter" id=0>
                     <Span>
-                        <span class="text">r#"      long"#</span>
+                        <span class="text">r#"      long j"#</span>
                     </Span>
                     <Span>
                         <yoyo line=99.0>""</yoyo>
@@ -17,10 +14,9 @@
             <Paragraph>
                 <Grid id=1>
                     <Span>
-                        <span class="text">r#"      lists of j         j"#</span>
+                        <span class="text">r#"      lists of j"#</span>
                     </Span>
                 </Grid>
-                <Space>""</Space>
             </Paragraph>
             <Paragraph>
                 <Indent>

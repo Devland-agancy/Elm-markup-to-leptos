@@ -24,7 +24,7 @@
       ],
       "children": [
         {
-          "id": 11,
+          "id": 9,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Paragraph",
@@ -32,28 +32,7 @@
           "children": [
             {
               "id": 2,
-              "parent_id": 11,
-              "type": "~block~",
-              "children": [
-                {
-                  "type": "~text~",
-                  "content": "   view functions as ::::NestedCounter",
-                  "wrapped_with": null
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": 12,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Paragraph",
-          "attributes": [],
-          "children": [
-            {
-              "id": 3,
-              "parent_id": 12,
+              "parent_id": 9,
               "type": "~element~",
               "tag": "Grid",
               "attributes": [
@@ -68,20 +47,20 @@
               ],
               "children": [
                 {
-                  "id": 15,
-                  "parent_id": 3,
+                  "id": 12,
+                  "parent_id": 2,
                   "type": "~element~",
                   "tag": "Span",
                   "attributes": [],
                   "children": [
                     {
-                      "id": 4,
-                      "parent_id": 15,
+                      "id": 3,
+                      "parent_id": 12,
                       "type": "~block~",
                       "children": [
                         {
                           "type": "~text~",
-                          "content": "       long",
+                          "content": "       long j",
                           "wrapped_with": null
                         }
                       ]
@@ -89,15 +68,15 @@
                   ]
                 },
                 {
-                  "id": 16,
-                  "parent_id": 3,
+                  "id": 13,
+                  "parent_id": 2,
                   "type": "~element~",
                   "tag": "Span",
                   "attributes": [],
                   "children": [
                     {
-                      "id": 5,
-                      "parent_id": 16,
+                      "id": 4,
+                      "parent_id": 13,
                       "type": "~element~",
                       "tag": "yoyo",
                       "attributes": [
@@ -115,15 +94,15 @@
           ]
         },
         {
-          "id": 13,
+          "id": 10,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Paragraph",
           "attributes": [],
           "children": [
             {
-              "id": 6,
-              "parent_id": 13,
+              "id": 5,
+              "parent_id": 10,
               "type": "~element~",
               "tag": "Grid",
               "attributes": [
@@ -134,20 +113,20 @@
               ],
               "children": [
                 {
-                  "id": 17,
-                  "parent_id": 6,
+                  "id": 14,
+                  "parent_id": 5,
                   "type": "~element~",
                   "tag": "Span",
                   "attributes": [],
                   "children": [
                     {
-                      "id": 7,
-                      "parent_id": 17,
+                      "id": 6,
+                      "parent_id": 14,
                       "type": "~block~",
                       "children": [
                         {
                           "type": "~text~",
-                          "content": "       lists of j         j",
+                          "content": "       lists of j",
                           "wrapped_with": null
                         }
                       ]
@@ -155,34 +134,26 @@
                   ]
                 }
               ]
-            },
-            {
-              "id": 8,
-              "parent_id": 13,
-              "type": "~element~",
-              "tag": "Space",
-              "attributes": [],
-              "children": []
             }
           ]
         },
         {
-          "id": 14,
+          "id": 11,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Paragraph",
           "attributes": [],
           "children": [
             {
-              "id": 18,
-              "parent_id": 14,
+              "id": 15,
+              "parent_id": 11,
               "type": "~element~",
               "tag": "Indent",
               "attributes": [],
               "children": [
                 {
-                  "id": 9,
-                  "parent_id": 14,
+                  "id": 7,
+                  "parent_id": 11,
                   "type": "~block~",
                   "children": [
                     {

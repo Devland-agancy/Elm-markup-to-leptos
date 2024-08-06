@@ -2,11 +2,10 @@
     line 2.0
     roman_counter GridC
 
-    view functions as ::::NestedCounter
     |> Grid
         roman_counter NestedCounter
 
-        long
+        long ++::NestedCounter
 
         |> yoyo
             line 99
@@ -14,7 +13,7 @@
     |> Grid
 
         lists of ++::GridC 
-        ::::GridC
+
     lists of --::GridC
     
            

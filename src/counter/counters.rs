@@ -1,6 +1,6 @@
 use super::counter_instance::CounterInstance;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Counters {
     pub counters_list: Vec<CounterInstance>,
 }
@@ -19,5 +19,14 @@ impl Counters {
         let counter_exists = self.counters_list.iter().any(|c| c.name == counter.name);
         assert!(!counter_exists, "Counter name already used");
         self.counters_list.push(counter);
+    }
+
+    pub fn remove_counter(&mut self, counter: &CounterInstance) {
+        self.counters_list = self
+            .counters_list
+            .iter()
+            .filter(|c| c.name != counter.name)
+            .cloned()
+            .collect();
     }
 }

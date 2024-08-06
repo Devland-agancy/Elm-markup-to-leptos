@@ -22,18 +22,6 @@
         {
           "id": 2,
           "parent_id": 1,
-          "type": "~block~",
-          "children": [
-            {
-              "type": "~text~",
-              "content": "   view functions as ::::NestedCounter",
-              "wrapped_with": null
-            }
-          ]
-        },
-        {
-          "id": 3,
-          "parent_id": 1,
           "type": "~element~",
           "tag": "Grid",
           "attributes": [
@@ -44,20 +32,20 @@
           ],
           "children": [
             {
-              "id": 4,
-              "parent_id": 3,
+              "id": 3,
+              "parent_id": 2,
               "type": "~block~",
               "children": [
                 {
                   "type": "~text~",
-                  "content": "       long",
+                  "content": "       long j",
                   "wrapped_with": null
                 }
               ]
             },
             {
-              "id": 5,
-              "parent_id": 3,
+              "id": 4,
+              "parent_id": 2,
               "type": "~element~",
               "tag": "yoyo",
               "attributes": [
@@ -71,20 +59,20 @@
           ]
         },
         {
-          "id": 6,
+          "id": 5,
           "parent_id": 1,
           "type": "~element~",
           "tag": "Grid",
           "attributes": [],
           "children": [
             {
-              "id": 7,
-              "parent_id": 6,
+              "id": 6,
+              "parent_id": 5,
               "type": "~block~",
               "children": [
                 {
                   "type": "~text~",
-                  "content": "       lists of j         j",
+                  "content": "       lists of j",
                   "wrapped_with": null
                 }
               ]
@@ -92,15 +80,7 @@
           ]
         },
         {
-          "id": 8,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Space",
-          "attributes": [],
-          "children": []
-        },
-        {
-          "id": 9,
+          "id": 7,
           "parent_id": 1,
           "type": "~block~",
           "children": [

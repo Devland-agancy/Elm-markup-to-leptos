@@ -1,3 +1,7 @@
+use std::string;
+
+use numerals::roman::Roman;
+
 use super::counter_instance::CounterInstance;
 
 #[derive(Debug, Clone)]
@@ -7,11 +11,26 @@ pub enum CounterType {
     ALPHABITICAL,
 }
 
-#[derive(Debug, Clone, Copy)]
+// #[derive(Debug)]
+// struct MyRoman(Roman);
+
+// impl MyRoman {
+//     fn new(roman: Roman) -> Self {
+//         Self(roman)
+//     }
+// }
+
+// impl Clone for MyRoman {
+//     fn clone(&self) -> Self {
+//         Self::new(self.0)
+//     }
+// }
+
+#[derive(Debug, Clone)]
 pub enum CounterValueType {
     ARABIC(isize),
-    ROMAN(char),
-    ALPHABITICAL(char),
+    ROMAN(String),
+    ALPHABITICAL(String),
 }
 
 impl CounterType {
@@ -30,20 +49,78 @@ impl CounterType {
 }
 
 impl CounterValueType {
-    pub fn from_str(string: &str) -> Self {
+    fn is_valid(&self, value: &str) -> bool {
+        match self {
+            CounterValueType::ARABIC(_) => value.parse::<isize>().is_ok(),
+            CounterValueType::ROMAN(roman) => {
+                let roman = Roman::parse(roman);
+                roman.is_some()
+            }
+            CounterValueType::ALPHABITICAL(alpha) => alpha.chars().all(|c| {
+                let code_point = c as u32;
+                code_point >= 65
+            }),
+        }
+    }
+
+    fn default_value(&self, value: Option<&str>) -> Self {
+        match self {
+            CounterValueType::ARABIC(_) => {
+                if let Some(value) = value {
+                    if CounterValueType::ARABIC(0).is_valid(value) {
+                        Self::ARABIC(value.parse::<isize>().unwrap())
+                    } else {
+                        panic!("Wrong Arabic counter value")
+                    }
+                } else {
+                    Self::ARABIC(0)
+                }
+            }
+            CounterValueType::ROMAN(_) => {
+                if let Some(default_value) = value {
+                    if CounterValueType::ROMAN("".to_string()).is_valid(default_value) {
+                        Self::ROMAN(default_value.to_string())
+                    } else {
+                        panic!("Wrong Roman counter value")
+                    }
+                } else {
+                    Self::ROMAN("0".to_string())
+                }
+            }
+            CounterValueType::ALPHABITICAL(_) => {
+                if let Some(default_value) = value {
+                    if CounterValueType::ALPHABITICAL("".to_string()).is_valid(default_value) {
+                        Self::ALPHABITICAL(default_value.to_string())
+                    } else {
+                        panic!("Wrong Aphabitical counter value")
+                    }
+                } else {
+                    Self::ALPHABITICAL("0".to_string())
+                }
+            }
+        }
+    }
+
+    pub fn from_str(string: &str, default_value: Option<&str>) -> Self {
         match string {
-            "counter" => Self::ARABIC(0),
-            "roman_counter" => Self::ROMAN('0'),
-            "alphabitical_counter" => Self::ALPHABITICAL('0'),
+            "counter" => CounterValueType::ARABIC(0).default_value(default_value),
+            "roman_counter" => CounterValueType::ROMAN("".to_string()).default_value(default_value),
+            "alphabitical_counter" => {
+                CounterValueType::ALPHABITICAL("".to_string()).default_value(default_value)
+            }
             _ => Self::ARABIC(0),
         }
     }
 
-    pub fn from_type(counter_type: &CounterType) -> Self {
+    pub fn from_type(counter_type: &CounterType, default_value: Option<&str>) -> Self {
         match counter_type {
-            CounterType::ARABIC => Self::ARABIC(0),
-            CounterType::ROMAN => Self::ROMAN('0'),
-            CounterType::ALPHABITICAL => Self::ALPHABITICAL('0'),
+            CounterType::ARABIC => CounterValueType::ARABIC(0).default_value(default_value),
+            CounterType::ROMAN => {
+                CounterValueType::ROMAN("".to_string()).default_value(default_value)
+            }
+            CounterType::ALPHABITICAL => {
+                CounterValueType::ALPHABITICAL("".to_string()).default_value(default_value)
+            }
             _ => Self::ARABIC(0),
         }
     }
@@ -57,14 +134,7 @@ impl CounterValueType {
                     number.to_string()
                 }
             }
-            CounterValueType::ROMAN(roman) => {
-                let code_point = *roman as u32;
-                if *roman != '0' && code_point < 8560 {
-                    "-".to_string()
-                } else {
-                    roman.to_string()
-                }
-            }
+            CounterValueType::ROMAN(roman) => roman.to_string(),
             CounterValueType::ALPHABITICAL(string) => string.to_string(),
         }
     }

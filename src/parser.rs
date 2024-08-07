@@ -77,7 +77,7 @@ impl<'a> Parser<'a> {
 
     pub fn export_json(
         &mut self,
-        elm: &String,
+        elm: &'a str,
         mut curr_el_id: Option<u32>,
         mut is_nested: bool,
     ) -> String {
@@ -137,15 +137,19 @@ impl<'a> Parser<'a> {
                     .expect(&format!("There is no parent tag . at line \n {:?}", line));
                 if last.in_props {
                     // tag props
-                    if let Some(prop_line) = trimmed_line.split_once(" ") {
-                        if CounterType::is_valid(prop_line.0) {
-                            // create new counter
-                            self.counters.add_counter(CounterInstance::new(
-                                prop_line.1,
-                                prop_line.0,
-                                indent / 4,
-                            ))
-                        }
+                    let mut prop_line_splits = trimmed_line.split(" ");
+                    let counter_type = prop_line_splits.next().unwrap();
+                    if CounterType::is_valid(counter_type) {
+                        let counter_name =
+                            prop_line_splits.next().expect("Counter must have a name");
+                        let default_value = prop_line_splits.next();
+                        // create new counter
+                        self.counters.add_counter(CounterInstance::new(
+                            counter_name,
+                            counter_type,
+                            indent / 4,
+                            default_value,
+                        ))
                     }
 
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);

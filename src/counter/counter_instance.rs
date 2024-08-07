@@ -1,4 +1,6 @@
 use super::counter_types::{CounterType, CounterValueType};
+use leptos::server_fn::default;
+use numerals::roman::Roman;
 
 #[derive(Debug, Clone)]
 pub struct CounterInstance {
@@ -13,11 +15,11 @@ pub struct CounterInstance {
 // }
 
 impl CounterInstance {
-    pub fn new(name: &str, _type: &str, scope: usize) -> Self {
+    pub fn new(name: &str, _type: &str, scope: usize, default_value: Option<&str>) -> Self {
         Self {
             name: name.to_string(),
             counter_type: CounterType::from_str(_type).unwrap(),
-            current_value: CounterValueType::from_str(_type),
+            current_value: CounterValueType::from_str(_type, default_value),
             scope,
         }
     }
@@ -25,24 +27,23 @@ impl CounterInstance {
     pub fn increment(&mut self) {
         match self.counter_type {
             CounterType::ARABIC => {
-                self.current_value = match self.current_value {
-                    CounterValueType::ARABIC(i) => CounterValueType::ARABIC(i + 1),
-                    _ => self.current_value,
+                if let CounterValueType::ARABIC(i) = self.current_value {
+                    self.current_value = CounterValueType::ARABIC(i + 1)
                 }
             }
             CounterType::ROMAN => {
-                self.current_value = match self.current_value {
-                    CounterValueType::ROMAN(roman) => {
-                        if roman == '0' {
-                            CounterValueType::ROMAN('ⅰ')
-                        } else {
-                            let code_point = roman as u32;
-                            let incremented = std::char::from_u32(code_point + 1).unwrap();
-                            CounterValueType::ROMAN(incremented)
-                        }
+                if let CounterValueType::ROMAN(roman) = &self.current_value {
+                    self.current_value = if roman == "0" {
+                        CounterValueType::ROMAN("i".to_string())
+                    } else {
+                        let mut num: i16 =
+                            Roman::parse(&roman).expect("unvalid roman chars").value();
+                        num += 1;
+                        let incremented_roman = format!("{:x}", Roman::from(num));
+                        CounterValueType::ROMAN(incremented_roman)
                     }
-                    _ => self.current_value,
                 }
+                println!("self.current_value {:?}", self.current_value);
             }
             CounterType::ALPHABITICAL => {}
             _ => {}
@@ -52,23 +53,24 @@ impl CounterInstance {
     pub fn decrement(&mut self) {
         match self.counter_type {
             CounterType::ARABIC => {
-                self.current_value = match self.current_value {
-                    CounterValueType::ARABIC(i) => CounterValueType::ARABIC(i - 1),
-                    _ => self.current_value,
+                if let CounterValueType::ARABIC(i) = self.current_value {
+                    self.current_value = CounterValueType::ARABIC(i - 1)
                 }
             }
             CounterType::ROMAN => {
-                self.current_value = match self.current_value {
-                    CounterValueType::ROMAN(roman) => {
-                        if roman == 'i' {
-                            CounterValueType::ROMAN('0')
+                if let CounterValueType::ROMAN(roman) = &self.current_value {
+                    self.current_value = if roman == "i" {
+                        CounterValueType::ROMAN("0".to_string())
+                    } else {
+                        if let Some(paresed) = Roman::parse(&roman) {
+                            let mut num: i16 = paresed.value();
+                            num -= 1;
+                            let incremented_roman = format!("{:x}", Roman::from(num));
+                            CounterValueType::ROMAN(incremented_roman)
                         } else {
-                            let code_point = roman as u32;
-                            let incremented = std::char::from_u32(code_point - 1).unwrap();
-                            CounterValueType::ROMAN(incremented)
+                            CounterValueType::ROMAN("-".to_string())
                         }
                     }
-                    _ => self.current_value,
                 }
             }
             CounterType::ALPHABITICAL => {}

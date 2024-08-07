@@ -23,7 +23,9 @@ pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
         }
         for counter in counters.counters_list.iter_mut() {
             if caps[0] == format!("++::{}", counter.name) {
+                println!("before {}", counter.current_value.to_string());
                 counter.increment();
+                println!("after {}", counter.current_value.to_string())
             }
             if caps[0] == format!("--::{}", counter.name) {
                 counter.decrement();
@@ -44,8 +46,18 @@ pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
 #[test]
 fn test_replace_counter_in_line() {
     let mut counters = Counters::new();
-    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter", 0));
-    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter", 0));
+    counters.add_counter(CounterInstance::new(
+        "TestArabicCounter",
+        "counter",
+        0,
+        None,
+    ));
+    counters.add_counter(CounterInstance::new(
+        "TestRomanCounter",
+        "roman_counter",
+        0,
+        None,
+    ));
 
     //with text after
     let test1 =
@@ -95,8 +107,18 @@ fn test_replace_counter_in_line() {
 #[test]
 fn decrement_less_than_0() {
     let mut counters = Counters::new();
-    counters.add_counter(CounterInstance::new("TestArabicCounter", "counter", 0));
-    counters.add_counter(CounterInstance::new("TestRomanCounter", "roman_counter", 0));
+    counters.add_counter(CounterInstance::new(
+        "TestArabicCounter",
+        "counter",
+        0,
+        None,
+    ));
+    counters.add_counter(CounterInstance::new(
+        "TestRomanCounter",
+        "roman_counter",
+        0,
+        None,
+    ));
 
     let test =
         replace_counter_in_line("--::TestArabicCounter --::TestArabicCounter", &mut counters);
@@ -105,4 +127,27 @@ fn decrement_less_than_0() {
     let test2 =
         replace_counter_in_line("::::TestRomanCounter --::TestArabicCounter", &mut counters);
     assert_eq!(test2, "0 -");
+}
+
+#[test]
+fn default_value() {
+    let mut counters = Counters::new();
+    counters.add_counter(CounterInstance::new(
+        "TestArabicCounter",
+        "counter",
+        0,
+        Some("10"),
+    ));
+    counters.add_counter(CounterInstance::new(
+        "TestRomanCounter",
+        "roman_counter",
+        0,
+        Some("ⅱ"),
+    ));
+
+    let test = replace_counter_in_line("--::TestArabicCounter", &mut counters);
+    assert_eq!(test, "9");
+
+    let test2 = replace_counter_in_line("::::TestRomanCounter --::TestRomanCounter", &mut counters);
+    assert_eq!(test2, "ⅱ ⅰ");
 }

@@ -42,7 +42,8 @@ fn main() {
 
     let mut counters = Counters::new();
     let mut json = Parser::new(&mut counters);
-    let json_tree = json.export_json(&contents.to_string(), None, false);
+    let content_str = &contents;
+    let json_tree = json.export_json(&contents, None, false);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
 

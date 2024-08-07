@@ -27,7 +27,7 @@
           "attributes": [
             {
               "key": "roman_counter",
-              "value": "NestedCounter"
+              "value": "NestedCounter v"
             }
           ],
           "children": [
@@ -38,7 +38,7 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "       long j",
+                  "content": "       long vi",
                   "wrapped_with": null
                 }
               ]
@@ -72,7 +72,7 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "       lists of j",
+                  "content": "       lists of i",
                   "wrapped_with": null
                 }
               ]
@@ -86,7 +86,7 @@
           "children": [
             {
               "type": "~text~",
-              "content": "   lists of i",
+              "content": "   incc ii     incc iii     incc iv     incc v     incc iv     incc iii     incc ii     incc i     incc 0     incc -",
               "wrapped_with": null
             }
           ]

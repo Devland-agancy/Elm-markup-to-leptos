@@ -10,10 +10,6 @@ pub struct CounterInstance {
     pub scope: usize,
 }
 
-// pub trait AssignType<T>  {
-
-// }
-
 impl CounterInstance {
     pub fn new(name: &str, _type: &str, scope: usize, default_value: Option<&str>) -> Self {
         Self {
@@ -43,7 +39,6 @@ impl CounterInstance {
                         CounterValueType::ROMAN(incremented_roman)
                     }
                 }
-                println!("self.current_value {:?}", self.current_value);
             }
             CounterType::ALPHABITICAL => {}
             _ => {}

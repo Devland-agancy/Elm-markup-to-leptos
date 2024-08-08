@@ -1,8 +1,4 @@
-use std::string;
-
 use numerals::roman::Roman;
-
-use super::counter_instance::CounterInstance;
 
 #[derive(Debug, Clone)]
 pub enum CounterType {
@@ -10,21 +6,6 @@ pub enum CounterType {
     ROMAN,
     ALPHABITICAL,
 }
-
-// #[derive(Debug)]
-// struct MyRoman(Roman);
-
-// impl MyRoman {
-//     fn new(roman: Roman) -> Self {
-//         Self(roman)
-//     }
-// }
-
-// impl Clone for MyRoman {
-//     fn clone(&self) -> Self {
-//         Self::new(self.0)
-//     }
-// }
 
 #[derive(Debug, Clone)]
 pub enum CounterValueType {

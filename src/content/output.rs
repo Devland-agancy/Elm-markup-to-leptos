@@ -4,7 +4,7 @@
             <Paragraph>
                 <Grid roman_counter="NestedCounter v" id=0>
                     <Span>
-                        <span class="text">r#"      long vi"#</span>
+                        <span class="text">r#"      longvi"#</span>
                     </Span>
                     <Span>
                         <yoyo line=99.0>""</yoyo>

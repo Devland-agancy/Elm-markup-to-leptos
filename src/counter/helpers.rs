@@ -5,39 +5,47 @@ use regex::Regex;
 
 pub fn replace_counter_in_line(line: &str, counters: &mut Counters) -> String {
     // create regex to match this string ""::::CounterName"
-    let insert_regex = Regex::new(r"(::|..)(::|\+\+|--)\w+").unwrap();
+    let insert_regex = Regex::new(r"(^|[^\\])(::|..)(::|\+\+|--)\w+").unwrap();
 
     let mut new_line = String::from(line);
 
     let _ = insert_regex.replace_all(line, |caps: &regex::Captures| {
+        let command_str = if &caps[1] == "" {
+            &caps[0]
+        } else {
+            &caps[0][1..]
+        }; // remove the first char if there one before the command as it's used to detect escape char
+
+        let detected_counter_name = &command_str[4..];
+
         let mut counter_names = Vec::new();
         for counter in counters.counters_list.iter() {
             counter_names.push(&counter.name)
         }
-        if !counter_names.contains(&&caps[0][4..].to_string()) {
+        if !counter_names.contains(&&detected_counter_name.to_string()) {
             panic!(
                 "Counter {} was used out of scope in line {}",
-                caps[0][4..].to_string(),
-                line
+                detected_counter_name, line
             );
         }
         for counter in counters.counters_list.iter_mut() {
-            if caps[0] == format!("::++{}", counter.name)
-                || caps[0] == format!("..++{}", counter.name)
+            if command_str == format!("::++{}", counter.name)
+                || command_str == format!("..++{}", counter.name)
             {
                 counter.increment();
             }
-            if caps[0] == format!("::--{}", counter.name)
-                || caps[0] == format!("..--{}", counter.name)
+            if command_str == format!("::--{}", counter.name)
+                || command_str == format!("..--{}", counter.name)
             {
                 counter.decrement();
             }
-            if caps[0][4..] == counter.name {
+
+            if detected_counter_name == counter.name {
                 // ::++ and ::-- are silent and do not change the line
-                let replace_with = if &caps[0][0..2] == "::" {
-                    counter.current_value.to_string()
+                let replace_with = if &command_str[0..2] == "::" {
+                    caps[1].to_string() + counter.current_value.to_string().as_str()
                 } else {
-                    "".to_string()
+                    caps[1].to_string()
                 };
                 new_line = insert_regex.replace(&new_line, &replace_with).to_string()
             }
@@ -108,6 +116,10 @@ fn test_replace_counter_in_line() {
         &mut counters,
     );
     assert_eq!(test4, "dec ii another dec i fix i dec ar 0 fix ar 0");
+
+    // test escaped
+    let test4 = replace_counter_in_line(r#"escaped \::--TestRomanCounter"#, &mut counters);
+    assert_eq!(test4, r"escaped \::--TestRomanCounter");
 }
 
 #[test]

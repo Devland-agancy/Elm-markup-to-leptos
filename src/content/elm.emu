@@ -5,7 +5,7 @@
     |> Grid
         roman_counter NestedCounter v
 
-        long ::++NestedCounter
+        long::++NestedCounter
 
         |> yoyo
             line 99

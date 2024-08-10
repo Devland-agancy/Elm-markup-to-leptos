@@ -1,10 +1,11 @@
 use std::str::Lines;
 use std::vec;
 
+use crate::counter::counter_commands::CounterCommand;
+
 use super::counter::counter_instance::CounterInstance;
 use super::counter::counter_types::CounterType;
 use super::counter::counters::Counters;
-use super::counter::helpers::replace_counter_in_line;
 
 use super::element_text::ElementText;
 use super::helpers::*;
@@ -158,7 +159,17 @@ impl<'a> Parser<'a> {
 
                 // counter
                 //handle_counters();
-                let trimmed_line = replace_counter_in_line(line, self.counters);
+                // if let Some(parent_id) = curr_el_id {
+                //     let cc = CounterCommand::new();
+                //     cc.generate_counter_elements(
+                //         line,
+                //         &mut self.counters,
+                //         &mut self.result,
+                //         &mut self.id,
+                //         parent_id,
+                //     );
+
+                // };
 
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()
@@ -187,30 +198,48 @@ impl<'a> Parser<'a> {
                         trimmed_line.trim_end(),
                     );
 
-                    let mut block = BlockCell::new();
-                    let e = ElementText::new(&text_node);
-                    let block_children = e.split_text();
+                    let cc = CounterCommand::new();
+                    let splits_by_command = cc.split_line(&text_node);
 
-                    block_children.iter().for_each(|child| {
-                        if let BlockChildType::Text(text) = &child {
-                            if text.content != "" {
-                                BlockChildType::push_cell(&mut block, child.to_owned());
-                            }
+                    splits_by_command.iter().for_each(|part| {
+                        if part.is_command {
+                            if let Some(parent_id) = curr_el_id {
+                                cc.generate_counter_elements(
+                                    &part.content,
+                                    &mut self.counters,
+                                    &mut self.result,
+                                    &mut self.id,
+                                    parent_id,
+                                );
+                            };
                         } else {
-                            BlockChildType::push_cell(&mut block, child.to_owned());
+                            let mut block = BlockCell::new();
+                            let e = ElementText::new(&part.content);
+                            let block_children = e.split_text();
+
+                            block_children.iter().for_each(|child| {
+                                if let BlockChildType::Text(text) = &child {
+                                    if text.content != "" {
+                                        BlockChildType::push_cell(&mut block, child.to_owned());
+                                    }
+                                } else {
+                                    BlockChildType::push_cell(&mut block, child.to_owned());
+                                }
+                            });
+
+                            text_node = "".to_string();
+                            BlockCell::add_cell(
+                                &mut self.result,
+                                curr_el_id.unwrap(),
+                                self.id,
+                                &block,
+                            );
+                            self.id += 1;
                         }
                     });
 
-                    BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
-                    self.id += 1;
-
                     if end_of_attached_element && tag_stack.len() > 1 {
-                        let parent_id =
-                            if let Some(before_last) = tag_stack.get(tag_stack.len() - 2) {
-                                Some(before_last.id)
-                            } else {
-                                None
-                            };
+                        let parent_id = self.get_parent_id(&tag_stack);
                         ElementCell::add_cell(
                             &mut self.result,
                             parent_id.unwrap(),
@@ -220,7 +249,6 @@ impl<'a> Parser<'a> {
                         self.id += 1;
                     }
 
-                    text_node = "".to_string();
                     continue;
                 }
 
@@ -234,5 +262,18 @@ impl<'a> Parser<'a> {
         }
         let res = serde_json::to_string_pretty(&self.result);
         res.unwrap_or("Something Wrong".to_string())
+    }
+
+    fn get_parent_id(&self, tag_stack: &Vec<TagInfo>) -> Option<u32> {
+        let before_last_index = tag_stack.len().checked_sub(2);
+        if before_last_index.is_none() {
+            return None;
+        }
+        let before_last_index = before_last_index.unwrap();
+        if let Some(before_last) = tag_stack.get(before_last_index) {
+            Some(before_last.id)
+        } else {
+            None
+        }
     }
 }

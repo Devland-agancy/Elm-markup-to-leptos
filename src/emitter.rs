@@ -35,25 +35,29 @@ impl Emitter {
                 });
             }
             CellType::Element(el) => {
-                output.push_str(&format!("<{} ", el.name));
-                el.props.iter().for_each(|prop| {
-                    output.push_str(&Self::handle_prop_line(&format!(
-                        "{} {}",
-                        prop.key, prop.value
-                    )));
-                });
-                if self.self_closing_tags.contains(&el.name.as_str()) {
-                    output.push_str(" />");
+                if el.is_counter {
+                    output.push_str(&format!("r#\"{}\"#", el.is_counter))
                 } else {
-                    output.push_str(" >");
-
-                    el.children.iter().for_each(|child| {
-                        output.push_str(&self.emit_json(child));
+                    output.push_str(&format!("<{} ", el.name));
+                    el.props.iter().for_each(|prop| {
+                        output.push_str(&Self::handle_prop_line(&format!(
+                            "{} {}",
+                            prop.key, prop.value
+                        )));
                     });
-                    if el.children.is_empty() {
-                        output.push_str("\"\"");
+                    if self.self_closing_tags.contains(&el.name.as_str()) {
+                        output.push_str(" />");
+                    } else {
+                        output.push_str(" >");
+
+                        el.children.iter().for_each(|child| {
+                            output.push_str(&self.emit_json(child));
+                        });
+                        if el.children.is_empty() {
+                            output.push_str("\"\"");
+                        }
+                        output.push_str(&format!("</{}>", el.name));
                     }
-                    output.push_str(&format!("</{}>", el.name));
                 }
             }
             CellType::Block(block) => {
@@ -69,7 +73,7 @@ impl Emitter {
                             sub_text_block.push_str(&text.content);
                         }
                         BlockChildType::Delimited(dl) => {
-                            if let Some(wrap_with) = &dl.wrapped_with {
+                            if let Some(_) = &dl.wrapped_with {
                                 if !sub_text_block.trim().is_empty() {
                                     text_block
                                         .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));

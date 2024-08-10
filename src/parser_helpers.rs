@@ -1,5 +1,5 @@
-use crate::parser::*;
-use leptos::html::Data;
+use crate::{counter::counter_commands::CommandType, parser::*};
+use leptos::{html::Data, server_fn::default};
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 use serde_json::*;
 use syn::Block;
@@ -33,6 +33,8 @@ pub enum BlockChildType {
     Text(TextCell),
     #[serde(rename = "~delimited~")]
     Delimited(DelimitedCell),
+    // #[serde(rename = "~counter~")]
+    // Counter(CounterCell),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -92,6 +94,7 @@ pub struct ElementCell {
     #[serde(rename = "attributes")]
     pub props: Vec<Prop>,
     pub children: Vec<DataCell>,
+    pub is_counter: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -120,6 +123,13 @@ pub struct DelimitedCell {
     pub wrapped_with: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CounterCell {
+    pub counter_name: String,
+    pub command_type: CommandType,
+    pub assign_value: Option<String>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub enum DelimitedDisplayType {
     #[default]
@@ -135,7 +145,7 @@ pub trait Cell<T> {
 }
 
 impl ElementCell {
-    fn push_attribute(&mut self, line: &str) {
+    pub fn push_attribute(&mut self, line: &str) {
         if let Some(prop_line) = line.split_once(" ") {
             self.props.push(Prop {
                 key: prop_line.0.to_string(),
@@ -166,7 +176,7 @@ impl ElementCell {
         }
     }
 
-    fn add_existing_cell(add_to: &mut DataCell, parent_id: u32, cell: &DataCell) {
+    pub fn add_existing_cell(add_to: &mut DataCell, parent_id: u32, cell: &DataCell) {
         if add_to.id == parent_id {
             match add_to.cell_type {
                 CellType::Element(ref mut el) => el.children.push(DataCell {

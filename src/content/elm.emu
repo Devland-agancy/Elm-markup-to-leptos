@@ -5,14 +5,17 @@
     |> Grid
         roman_counter NestedCounter v
 
-        long::++NestedCounter
+        long ::++NestedCounter ::::NestedCounter
+        asdasdasdasdas
+        asdasdasdasdas
+
 
         |> yoyo
             line 99
 
     |> Grid
 
-        lists of ++::GridC 
+        lists of ::++GridC 
 
     incc ::++GridC
     incc ::++GridC

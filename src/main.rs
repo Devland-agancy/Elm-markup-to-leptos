@@ -79,9 +79,26 @@ fn main() {
                     element: "Space",
                     attach_to: AttachToEnum::BEFORE,
                 },
+                IgnoreOptions {
+                    element: "CounterInsert",
+                    attach_to: AttachToEnum::BOTH,
+                },
             ]),
         )
-        .wrap_children(vec!["Grid"], "Span", &None)
+        .wrap_children(
+            vec!["Grid"],
+            "Span",
+            &Some(vec![
+                IgnoreOptions {
+                    element: "CounterInsert",
+                    attach_to: AttachToEnum::BOTH,
+                },
+                IgnoreOptions {
+                    element: "CounterIncrement",
+                    attach_to: AttachToEnum::BOTH,
+                },
+            ]),
+        )
         .wrap_children(vec!["List"], "Item", &None)
         .add_indent(&ParagraphIndentOptions {
             tags_before_non_indents: vec![

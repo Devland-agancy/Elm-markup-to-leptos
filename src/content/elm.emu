@@ -1,33 +1,13 @@
-|> Solution
-    line 2.0
-    roman_counter GridC
+|> tell
+    hi
 
-    |> Grid
-        roman_counter NestedCounter v
-
-        long ::++NestedCounter ::::NestedCounter
-        asdasdasdasdas
-        asdasdasdasdas
-
-
-        |> yoyo
-            line 99
-
-    |> Grid
-
-        lists of ::++GridC 
-
-    incc ::++GridC
-    incc ::++GridC
-    incc ::++GridC
-    incc ::++GridC
-    incc ::--GridC
-    incc ..--GridC
-    incc ..--GridC
-    incc ..--GridC
-    incc ..--GridC
-    incc ::--GridC
-
+    |> tell
+        counter Test
+        
+        this is counter value ::::Test
+    
+        this is counter value ::++Test
+        this is counter value ..++Test
+        this is counter value ::::Test
 
     
-           

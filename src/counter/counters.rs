@@ -1,4 +1,4 @@
-use super::counter_instance::CounterInstance;
+use super::{counter_commands::CommandType, counter_instance::CounterInstance};
 
 #[derive(Debug, Clone)]
 pub struct Counters {
@@ -28,5 +28,25 @@ impl Counters {
             .filter(|c| c.name != counter.name)
             .cloned()
             .collect();
+    }
+
+    pub fn execute(&mut self, command_type: CommandType, counter_name: &str) -> Option<String> {
+        let counter = self
+            .counters_list
+            .iter_mut()
+            .find(|c| c.name == counter_name);
+        assert!(
+            !counter.is_none(),
+            "Counter {counter_name} Does not exist or is out of scope"
+        );
+        match command_type {
+            CommandType::INC => counter.unwrap().increment(),
+            CommandType::DEC => counter.unwrap().decrement(),
+            CommandType::ASSIGN => {}
+            CommandType::INSERT => {
+                return Some(counter.unwrap().current_value.to_string());
+            }
+        }
+        None
     }
 }

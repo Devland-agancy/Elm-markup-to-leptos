@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
                 check_extra_spaces(indent, last.indent, line);
             }
 
-            // remove counters that are out of scope
+            //remove counters that are out of scope
             for counter in self.counters.clone().counters_list.iter_mut() {
                 if !line.is_empty()
                     && !line.chars().all(char::is_whitespace)
@@ -150,7 +150,7 @@ impl<'a> Parser<'a> {
                             counter_type,
                             indent / 4,
                             default_value,
-                        ))
+                        ));
                     }
 
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);
@@ -198,45 +198,42 @@ impl<'a> Parser<'a> {
                         trimmed_line.trim_end(),
                     );
 
-                    let cc = CounterCommand::new();
-                    let splits_by_command = cc.split_line(&text_node);
+                    // let cc = CounterCommand::new();
+                    // let splits_by_command = cc.split_line(&text_node);
 
-                    splits_by_command.iter().for_each(|part| {
-                        if part.is_command {
-                            if let Some(parent_id) = curr_el_id {
-                                cc.generate_counter_elements(
-                                    &part.content,
-                                    &mut self.counters,
-                                    &mut self.result,
-                                    &mut self.id,
-                                    parent_id,
-                                );
-                            };
+                    // splits_by_command.iter().for_each(|part| {
+                    //     if part.is_command {
+                    //         if let Some(parent_id) = curr_el_id {
+                    //             cc.generate_counter_elements(
+                    //                 &part.content,
+                    //                 &mut self.counters,
+                    //                 &mut self.result,
+                    //                 &mut self.id,
+                    //                 parent_id,
+                    //             );
+                    //         };
+                    //     } else {
+
+                    //     }
+                    // });
+
+                    let mut block = BlockCell::new();
+                    let e = ElementText::new(&text_node);
+                    let block_children = e.split_text();
+
+                    block_children.iter().for_each(|child| {
+                        if let BlockChildType::Text(text) = &child {
+                            if text.content != "" {
+                                BlockChildType::push_cell(&mut block, child.to_owned());
+                            }
                         } else {
-                            let mut block = BlockCell::new();
-                            let e = ElementText::new(&part.content);
-                            let block_children = e.split_text();
-
-                            block_children.iter().for_each(|child| {
-                                if let BlockChildType::Text(text) = &child {
-                                    if text.content != "" {
-                                        BlockChildType::push_cell(&mut block, child.to_owned());
-                                    }
-                                } else {
-                                    BlockChildType::push_cell(&mut block, child.to_owned());
-                                }
-                            });
-
-                            text_node = "".to_string();
-                            BlockCell::add_cell(
-                                &mut self.result,
-                                curr_el_id.unwrap(),
-                                self.id,
-                                &block,
-                            );
-                            self.id += 1;
+                            BlockChildType::push_cell(&mut block, child.to_owned());
                         }
                     });
+
+                    text_node = "".to_string();
+                    BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
+                    self.id += 1;
 
                     if end_of_attached_element && tag_stack.len() > 1 {
                         let parent_id = self.get_parent_id(&tag_stack);

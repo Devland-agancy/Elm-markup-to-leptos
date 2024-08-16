@@ -6,6 +6,7 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
+use counter::counter_commands::CounterCommand;
 use counter::counters::Counters;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
 use emitter::Emitter;
@@ -42,13 +43,17 @@ fn main() {
 
     let mut counters = Counters::new();
     let mut json = Parser::new(&mut counters);
+
     let content_str = &contents;
     let json_tree = json.export_json(&contents, None, false);
 
+    println!("commands {:?}", counters.counters_list);
+
+    let mut counter_command = CounterCommand::new(&mut counters);
+    let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
+    let json_tree = counter_command.replace_counters(&mut json);
+
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
-
-    let emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
-
     json_desugarer = json_desugarer
         .pre_process_exercises()
         .add_increamental_attr(vec![("Solution", "solution_number"), ("Grid", "id")])
@@ -110,20 +115,19 @@ fn main() {
                 "Table",
             ],
             tags_with_non_indent_first_child: vec![
-                "Paragraphs",
-                "Paragraph",
-                "Example",
-                "Section",
-                "tr",
-                "Table",
-                "Solution",
-                "Exercise",
+                "Example", "Section", "tr", "Table", "Solution", "Exercise",
             ],
         })
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
         .auto_convert_to_float(vec!["line"]);
 
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+
+    let mut emitter: Emitter = Emitter::new(
+        &json_value,
+        vec!["img", "SectionDivider", "InlineImage"],
+        &mut counters,
+    );
     let leptos_code = emitter.emit_json(&json_value);
 
     let mut file = match File::create("src/content/output.rs") {

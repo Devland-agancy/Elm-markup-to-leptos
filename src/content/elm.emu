@@ -2,9 +2,9 @@
     hi
 
     |> tell
-        counter Test
+        counter Test 10
         
-        this is counter value ::::Test
+        this is counter *value ::::Test*
     
         this is counter value ::++Test
         this is counter value ..++Test

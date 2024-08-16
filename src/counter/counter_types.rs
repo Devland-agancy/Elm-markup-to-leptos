@@ -102,7 +102,6 @@ impl CounterValueType {
             CounterType::ALPHABITICAL => {
                 CounterValueType::ALPHABITICAL("".to_string()).default_value(default_value)
             }
-            _ => Self::ARABIC(0),
         }
     }
 

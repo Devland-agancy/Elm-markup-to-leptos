@@ -18,7 +18,7 @@
           "attributes": [
             {
               "key": "counter",
-              "value": "Test"
+              "value": "Test 10"
             }
           ],
           "children": [
@@ -29,7 +29,15 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "this is counter value 0",
+                  "content": "this is counter ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "*",
+                  "close_delimeter": "*",
+                  "terminal": "value 10",
+                  "display_type": "INLINE",
                   "wrapped_with": null
                 }
               ]
@@ -41,7 +49,7 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "this is counter value 1 this is counter value this is counter value 2",
+                  "content": "this is counter value 11 this is counter value this is counter value 12",
                   "wrapped_with": null
                 }
               ]

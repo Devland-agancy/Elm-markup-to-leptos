@@ -1,5 +1,4 @@
 use super::counter_types::{CounterType, CounterValueType};
-use leptos::server_fn::default;
 use numerals::roman::Roman;
 
 #[derive(Debug, Clone)]
@@ -41,7 +40,6 @@ impl CounterInstance {
                 }
             }
             CounterType::ALPHABITICAL => {}
-            _ => {}
         }
     }
 
@@ -69,7 +67,6 @@ impl CounterInstance {
                 }
             }
             CounterType::ALPHABITICAL => {}
-            _ => {}
         }
     }
 }

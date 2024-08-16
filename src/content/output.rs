@@ -1,10 +1,10 @@
 
     view! {
         <tell>
-            <tell counter="Test">
-                <span class="text">r#"this is counter value 0"#</span>
+            <tell counter="Test 10">
+                <span class="text">r#"this is counter "#<Span bold=true>r#"value 10"#</Span></span>
                 <span class="text">
-                    r#"this is counter value 1 this is counter value this is counter value 2"#
+                    r#"this is counter value 11 this is counter value this is counter value 12"#
                 </span>
             </tell>
         </tell>

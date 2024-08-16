@@ -1,9 +1,6 @@
 use crate::parser_helpers::{BlockChildType, Cell, CellType, DataCell, ElementCell};
 
-use super::{
-    counter_instance::CounterInstance, counter_types::CounterValueType, counters::Counters,
-};
-use leptos::html::S;
+use super::counters::Counters;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -211,32 +208,38 @@ impl<'a> CounterCommand<'a> {
     fn handle_block_child(&mut self, block_child: &mut BlockChildType) {
         match block_child {
             BlockChildType::Text(text) => {
-                let splits = self.split_line(&text.content);
-                let mut res = String::new();
-                for split in splits {
-                    if split.is_command {
-                        let commands = self.get_commands(split.content.as_str());
+                text.content = self.replace_counter_value(&text.content);
+            }
+            BlockChildType::Delimited(d) => {
+                d.terminal = self.replace_counter_value(&d.terminal);
+            }
+        }
+    }
 
-                        for command in commands {
-                            let execution = self.counters.execute(
-                                command,
-                                &self.get_command_counter_name(split.content.as_str()),
-                            );
-                            if execution.is_some() {
-                                if &split.content.as_str()[0..1] == " " {
-                                    res.push_str(" ");
-                                }
-                                res.push_str(&execution.unwrap());
-                            }
+    fn replace_counter_value(&mut self, text: &str) -> String {
+        let splits = self.split_line(&text);
+        let mut res = String::new();
+        for split in splits {
+            if split.is_command {
+                let commands = self.get_commands(split.content.as_str());
+
+                for command in commands {
+                    let execution = self.counters.execute(
+                        command,
+                        &self.get_command_counter_name(split.content.as_str()),
+                    );
+                    if execution.is_some() {
+                        if &split.content.as_str()[0..1] == " " {
+                            res.push_str(" ");
                         }
-                    } else {
-                        res.push_str(&split.content);
+                        res.push_str(&execution.unwrap());
                     }
                 }
-                text.content = res;
+            } else {
+                res.push_str(&split.content);
             }
-            BlockChildType::Delimited(d) => {}
         }
+        res
     }
 }
 

@@ -14,7 +14,7 @@ use super::parser_helpers::*;
 #[derive(Debug)]
 pub struct Parser<'a> {
     result: DataCell,
-    pub id: u32,
+    pub id: usize,
     pub counters: &'a mut Counters,
 }
 
@@ -38,7 +38,7 @@ impl<'a> Parser<'a> {
     fn handle_tag_line(
         &mut self,
         trimmed_line: &str,
-        mut curr_el_id: Option<u32>,
+        mut curr_el_id: Option<usize>,
         mut is_nested: &bool,
         tag_stack: &mut Vec<TagInfo>,
         indent: usize,
@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
     pub fn export_json(
         &mut self,
         elm: &'a str,
-        mut curr_el_id: Option<u32>,
+        mut curr_el_id: Option<usize>,
         mut is_nested: bool,
     ) -> String {
         let mut tag_stack: Vec<TagInfo> = Vec::new();
@@ -102,14 +102,14 @@ impl<'a> Parser<'a> {
             }
 
             //remove counters that are out of scope
-            for counter in self.counters.clone().counters_list.iter_mut() {
-                if !line.is_empty()
-                    && !line.chars().all(char::is_whitespace)
-                    && counter.scope > indent / 4
-                {
-                    self.counters.remove_counter(counter);
-                }
-            }
+            // for counter in self.counters.clone().counters_list.iter_mut() {
+            //     if !line.is_empty()
+            //         && !line.chars().all(char::is_whitespace)
+            //         && counter.scope > indent / 4
+            //     {
+            //         self.counters.remove_counter(counter);
+            //     }
+            // }
             if trimmed_line.starts_with("|> ") {
                 self.handle_tag_line(trimmed_line, curr_el_id, &is_nested, &mut tag_stack, indent);
                 continue;
@@ -148,7 +148,7 @@ impl<'a> Parser<'a> {
                         self.counters.add_counter(CounterInstance::new(
                             counter_name,
                             counter_type,
-                            indent / 4,
+                            self.id - 1,
                             default_value,
                         ));
                     }
@@ -261,7 +261,7 @@ impl<'a> Parser<'a> {
         res.unwrap_or("Something Wrong".to_string())
     }
 
-    fn get_parent_id(&self, tag_stack: &Vec<TagInfo>) -> Option<u32> {
+    fn get_parent_id(&self, tag_stack: &Vec<TagInfo>) -> Option<usize> {
         let before_last_index = tag_stack.len().checked_sub(2);
         if before_last_index.is_none() {
             return None;

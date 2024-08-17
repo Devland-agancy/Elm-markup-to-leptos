@@ -49,6 +49,7 @@ impl CommandType {
 pub struct CounterCommand<'a> {
     //commands: Vec<CommandType>,
     pub counters: &'a mut Counters,
+    pub json_tree: String,
 }
 
 pub struct LineSplits {
@@ -57,8 +58,11 @@ pub struct LineSplits {
 }
 
 impl<'a> CounterCommand<'a> {
-    pub fn new(counters: &'a mut Counters) -> Self {
-        Self { counters }
+    pub fn new(counters: &'a mut Counters, json_tree: &'a str) -> Self {
+        Self {
+            counters,
+            json_tree: json_tree.to_string(),
+        }
     }
 
     fn get_commands(&self, command_str: &str) -> Vec<CommandType> {
@@ -119,8 +123,8 @@ impl<'a> CounterCommand<'a> {
         command_str: &str,
         counters: &mut Counters,
         json_tree: &mut DataCell,
-        latest_id: &mut u32,
-        parent_id: u32,
+        latest_id: &mut usize,
+        parent_id: usize,
     ) {
         // create regex to match this string ""::::CounterName"
 
@@ -185,13 +189,14 @@ impl<'a> CounterCommand<'a> {
         // }
     }
 
-    pub fn replace_counters(&mut self, json_tree: &mut DataCell) -> String {
-        match &mut json_tree.cell_type {
+    pub fn replace_counters(&mut self, cell: &mut DataCell) -> String {
+        let cloned_cell = cell.clone();
+        match &mut cell.cell_type {
             CellType::Block(block) => {
                 block
                     .children
                     .iter_mut()
-                    .for_each(|child| self.handle_block_child(child));
+                    .for_each(|child| self.handle_block_child(child, &cloned_cell));
             }
             CellType::Element(el) => el.children.iter_mut().for_each(|child| {
                 self.replace_counters(child);
@@ -202,32 +207,36 @@ impl<'a> CounterCommand<'a> {
             _ => (),
         }
 
-        serde_json::to_string(&json_tree).unwrap()
+        serde_json::to_string(&cell).unwrap()
     }
 
-    fn handle_block_child(&mut self, block_child: &mut BlockChildType) {
+    fn handle_block_child(&mut self, block_child: &mut BlockChildType, cell: &DataCell) {
         match block_child {
             BlockChildType::Text(text) => {
-                text.content = self.replace_counter_value(&text.content);
+                text.content = self.replace_counter_value(&text.content, cell);
             }
             BlockChildType::Delimited(d) => {
-                d.terminal = self.replace_counter_value(&d.terminal);
+                d.terminal = self.replace_counter_value(&d.terminal, cell);
             }
         }
     }
 
-    fn replace_counter_value(&mut self, text: &str) -> String {
+    fn replace_counter_value(&mut self, text: &str, cell: &DataCell) -> String {
         let splits = self.split_line(&text);
         let mut res = String::new();
         for split in splits {
             if split.is_command {
+                let counter_name = &self.get_command_counter_name(split.content.as_str());
+                self.counters.check_scope(
+                    &cell,
+                    counter_name,
+                    &serde_json::from_str(&self.json_tree).unwrap(),
+                );
+
                 let commands = self.get_commands(split.content.as_str());
 
                 for command in commands {
-                    let execution = self.counters.execute(
-                        command,
-                        &self.get_command_counter_name(split.content.as_str()),
-                    );
+                    let execution = self.counters.execute(command, counter_name);
                     if execution.is_some() {
                         if &split.content.as_str()[0..1] == " " {
                             res.push_str(" ");

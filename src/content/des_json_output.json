@@ -14,7 +14,7 @@
           "id": 2,
           "parent_id": 1,
           "type": "~element~",
-          "tag": "tell",
+          "tag": "yo",
           "attributes": [
             {
               "key": "counter",
@@ -41,15 +41,25 @@
                   "wrapped_with": null
                 }
               ]
-            },
+            }
+          ],
+          "is_counter": false
+        },
+        {
+          "id": 4,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "tell",
+          "attributes": [],
+          "children": [
             {
-              "id": 4,
-              "parent_id": 2,
+              "id": 5,
+              "parent_id": 4,
               "type": "~block~",
               "children": [
                 {
                   "type": "~text~",
-                  "content": "this is counter value 11 this is counter value this is counter value 12",
+                  "content": "qwe",
                   "wrapped_with": null
                 }
               ]

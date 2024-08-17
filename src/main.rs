@@ -47,10 +47,11 @@ fn main() {
     let content_str = &contents;
     let json_tree = json.export_json(&contents, None, false);
 
-    println!("commands {:?}", counters.counters_list);
+    println!("counters_list {:?}", counters.counters_list);
 
-    let mut counter_command = CounterCommand::new(&mut counters);
+    let mut counter_command = CounterCommand::new(&mut counters, &json_tree);
     let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
+
     let json_tree = counter_command.replace_counters(&mut json);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);

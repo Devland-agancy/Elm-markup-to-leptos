@@ -2,11 +2,12 @@
     view! {
         <tell>
             <yo counter="Test 10">
-                <span class="text">r#"this is counter "#<Span bold=true>r#"value 10"#</Span></span>
+                <span class="text">
+                    r#"10 this is counter "#<Span bold=true>r#"value asd 10"#</Span>
+                </span>
             </yo>
-            <tell>
-                <span class="text">r#"qwe"#</span>
-            </tell>
+            <tell>""</tell>
+            <span class="text">r#"qwe 10"#</span>
         </tell>
     }
     

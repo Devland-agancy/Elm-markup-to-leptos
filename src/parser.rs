@@ -157,20 +157,6 @@ impl<'a> Parser<'a> {
                     continue;
                 }
 
-                // counter
-                //handle_counters();
-                // if let Some(parent_id) = curr_el_id {
-                //     let cc = CounterCommand::new();
-                //     cc.generate_counter_elements(
-                //         line,
-                //         &mut self.counters,
-                //         &mut self.result,
-                //         &mut self.id,
-                //         parent_id,
-                //     );
-
-                // };
-
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()
                     || (next_line.is_some() && next_line.unwrap().trim().is_empty());
@@ -197,25 +183,6 @@ impl<'a> Parser<'a> {
                         if text_node == "" { "" } else { " " },
                         trimmed_line.trim_end(),
                     );
-
-                    // let cc = CounterCommand::new();
-                    // let splits_by_command = cc.split_line(&text_node);
-
-                    // splits_by_command.iter().for_each(|part| {
-                    //     if part.is_command {
-                    //         if let Some(parent_id) = curr_el_id {
-                    //             cc.generate_counter_elements(
-                    //                 &part.content,
-                    //                 &mut self.counters,
-                    //                 &mut self.result,
-                    //                 &mut self.id,
-                    //                 parent_id,
-                    //             );
-                    //         };
-                    //     } else {
-
-                    //     }
-                    // });
 
                     let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);

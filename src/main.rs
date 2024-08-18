@@ -47,12 +47,10 @@ fn main() {
     let content_str = &contents;
     let json_tree = json.export_json(&contents, None, false);
 
-    println!("counters_list {:?}", counters.counters_list);
-
     let mut counter_command = CounterCommand::new(&mut counters, &json_tree);
     let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
 
-    let json_tree = counter_command.replace_counters(&mut json);
+    let json_tree = counter_command.run(&mut json);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
     json_desugarer = json_desugarer
@@ -124,11 +122,8 @@ fn main() {
 
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
 
-    let mut emitter: Emitter = Emitter::new(
-        &json_value,
-        vec!["img", "SectionDivider", "InlineImage"],
-        &mut counters,
-    );
+    let mut emitter: Emitter =
+        Emitter::new(&json_value, vec!["img", "SectionDivider", "InlineImage"]);
     let leptos_code = emitter.emit_json(&json_value);
 
     let mut file = match File::create("src/content/output.rs") {

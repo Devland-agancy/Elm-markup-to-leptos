@@ -29,14 +29,14 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "this is counter ",
+                  "content": "10 this is counter ",
                   "wrapped_with": null
                 },
                 {
                   "type": "~delimited~",
                   "open_delimeter": "*",
                   "close_delimeter": "*",
-                  "terminal": "value 10",
+                  "terminal": "value asd 10",
                   "display_type": "INLINE",
                   "wrapped_with": null
                 }
@@ -51,21 +51,20 @@
           "type": "~element~",
           "tag": "tell",
           "attributes": [],
+          "children": [],
+          "is_counter": false
+        },
+        {
+          "id": 5,
+          "parent_id": 1,
+          "type": "~block~",
           "children": [
             {
-              "id": 5,
-              "parent_id": 4,
-              "type": "~block~",
-              "children": [
-                {
-                  "type": "~text~",
-                  "content": "qwe",
-                  "wrapped_with": null
-                }
-              ]
+              "type": "~text~",
+              "content": "qwe 10",
+              "wrapped_with": null
             }
-          ],
-          "is_counter": false
+          ]
         }
       ],
       "is_counter": false

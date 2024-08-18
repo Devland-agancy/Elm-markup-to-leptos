@@ -1,6 +1,6 @@
 use crate::parser_helpers::{BlockChildType, Cell, CellType, DataCell, ElementCell};
 
-use super::counters::Counters;
+use super::{counters::Counters, handle_instance::HandleInstance};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -15,14 +15,23 @@ pub enum CommandType {
 
 impl CommandType {
     fn from_str(string: &str) -> Vec<Self> {
-        match string {
+        let mut sub_string = string;
+        if string.starts_with("<<") {
+            sub_string = &string[2..];
+        }
+
+        let mut res = match sub_string {
             "::++" => vec![CommandType::INC, CommandType::INSERT],
             "::--" => vec![CommandType::DEC, CommandType::INSERT],
             "..++" => vec![CommandType::INC],
             "..--" => vec![CommandType::DEC],
             "::::" => vec![CommandType::INSERT],
             _ => vec![],
+        };
+        if string.starts_with("<<") {
+            res.push(CommandType::ASSIGN); // align should be the last
         }
+        res
     }
 
     fn to_tag_name(&self) -> String {
@@ -52,6 +61,7 @@ pub struct CounterCommand<'a> {
     pub json_tree: String,
 }
 
+#[derive(Debug)]
 pub struct LineSplits {
     pub content: String,
     pub is_command: bool,
@@ -66,25 +76,36 @@ impl<'a> CounterCommand<'a> {
     }
 
     fn get_commands(&self, command_str: &str) -> Vec<CommandType> {
-        let command_operation = if &command_str[0..1] == " " {
-            &command_str[1..5]
-        } else {
-            &command_str[0..4]
-        }; // remove the first char if there one before the command as it's used to detect escape char
+        let command_split = command_str.split("<<").collect::<Vec<&str>>();
 
-        CommandType::from_str(command_operation)
-    }
-
-    fn get_command_counter_name(&self, command_str: &str) -> String {
-        if &command_str[0..1] == " " {
-            command_str[5..].to_string()
+        if command_split.len() == 1 {
+            CommandType::from_str(&command_split[0][0..4])
         } else {
-            command_str[4..].to_string()
+            CommandType::from_str(&("<<".to_string() + &command_split[1][0..4]))
         }
     }
 
-    pub fn split_line(&self, line: &str) -> Vec<LineSplits> {
-        let cmd_regex = r"(^|[^\\])(::|\.\.)(::|\+\+|--)\w+";
+    fn get_command_counter_name(&self, command_str: &str) -> String {
+        let command_split = command_str.split("<<").collect::<Vec<&str>>();
+
+        command_split.last().unwrap()[4..].to_string()
+    }
+    fn get_handle_name(&self, command_str: &str) -> Option<String> {
+        let command_split = command_str.split("<<").collect::<Vec<&str>>();
+
+        if command_split.len() == 1 {
+            None
+        } else {
+            Some(command_split[0].to_string())
+        }
+    }
+
+    fn split_line(&self, line: &str, handle_insert_command: bool) -> Vec<LineSplits> {
+        let cmd_regex = if handle_insert_command {
+            r"(^|[^\\])(>>)\w+"
+        } else {
+            r"(^|[^\\])(\w+<<)?(::|\.\.)(::|\+\+|--)\w+"
+        };
 
         // Create the regex object
         let re = Regex::new(cmd_regex).unwrap();
@@ -94,15 +115,27 @@ impl<'a> CounterCommand<'a> {
         let mut start = 0;
 
         for mat in re.find_iter(line) {
+            let match_first_char = &line[mat.start()..mat.start() + 1];
+
             if mat.start() != start {
+                //if first char of found regex is not a space, add the previous part of the string
+                let mut string = String::from(&line[start..mat.start()]);
+                string.push_str(match_first_char);
                 result.push(LineSplits {
-                    content: line[start..mat.start()].to_string(),
+                    content: string,
                     is_command: false,
                 });
             }
 
+            let mut string = String::new();
+            if mat.start() > 0 {
+                string.push_str(&mat.as_str()[1..]);
+            } else {
+                string.push_str(&mat.as_str());
+            }
+
             result.push(LineSplits {
-                content: mat.as_str().to_string(),
+                content: string,
                 is_command: true,
             });
             start = mat.end();
@@ -115,94 +148,33 @@ impl<'a> CounterCommand<'a> {
                 is_command: false,
             });
         }
+
         result
     }
 
-    pub fn generate_counter_elements(
-        &self,
-        command_str: &str,
-        counters: &mut Counters,
-        json_tree: &mut DataCell,
-        latest_id: &mut usize,
-        parent_id: usize,
-    ) {
-        // create regex to match this string ""::::CounterName"
+    pub fn run(&mut self, json: &mut DataCell) -> String {
+        let json_str = self.replace_counters(json, false);
+        println!("list {:?}", self.counters.handles_list);
+        let mut json: DataCell = serde_json::from_str(&json_str).unwrap();
+        let json_str = self.replace_counters(&mut json, true);
 
-        let command_str = if &command_str[0..2] != "::" && &command_str[0..2] != ".."
-        // first char can be something else captured by regex for using (^|[^\\])
-        {
-            &command_str[1..]
-        } else {
-            command_str
-        }; // remove the first char if there one before the command as it's used to detect escape char
-
-        let detected_counter_name = &command_str[4..];
-
-        let mut counter_names = Vec::new();
-        for counter in counters.counters_list.iter() {
-            counter_names.push(&counter.name)
-        }
-        if !counter_names.contains(&&detected_counter_name.to_string()) {
-            panic!("Counter {} was used out of scope", detected_counter_name);
-        }
-
-        for command in self.get_commands(command_str) {
-            let mut counter_element =
-                ElementCell::init_cell(*latest_id, parent_id, &command.to_tag_name());
-            *latest_id += 1;
-            if let CellType::Element(el) = &mut counter_element.cell_type {
-                el.push_attribute(&format!("counter_name {}", detected_counter_name));
-                if command == CommandType::INC {
-                    el.push_attribute(&format!("increment 1"));
-                } else if command == CommandType::ASSIGN {
-                    //el.push_attribute(&format!("value {}", 1));
-                }
-                el.is_counter = true;
-
-                //el.push_attribute(&format!("silent {}", &command_str[0..2] == ".."));
-
-                ElementCell::add_existing_cell(json_tree, parent_id, &counter_element);
-            };
-        }
-
-        // for counter in counters.counters_list.iter_mut() {
-        //     if command_str == format!("::++{}", counter.name)
-        //         || command_str == format!("..++{}", counter.name)
-        //     {
-        //         counter.increment();
-        //     }
-        //     if command_str == format!("::--{}", counter.name)
-        //         || command_str == format!("..--{}", counter.name)
-        //     {
-        //         counter.decrement();
-        //     }
-
-        //     if detected_counter_name == counter.name {
-        //         // ::++ and ::-- are silent and do not change the line
-        //         let replace_with = if &command_str[0..2] == "::" {
-        //             caps[1].to_string() + counter.current_value.to_string().as_str()
-        //         } else {
-        //             caps[1].to_string()
-        //         };
-        //         new_line = insert_regex.replace(&new_line, &replace_with).to_string()
-        //     }
-        // }
+        json_str
     }
 
-    pub fn replace_counters(&mut self, cell: &mut DataCell) -> String {
+    pub fn replace_counters(&mut self, cell: &mut DataCell, handle_insert_command: bool) -> String {
         let cloned_cell = cell.clone();
+
         match &mut cell.cell_type {
             CellType::Block(block) => {
-                block
-                    .children
-                    .iter_mut()
-                    .for_each(|child| self.handle_block_child(child, &cloned_cell));
+                block.children.iter_mut().for_each(|child| {
+                    self.handle_block_child(child, &cloned_cell, handle_insert_command)
+                });
             }
             CellType::Element(el) => el.children.iter_mut().for_each(|child| {
-                self.replace_counters(child);
+                self.replace_counters(child, handle_insert_command);
             }),
             CellType::Root(el) => el.children.iter_mut().for_each(|child| {
-                self.replace_counters(child);
+                self.replace_counters(child, handle_insert_command);
             }),
             _ => (),
         }
@@ -210,20 +182,34 @@ impl<'a> CounterCommand<'a> {
         serde_json::to_string(&cell).unwrap()
     }
 
-    fn handle_block_child(&mut self, block_child: &mut BlockChildType, cell: &DataCell) {
+    fn handle_block_child(
+        &mut self,
+        block_child: &mut BlockChildType,
+        cell: &DataCell,
+        handle_insert_command: bool,
+    ) {
         match block_child {
             BlockChildType::Text(text) => {
-                text.content = self.replace_counter_value(&text.content, cell);
+                text.content = if handle_insert_command {
+                    self.insert_handle_value(&text.content)
+                } else {
+                    self.replace_counter_value(&text.content, cell)
+                }
             }
             BlockChildType::Delimited(d) => {
-                d.terminal = self.replace_counter_value(&d.terminal, cell);
+                d.terminal = if handle_insert_command {
+                    self.insert_handle_value(&d.terminal)
+                } else {
+                    self.replace_counter_value(&d.terminal, cell)
+                };
             }
-        }
+        };
     }
 
     fn replace_counter_value(&mut self, text: &str, cell: &DataCell) -> String {
-        let splits = self.split_line(&text);
+        let splits = self.split_line(&text, false);
         let mut res = String::new();
+
         for split in splits {
             if split.is_command {
                 let counter_name = &self.get_command_counter_name(split.content.as_str());
@@ -235,8 +221,10 @@ impl<'a> CounterCommand<'a> {
 
                 let commands = self.get_commands(split.content.as_str());
 
+                let handle_name = self.get_handle_name(split.content.as_str());
+
                 for command in commands {
-                    let execution = self.counters.execute(command, counter_name);
+                    let execution = self.counters.execute(command, counter_name, &handle_name);
                     if execution.is_some() {
                         if &split.content.as_str()[0..1] == " " {
                             res.push_str(" ");
@@ -244,10 +232,34 @@ impl<'a> CounterCommand<'a> {
                         res.push_str(&execution.unwrap());
                     }
                 }
+                //println!("hd  {:?}", self.counters.handles_list);
             } else {
                 res.push_str(&split.content);
             }
         }
+
+        res
+    }
+
+    fn insert_handle_value(&mut self, text: &str) -> String {
+        let splits = self.split_line(&text, true);
+
+        let mut res = String::new();
+        for split in splits {
+            if split.is_command {
+                let handle = self
+                    .counters
+                    .handles_list
+                    .iter()
+                    .find(|h| h.name == &split.content[2..]);
+                if handle.is_some() {
+                    res.push_str(&handle.unwrap().value);
+                };
+            } else {
+                res.push_str(&split.content);
+            }
+        }
+
         res
     }
 }

@@ -21,21 +21,13 @@ pub struct TagInfo {
 pub struct Emitter<'a> {
     pub tree: &'a DataCell,
     pub self_closing_tags: Vec<&'a str>,
-    text_to_attach_to_next_span: String,
-    pub counters: &'a mut Counters,
 }
 
 impl<'a> Emitter<'a> {
-    pub fn new(
-        tree: &'a DataCell,
-        self_closing_tags: Vec<&'a str>,
-        counters: &'a mut Counters,
-    ) -> Emitter<'a> {
+    pub fn new(tree: &'a DataCell, self_closing_tags: Vec<&'a str>) -> Emitter<'a> {
         Emitter {
             tree,
             self_closing_tags,
-            text_to_attach_to_next_span: String::new(),
-            counters,
         }
     }
 
@@ -49,80 +41,30 @@ impl<'a> Emitter<'a> {
                 });
             }
             CellType::Element(el) => {
-                if el.is_counter {
-                    let counter_type = CommandType::from_tag_name(&el.name).unwrap();
-                    let counter_name = &el
-                        .props
-                        .iter()
-                        .find(|c| c.key == "counter_name")
-                        .unwrap()
-                        .value;
-                    let res = self.counters.execute(counter_type, counter_name);
-                    if let Some(res) = res {
-                        output.push_str(&format!("<span>\"{}\"</span>", res));
-                    }
+                output.push_str(&format!("<{} ", el.name));
+                el.props.iter().for_each(|prop| {
+                    output.push_str(&Self::handle_prop_line(&format!(
+                        "{} {}",
+                        prop.key, prop.value
+                    )));
+                });
+                if self.self_closing_tags.contains(&el.name.as_str()) {
+                    output.push_str(" />");
                 } else {
-                    output.push_str(&format!("<{} ", el.name));
-                    el.props.iter().for_each(|prop| {
-                        output.push_str(&Self::handle_prop_line(&format!(
-                            "{} {}",
-                            prop.key, prop.value
-                        )));
-                    });
-                    if self.self_closing_tags.contains(&el.name.as_str()) {
-                        output.push_str(" />");
-                    } else {
-                        output.push_str(" >");
+                    output.push_str(" >");
 
-                        el.children.iter().for_each(|child| {
-                            output.push_str(&self.emit_json(child));
-                        });
-                        if el.children.is_empty() {
-                            output.push_str("\"\"");
-                        }
-                        output.push_str(&format!("</{}>", el.name));
+                    el.children.iter().for_each(|child| {
+                        output.push_str(&self.emit_json(child));
+                    });
+                    if el.children.is_empty() {
+                        output.push_str("\"\"");
                     }
+                    output.push_str(&format!("</{}>", el.name));
                 }
             }
             CellType::Block(block) => {
                 let mut text_block = String::new();
                 let mut sub_text_block = String::new();
-                // check if prev sibling cell is attached to this block
-                let parent = DataCell::get_cell_by_id_immut(&self.tree, data_cell.parent_id);
-
-                // if let Some(parent) = parent {
-                //     let mut attached_elements_text = String::new();
-
-                //     let prev_sibling = data_cell.get_prev_sibling(parent);
-                //     let mut prev_sibling_loop = prev_sibling.clone();
-                //     let mut last_sibling = prev_sibling.clone();
-
-                //     while let Some(prev_sib) = prev_sibling_loop {
-                //         if let CellType::Element(el) = &prev_sib.cell_type {
-                //             attached_elements_text =
-                //                 "value".to_owned() + attached_elements_text.as_str();
-                //             prev_sibling_loop = prev_sib.get_prev_sibling(parent);
-                //             last_sibling = prev_sib.get_prev_sibling(parent);
-
-                //             if !el.is_attached_to_next && !el.is_attached_to_prev {
-                //                 break;
-                //             }
-                //         } else {
-                //             break;
-                //         }
-                //     }
-
-                //     if let Some(prev_sibling) = &prev_sibling {
-                //         if let CellType::Element(el) = &prev_sibling.cell_type {
-                //             if (el.is_attached_to_next && !el.is_attached_to_prev)
-                //                 || (el.is_attached_to_next && last_sibling.is_none())
-                //             {
-                //                 sub_text_block.push_str(&attached_elements_text)
-                //             } else if el.is_attached_to_next && el.is_attached_to_prev {
-                //             }
-                //         }
-                //     }
-                // }
 
                 block
                     .children
@@ -168,63 +110,12 @@ impl<'a> Emitter<'a> {
                         }
                     });
 
-                let mut next_is_el_attached_to_prev = false;
-                //Check if next cell is an attached element
-                // if let Some(parent) = parent {
-                //     let mut attached_elements_text = String::new();
-
-                //     let next_sibling = data_cell.get_next_sibling(parent);
-                //     let mut next_sibling_loop = next_sibling.clone();
-                //     let mut last_sibling = next_sibling.clone();
-
-                //     while let Some(next_sib) = next_sibling_loop {
-                //         if let CellType::Element(el) = &next_sib.cell_type {
-                //             if !el.is_attached_to_prev {
-                //                 break;
-                //             }
-
-                //             attached_elements_text =
-                //                 "value".to_owned() + attached_elements_text.as_str();
-                //             next_sibling_loop = next_sib.get_next_sibling(parent);
-                //             last_sibling = next_sib.get_next_sibling(parent);
-
-                //             if el.is_attached_to_next {
-                //                 self.text_to_attach_to_next_span = String::from(&sub_text_block);
-                //                 self.text_to_attach_to_next_span
-                //                     .push_str(&attached_elements_text);
-                //                 next_is_el_attached_to_prev = true
-                //             }
-                //         } else {
-                //             break;
-                //         }
-                //     }
-
-                //     if let Some(_) = &next_sibling {
-                //         sub_text_block.push_str(&attached_elements_text)
-                //     }
-                // }
-
-                if !sub_text_block.trim().is_empty()
-                // && !next_is_el_attached_to_prev
-                // && self.text_to_attach_to_next_span.len() == 0
-                {
+                if !sub_text_block.trim().is_empty() {
                     text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
                     let text_el = ElementText::new(sub_text_block.as_str());
                     text_block.push_str(&text_el.handle_delimeters());
                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                 }
-
-                // if !next_is_el_attached_to_prev && self.text_to_attach_to_next_span.len() > 0 {
-                //     println!("last {:?}", self.text_to_attach_to_next_span);
-
-                //     sub_text_block =
-                //         self.text_to_attach_to_next_span.to_owned() + sub_text_block.as_str();
-                //     self.text_to_attach_to_next_span = "".to_string();
-                //     text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
-                //     let text_el = ElementText::new(sub_text_block.as_str());
-                //     text_block.push_str(&text_el.handle_delimeters());
-                //     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
-                // }
 
                 output.push_str(&format!("r#\"{}\"#", text_block));
             }

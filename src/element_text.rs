@@ -166,10 +166,6 @@ impl ElementText {
                             string.push_str(self.get_char(i).as_str());
                             i += 1;
                         }
-                        if self.get_char(i) == " " {
-                            string.push_str(" ");
-                            i += 1;
-                        }
                         let handled_string = self::ElementText::new(&string).handle_delimeters();
                         i += 1;
                         output.push_str(&handled_string);

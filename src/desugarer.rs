@@ -139,8 +139,7 @@ impl Desugarer {
         for (i, element) in elements.clone().iter_mut().enumerate() {
             if let CellType::Element(el) = &element.cell_type {
                 // counter prop to parent
-                println!("poar {}", element.parent_id);
-                ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
+                // ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
             }
             let new_block_child = BlockChildType::Delimited(DelimitedCell {
                 open_delimeter: "*".to_string(),

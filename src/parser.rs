@@ -1,8 +1,6 @@
 use std::str::Lines;
 use std::vec;
 
-use crate::counter::counter_commands::CounterCommand;
-
 use super::counter::counter_instance::CounterInstance;
 use super::counter::counter_types::CounterType;
 use super::counter::counters::Counters;

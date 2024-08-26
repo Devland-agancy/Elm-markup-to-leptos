@@ -1,5 +1,8 @@
+use leptos::html::{data, Data};
 use regex::Regex;
 
+use crate::counter::counter_commands::CommandType;
+use crate::counter::counters::Counters;
 use crate::parser_helpers::{BlockChildType, CellType, DataCell, DelimitedDisplayType};
 
 use super::element_text::ElementText;
@@ -15,18 +18,21 @@ pub struct TagInfo {
 }
 
 #[derive(Debug)]
-pub struct Emitter {
-    pub self_closing_tags: Vec<&'static str>,
+pub struct Emitter<'a> {
+    pub tree: &'a DataCell,
+    pub self_closing_tags: Vec<&'a str>,
 }
 
-impl Emitter {
-    pub fn new(self_closing_tags: Vec<&'static str>) -> Emitter {
-        Emitter { self_closing_tags }
+impl<'a> Emitter<'a> {
+    pub fn new(tree: &'a DataCell, self_closing_tags: Vec<&'a str>) -> Emitter<'a> {
+        Emitter {
+            tree,
+            self_closing_tags,
+        }
     }
 
-    pub fn emit_json(&self, data_cell: &DataCell) -> String {
+    pub fn emit_json(&mut self, data_cell: &DataCell) -> String {
         let mut output = String::new();
-        /* let json_tree: DataCell = serde_json::from_str(json).unwrap(); */
 
         match &data_cell.cell_type {
             CellType::Root(root) => {
@@ -69,7 +75,7 @@ impl Emitter {
                             sub_text_block.push_str(&text.content);
                         }
                         BlockChildType::Delimited(dl) => {
-                            if let Some(wrap_with) = &dl.wrapped_with {
+                            if let Some(_) = &dl.wrapped_with {
                                 if !sub_text_block.trim().is_empty() {
                                     text_block
                                         .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
@@ -103,6 +109,7 @@ impl Emitter {
                             }
                         }
                     });
+
                 if !sub_text_block.trim().is_empty() {
                     text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
                     let text_el = ElementText::new(sub_text_block.as_str());
@@ -110,7 +117,7 @@ impl Emitter {
                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                 }
 
-                output.push_str(&format!("r#\"{}\"#", text_block))
+                output.push_str(&format!("r#\"{}\"#", text_block));
             }
             _ => {}
         }

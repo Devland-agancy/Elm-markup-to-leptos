@@ -205,7 +205,7 @@ impl ElementText {
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
 
-                    let mut last_child = output.pop().unwrap();
+                    let last_child = output.pop().unwrap();
                     match last_child {
                         BlockChildType::Text(mut t) => {
                             t.content

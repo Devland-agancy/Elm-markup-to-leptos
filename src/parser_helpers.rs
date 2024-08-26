@@ -1,5 +1,5 @@
-use crate::parser::*;
-use leptos::html::Data;
+use crate::{counter::counter_commands::CommandType, parser::*};
+use leptos::{html::Data, server_fn::default};
 use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
 use serde_json::*;
 use syn::Block;
@@ -7,7 +7,7 @@ use syn::Block;
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 
 pub struct TagInfo {
-    pub id: u32,
+    pub id: usize,
     pub name: String,
     pub indent: usize,
     pub is_self_closing: bool,
@@ -33,18 +33,20 @@ pub enum BlockChildType {
     Text(TextCell),
     #[serde(rename = "~delimited~")]
     Delimited(DelimitedCell),
+    // #[serde(rename = "~counter~")]
+    // Counter(CounterCell),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DataCell {
-    pub id: u32,
-    pub parent_id: u32,
+    pub id: usize,
+    pub parent_id: usize,
     #[serde(flatten)]
     pub cell_type: CellType,
 }
 
 impl DataCell {
-    pub fn get_cell_by_id(cell: &mut DataCell, id: u32) -> Option<&mut DataCell> {
+    pub fn get_cell_by_id(cell: &mut DataCell, id: usize) -> Option<&mut DataCell> {
         if cell.id == id {
             return Some(cell);
         };
@@ -72,10 +74,58 @@ impl DataCell {
         }
     }
 
+    pub fn get_cell_by_id_immut(cell: &DataCell, id: usize) -> Option<&DataCell> {
+        if cell.id == id {
+            return Some(cell);
+        };
+
+        match &cell.cell_type {
+            CellType::Element(el) => el.children.iter().find_map(|x| {
+                if let Some(child) = Self::get_cell_by_id_immut(x, id) {
+                    Some(child)
+                } else {
+                    None
+                }
+            }),
+
+            CellType::Root(el) => {
+                let res = el.children.iter().find_map(|x| {
+                    if let Some(child) = Self::get_cell_by_id_immut(x, id) {
+                        Some(child)
+                    } else {
+                        None
+                    }
+                });
+                res
+            }
+            _ => None,
+        }
+    }
+
     pub fn into_el(&self) -> Option<&ElementCell> {
         if let CellType::Element(el) = &self.cell_type {
             return Some(el);
         }
+        None
+    }
+
+    pub fn get_prev_sibling(&self, parent: &DataCell) -> Option<DataCell> {
+        if let CellType::Element(parent) = &parent.cell_type {
+            let index = parent.children.iter().position(|x| x.id == self.id)?;
+            if index > 0 {
+                return parent.children.iter().nth(index - 1).cloned();
+            }
+        }
+
+        None
+    }
+
+    pub fn get_next_sibling(&self, parent: &DataCell) -> Option<DataCell> {
+        if let CellType::Element(parent) = &parent.cell_type {
+            let index = parent.children.iter().position(|x| x.id == self.id)?;
+            return parent.children.iter().nth(index + 1).cloned();
+        }
+
         None
     }
 }
@@ -92,6 +142,9 @@ pub struct ElementCell {
     #[serde(rename = "attributes")]
     pub props: Vec<Prop>,
     pub children: Vec<DataCell>,
+    pub is_counter: bool,
+    // pub is_attached_to_prev: bool,
+    // pub is_attached_to_next: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -120,6 +173,13 @@ pub struct DelimitedCell {
     pub wrapped_with: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CounterCell {
+    pub counter_name: String,
+    pub command_type: CommandType,
+    pub assign_value: Option<String>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub enum DelimitedDisplayType {
     #[default]
@@ -129,13 +189,13 @@ pub enum DelimitedDisplayType {
 }
 
 pub trait Cell<T> {
-    fn init_cell(id: u32, parent_id: u32, s: T) -> DataCell;
-    fn push_cell(parent: &mut DataCell, id: u32, s: T);
-    fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, text: T);
+    fn init_cell(id: usize, parent_id: usize, s: T) -> DataCell;
+    fn push_cell(parent: &mut DataCell, id: usize, s: T);
+    fn add_cell(add_to: &mut DataCell, parent_id: usize, id: usize, text: T);
 }
 
 impl ElementCell {
-    fn push_attribute(&mut self, line: &str) {
+    pub fn push_attribute(&mut self, line: &str) {
         if let Some(prop_line) = line.split_once(" ") {
             self.props.push(Prop {
                 key: prop_line.0.to_string(),
@@ -144,7 +204,7 @@ impl ElementCell {
         }
     }
 
-    pub fn add_attribute(tree: &mut DataCell, cell_id: u32, prop_line: &str) {
+    pub fn add_attribute(tree: &mut DataCell, cell_id: usize, prop_line: &str) {
         if tree.id == cell_id {
             match &mut tree.cell_type {
                 CellType::Element(ref mut el) => el.push_attribute(prop_line),
@@ -166,7 +226,7 @@ impl ElementCell {
         }
     }
 
-    fn add_existing_cell(add_to: &mut DataCell, parent_id: u32, cell: &DataCell) {
+    pub fn add_existing_cell(add_to: &mut DataCell, parent_id: usize, cell: &DataCell) {
         if add_to.id == parent_id {
             match add_to.cell_type {
                 CellType::Element(ref mut el) => el.children.push(DataCell {
@@ -198,8 +258,8 @@ impl ElementCell {
 
     pub fn move_cell(
         tree: &mut DataCell,
-        (cell_to_move_parent_id, cell_to_move_id): (u32, u32),
-        move_to: u32,
+        (cell_to_move_parent_id, cell_to_move_id): (usize, usize),
+        move_to: usize,
     ) {
         if tree.id == cell_to_move_parent_id {
             if let CellType::Element(ref mut el) = tree.cell_type {
@@ -231,7 +291,7 @@ impl ElementCell {
         }
     }
 
-    pub fn move_children(tree: &mut DataCell, cell: u32, move_to: u32) {
+    pub fn move_children(tree: &mut DataCell, cell: usize, move_to: usize) {
         if tree.id == cell {
             let mut cloned_tree = tree.clone();
             if let CellType::Element(ref mut el) = &mut tree.cell_type {
@@ -269,7 +329,7 @@ impl ElementCell {
 }
 
 impl Cell<&str> for ElementCell {
-    fn init_cell(id: u32, parent_id: u32, tag_name: &str) -> DataCell {
+    fn init_cell(id: usize, parent_id: usize, tag_name: &str) -> DataCell {
         DataCell {
             id,
             parent_id,
@@ -280,7 +340,7 @@ impl Cell<&str> for ElementCell {
         }
     }
 
-    fn push_cell(parent: &mut DataCell, id: u32, tag_name: &str) {
+    fn push_cell(parent: &mut DataCell, id: usize, tag_name: &str) {
         match parent.cell_type {
             CellType::Element(ref mut el) => {
                 el.children.push(Self::init_cell(id, parent.id, tag_name))
@@ -292,7 +352,7 @@ impl Cell<&str> for ElementCell {
         }
     }
 
-    fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, tag_name: &str) {
+    fn add_cell(add_to: &mut DataCell, parent_id: usize, id: usize, tag_name: &str) {
         if add_to.id == parent_id {
             Self::push_cell(add_to, id, tag_name);
             return;
@@ -320,7 +380,7 @@ impl BlockCell {
         }
     }
 
-    fn insert_cell(parent: &mut DataCell, id: u32, block: &BlockCell) {
+    fn insert_cell(parent: &mut DataCell, id: usize, block: &BlockCell) {
         match parent.cell_type {
             CellType::Element(ref mut el) => {
                 el.children.insert(0, Self::init_cell(id, parent.id, block))
@@ -329,7 +389,12 @@ impl BlockCell {
         }
     }
 
-    pub fn add_cell_at_first(add_to: &mut DataCell, parent_id: u32, id: u32, block: &BlockCell) {
+    pub fn add_cell_at_first(
+        add_to: &mut DataCell,
+        parent_id: usize,
+        id: usize,
+        block: &BlockCell,
+    ) {
         if add_to.id == parent_id {
             Self::insert_cell(add_to, id, block);
             return;
@@ -350,7 +415,7 @@ impl BlockCell {
 }
 
 impl Cell<&BlockCell> for BlockCell {
-    fn init_cell(id: u32, parent_id: u32, block: &BlockCell) -> DataCell {
+    fn init_cell(id: usize, parent_id: usize, block: &BlockCell) -> DataCell {
         DataCell {
             id,
             parent_id,
@@ -358,7 +423,7 @@ impl Cell<&BlockCell> for BlockCell {
         }
     }
 
-    fn push_cell(parent: &mut DataCell, id: u32, block: &BlockCell) {
+    fn push_cell(parent: &mut DataCell, id: usize, block: &BlockCell) {
         match parent.cell_type {
             CellType::Element(ref mut el) => {
                 el.children.push(Self::init_cell(id, parent.id, block))
@@ -367,7 +432,7 @@ impl Cell<&BlockCell> for BlockCell {
         }
     }
 
-    fn add_cell(add_to: &mut DataCell, parent_id: u32, id: u32, block: &BlockCell) {
+    fn add_cell(add_to: &mut DataCell, parent_id: usize, id: usize, block: &BlockCell) {
         if add_to.id == parent_id {
             Self::push_cell(add_to, id, block);
             return;
@@ -390,7 +455,7 @@ impl Cell<&BlockCell> for BlockCell {
 pub trait BlockChild<T> {
     fn push_cell(parent: &mut BlockCell, s: T);
     fn insert_block(parent: &mut DataCell, s: T);
-    fn add_block_at_first(add_to: &mut DataCell, parent_id: u32, block: &T);
+    fn add_block_at_first(add_to: &mut DataCell, parent_id: usize, block: &T);
 }
 
 impl BlockChild<BlockChildType> for BlockChildType {
@@ -406,7 +471,7 @@ impl BlockChild<BlockChildType> for BlockChildType {
         }
     }
 
-    fn add_block_at_first(add_to: &mut DataCell, block_id: u32, block_child: &BlockChildType) {
+    fn add_block_at_first(add_to: &mut DataCell, block_id: usize, block_child: &BlockChildType) {
         if add_to.id == block_id {
             Self::insert_block(add_to, block_child.to_owned());
             return;

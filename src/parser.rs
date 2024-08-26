@@ -1,23 +1,25 @@
 use std::str::Lines;
 use std::vec;
 
-use crate::counter::counter_instance::CounterInstance;
-use crate::counter::counter_types::CounterType;
-use crate::counter::counters::Counters;
+use crate::counter::counter_commands::CounterCommand;
+
+use super::counter::counter_instance::CounterInstance;
+use super::counter::counter_types::CounterType;
+use super::counter::counters::Counters;
 
 use super::element_text::ElementText;
 use super::helpers::*;
 use super::parser_helpers::*;
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct Parser<'a> {
     result: DataCell,
-    pub id: u32,
-    pub counters: &'static mut Counters,
+    pub id: usize,
+    pub counters: &'a mut Counters,
 }
 
-impl Parser {
-    pub fn new(counters: &'static mut Counters) -> Parser {
+impl<'a> Parser<'a> {
+    pub fn new(counters: &'a mut Counters) -> Parser<'a> {
         Self {
             result: DataCell {
                 parent_id: 0,
@@ -36,14 +38,12 @@ impl Parser {
     fn handle_tag_line(
         &mut self,
         trimmed_line: &str,
-        mut curr_el_id: Option<u32>,
+        mut curr_el_id: Option<usize>,
         mut is_nested: &bool,
         tag_stack: &mut Vec<TagInfo>,
         indent: usize,
     ) {
         let tag_name = trimmed_line[3..].trim();
-        //println!("line {}", line);
-        //println!("line {:#?}", tag_stack.last());
         tag_stack_pop(tag_stack, &indent);
 
         curr_el_id = if let Some(last) = tag_stack.last() {
@@ -76,8 +76,8 @@ impl Parser {
 
     pub fn export_json(
         &mut self,
-        elm: &String,
-        mut curr_el_id: Option<u32>,
+        elm: &'a str,
+        mut curr_el_id: Option<usize>,
         mut is_nested: bool,
     ) -> String {
         let mut tag_stack: Vec<TagInfo> = Vec::new();
@@ -99,6 +99,15 @@ impl Parser {
                 check_extra_spaces(indent, last.indent, line);
             }
 
+            //remove counters that are out of scope
+            // for counter in self.counters.clone().counters_list.iter_mut() {
+            //     if !line.is_empty()
+            //         && !line.chars().all(char::is_whitespace)
+            //         && counter.scope > indent / 4
+            //     {
+            //         self.counters.remove_counter(counter);
+            //     }
+            // }
             if trimmed_line.starts_with("|> ") {
                 self.handle_tag_line(trimmed_line, curr_el_id, &is_nested, &mut tag_stack, indent);
                 continue;
@@ -127,20 +136,24 @@ impl Parser {
                     .expect(&format!("There is no parent tag . at line \n {:?}", line));
                 if last.in_props {
                     // tag props
-                    if let Some(prop_line) = trimmed_line.split_once(" ") {
-                        if CounterType::is_valid(prop_line.0) {
-                            // create new counter
-                            self.counters
-                                .add_counter(CounterInstance::new(prop_line.1, prop_line.0))
-                        }
+                    let mut prop_line_splits = trimmed_line.split(" ");
+                    let counter_type = prop_line_splits.next().unwrap();
+                    if CounterType::is_valid(counter_type) {
+                        let counter_name =
+                            prop_line_splits.next().expect("Counter must have a name");
+                        let default_value = prop_line_splits.next();
+                        // create new counter
+                        self.counters.add_counter(CounterInstance::new(
+                            counter_name,
+                            counter_type,
+                            self.id - 1,
+                            default_value,
+                        ));
                     }
 
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);
                     continue;
                 }
-
-                // counter
-                //handle_counters();
 
                 let next_line = lines.clone().nth(index + 1);
                 let next_line_empty = next_line.is_none()
@@ -183,16 +196,12 @@ impl Parser {
                         }
                     });
 
+                    text_node = "".to_string();
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
                     self.id += 1;
 
                     if end_of_attached_element && tag_stack.len() > 1 {
-                        let parent_id =
-                            if let Some(before_last) = tag_stack.get(tag_stack.len() - 2) {
-                                Some(before_last.id)
-                            } else {
-                                None
-                            };
+                        let parent_id = self.get_parent_id(&tag_stack);
                         ElementCell::add_cell(
                             &mut self.result,
                             parent_id.unwrap(),
@@ -202,7 +211,6 @@ impl Parser {
                         self.id += 1;
                     }
 
-                    text_node = "".to_string();
                     continue;
                 }
 
@@ -216,5 +224,18 @@ impl Parser {
         }
         let res = serde_json::to_string_pretty(&self.result);
         res.unwrap_or("Something Wrong".to_string())
+    }
+
+    fn get_parent_id(&self, tag_stack: &Vec<TagInfo>) -> Option<usize> {
+        let before_last_index = tag_stack.len().checked_sub(2);
+        if before_last_index.is_none() {
+            return None;
+        }
+        let before_last_index = before_last_index.unwrap();
+        if let Some(before_last) = tag_stack.get(before_last_index) {
+            Some(before_last.id)
+        } else {
+            None
+        }
     }
 }

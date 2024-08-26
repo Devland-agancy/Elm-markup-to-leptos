@@ -1,16 +1,6 @@
-|> Solution
-    line 2.0
+|> tell
 
-    view functions as
-    |> Grid
+    for
+    “$x_2 - x_1$”, “$y_2 - y_1$
 
-        long
-
-        |> yoyo
-            line 99
-    |> Grid
-
-        lists of  
-    lists of  
     
-           

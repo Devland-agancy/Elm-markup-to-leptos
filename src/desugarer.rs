@@ -1,17 +1,11 @@
-use crate::{
-    element_text,
-    emitter::Emitter,
-    parser_helpers::{
-        BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
-        ElementCell,
-    },
+use crate::parser_helpers::{
+    BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
+    ElementCell, Prop,
 };
-
-use super::helpers::*;
 
 pub struct Desugarer {
     pub json: String,
-    pub last_id: u32,
+    pub last_id: usize,
 }
 
 pub struct ParagraphIndentOptions {
@@ -30,7 +24,7 @@ pub struct IgnoreOptions {
 }
 
 impl Desugarer {
-    pub fn new(json: &str, last_id: u32) -> Desugarer {
+    pub fn new(json: &str, last_id: usize) -> Desugarer {
         Desugarer {
             json: json.to_string(),
             last_id,
@@ -136,19 +130,18 @@ impl Desugarer {
         }
     }
 
-    pub fn auto_increamental_title(
-        &mut self,
-        tag_name: &str,
-        title_label: &str,
-        // wrapper: Option<&str>,
-        // wrapper_break_on: Option<&str>,
-    ) -> Desugarer {
+    pub fn auto_increamental_title(&mut self, tag_name: &str, title_label: &str) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
         self.find_cell(&binding, &vec![tag_name], &mut elements);
 
-        for (i, element) in elements.clone().iter().enumerate() {
+        for (i, element) in elements.clone().iter_mut().enumerate() {
+            if let CellType::Element(el) = &element.cell_type {
+                // counter prop to parent
+                println!("poar {}", element.parent_id);
+                ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
+            }
             let new_block_child = BlockChildType::Delimited(DelimitedCell {
                 open_delimeter: "*".to_string(),
                 close_delimeter: "*".to_string(),
@@ -374,7 +367,7 @@ impl Desugarer {
     }
 
     pub fn is_first_child(
-        element_id: u32,
+        element_id: usize,
         parent: &Option<&mut DataCell>,
         options: &ParagraphIndentOptions,
     ) -> bool {
@@ -424,7 +417,7 @@ impl Desugarer {
         false
     }
 
-    pub fn prev_is_delimited(element_id: u32, parent: &Option<&mut DataCell>) -> bool {
+    pub fn prev_is_delimited(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
         if let Some(parent) = parent {
             if let CellType::Element(parent) = &parent.cell_type {
                 let mut prev_el: Option<&DataCell> = None;
@@ -443,7 +436,7 @@ impl Desugarer {
     }
 
     pub fn tags_before_non_indents(
-        element_id: u32,
+        element_id: usize,
         parent: &Option<&mut DataCell>,
         option: &ParagraphIndentOptions,
     ) -> bool {

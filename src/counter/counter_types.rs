@@ -1,3 +1,5 @@
+use numerals::roman::Roman;
+
 #[derive(Debug, Clone)]
 pub enum CounterType {
     ARABIC,
@@ -5,10 +7,11 @@ pub enum CounterType {
     ALPHABITICAL,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum CounterValueType {
-    NUMBER(usize),
-    STRING(char),
+    ARABIC(isize),
+    ROMAN(String),
+    ALPHABITICAL(String),
 }
 
 impl CounterType {
@@ -27,55 +30,92 @@ impl CounterType {
 }
 
 impl CounterValueType {
-    pub fn from_str(string: &str) -> Self {
-        match string {
-            "counter" => Self::NUMBER(0),
-            "roman_counter" => Self::STRING('ⅰ'),
-            "alphabitical_counter" => Self::STRING('a'),
-            _ => Self::NUMBER(0),
+    fn is_valid(&self, value: &str) -> bool {
+        match self {
+            CounterValueType::ARABIC(_) => value.parse::<isize>().is_ok(),
+            CounterValueType::ROMAN(roman) => {
+                let roman = Roman::parse(roman);
+                roman.is_some()
+            }
+            CounterValueType::ALPHABITICAL(alpha) => alpha.chars().all(|c| {
+                let code_point = c as u32;
+                code_point >= 65
+            }),
         }
     }
 
-    pub fn from_type(counter_type: &CounterType) -> Self {
+    fn default_value(&self, value: Option<&str>) -> Self {
+        match self {
+            CounterValueType::ARABIC(_) => {
+                if let Some(value) = value {
+                    if CounterValueType::ARABIC(0).is_valid(value) {
+                        Self::ARABIC(value.parse::<isize>().unwrap())
+                    } else {
+                        panic!("Wrong Arabic counter value")
+                    }
+                } else {
+                    Self::ARABIC(0)
+                }
+            }
+            CounterValueType::ROMAN(_) => {
+                if let Some(default_value) = value {
+                    if CounterValueType::ROMAN("".to_string()).is_valid(default_value) {
+                        Self::ROMAN(default_value.to_string())
+                    } else {
+                        panic!("Wrong Roman counter value")
+                    }
+                } else {
+                    Self::ROMAN("0".to_string())
+                }
+            }
+            CounterValueType::ALPHABITICAL(_) => {
+                if let Some(default_value) = value {
+                    if CounterValueType::ALPHABITICAL("".to_string()).is_valid(default_value) {
+                        Self::ALPHABITICAL(default_value.to_string())
+                    } else {
+                        panic!("Wrong Aphabitical counter value")
+                    }
+                } else {
+                    Self::ALPHABITICAL("0".to_string())
+                }
+            }
+        }
+    }
+
+    pub fn from_str(string: &str, default_value: Option<&str>) -> Self {
+        match string {
+            "counter" => CounterValueType::ARABIC(0).default_value(default_value),
+            "roman_counter" => CounterValueType::ROMAN("".to_string()).default_value(default_value),
+            "alphabitical_counter" => {
+                CounterValueType::ALPHABITICAL("".to_string()).default_value(default_value)
+            }
+            _ => Self::ARABIC(0),
+        }
+    }
+
+    pub fn from_type(counter_type: &CounterType, default_value: Option<&str>) -> Self {
         match counter_type {
-            CounterType::ARABIC => Self::NUMBER(0),
-            CounterType::ROMAN => Self::STRING('ⅰ'),
-            CounterType::ALPHABITICAL => Self::STRING('a'),
-            _ => Self::NUMBER(0),
+            CounterType::ARABIC => CounterValueType::ARABIC(0).default_value(default_value),
+            CounterType::ROMAN => {
+                CounterValueType::ROMAN("".to_string()).default_value(default_value)
+            }
+            CounterType::ALPHABITICAL => {
+                CounterValueType::ALPHABITICAL("".to_string()).default_value(default_value)
+            }
         }
     }
 
     pub fn to_string(&self) -> String {
         match self {
-            CounterValueType::NUMBER(number) => number.to_string(),
-            CounterValueType::STRING(string) => string.to_string(),
-        }
-    }
-
-    pub fn increment(&mut self, counter_type: &CounterType) {
-        match counter_type {
-            CounterType::ARABIC => {
-                *self = match *self {
-                    CounterValueType::NUMBER(i) => CounterValueType::NUMBER(i + 1),
-                    _ => *self,
+            CounterValueType::ARABIC(number) => {
+                if *number < 0 {
+                    "-".to_string()
+                } else {
+                    number.to_string()
                 }
             }
-            CounterType::ROMAN => {
-                *self = match self {
-                    CounterValueType::STRING(roman) => {
-                        let code_point = *roman as u32;
-                        // let start = 0x2170; // ⅰ (Roman Numeral Small One)
-                        // let end = 0x217F;
-
-                        let incremented = std::char::from_u32(code_point + 1).unwrap();
-
-                        CounterValueType::STRING(incremented)
-                    }
-                    _ => *self,
-                }
-            }
-            CounterType::ALPHABITICAL => {}
-            _ => {}
+            CounterValueType::ROMAN(roman) => roman.to_string(),
+            CounterValueType::ALPHABITICAL(string) => string.to_string(),
         }
     }
 }

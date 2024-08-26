@@ -7,188 +7,49 @@
       "id": 1,
       "parent_id": 0,
       "type": "~element~",
-      "tag": "Solution",
-      "attributes": [
-        {
-          "key": "line",
-          "value": "2.0"
-        },
-        {
-          "key": "solution_number",
-          "value": "0"
-        }
-      ],
+      "tag": "tell",
+      "attributes": [],
       "children": [
         {
-          "id": 11,
+          "id": 2,
           "parent_id": 1,
-          "type": "~element~",
-          "tag": "Paragraph",
-          "attributes": [],
+          "type": "~block~",
           "children": [
             {
-              "id": 2,
-              "parent_id": 11,
-              "type": "~block~",
-              "children": [
-                {
-                  "type": "~text~",
-                  "content": "view functions as",
-                  "wrapped_with": null
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": 12,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Paragraph",
-          "attributes": [],
-          "children": [
-            {
-              "id": 3,
-              "parent_id": 12,
-              "type": "~element~",
-              "tag": "Grid",
-              "attributes": [
-                {
-                  "key": "id",
-                  "value": "0"
-                }
-              ],
-              "children": [
-                {
-                  "id": 15,
-                  "parent_id": 3,
-                  "type": "~element~",
-                  "tag": "Span",
-                  "attributes": [],
-                  "children": [
-                    {
-                      "id": 4,
-                      "parent_id": 15,
-                      "type": "~block~",
-                      "children": [
-                        {
-                          "type": "~text~",
-                          "content": "long",
-                          "wrapped_with": null
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "id": 16,
-                  "parent_id": 3,
-                  "type": "~element~",
-                  "tag": "Span",
-                  "attributes": [],
-                  "children": [
-                    {
-                      "id": 5,
-                      "parent_id": 16,
-                      "type": "~element~",
-                      "tag": "yoyo",
-                      "attributes": [
-                        {
-                          "key": "line",
-                          "value": "99.0"
-                        }
-                      ],
-                      "children": []
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": 13,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Paragraph",
-          "attributes": [],
-          "children": [
-            {
-              "id": 6,
-              "parent_id": 13,
-              "type": "~element~",
-              "tag": "Grid",
-              "attributes": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ],
-              "children": [
-                {
-                  "id": 17,
-                  "parent_id": 6,
-                  "type": "~element~",
-                  "tag": "Span",
-                  "attributes": [],
-                  "children": [
-                    {
-                      "id": 7,
-                      "parent_id": 17,
-                      "type": "~block~",
-                      "children": [
-                        {
-                          "type": "~text~",
-                          "content": "lists of",
-                          "wrapped_with": null
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "type": "~text~",
+              "content": "for “",
+              "wrapped_with": null
             },
             {
-              "id": 8,
-              "parent_id": 13,
-              "type": "~element~",
-              "tag": "Space",
-              "attributes": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "id": 14,
-          "parent_id": 1,
-          "type": "~element~",
-          "tag": "Paragraph",
-          "attributes": [],
-          "children": [
+              "type": "~delimited~",
+              "open_delimeter": "$",
+              "close_delimeter": "$",
+              "terminal": "x_2 - x_1",
+              "display_type": "INLINE",
+              "wrapped_with": null
+            },
             {
-              "id": 18,
-              "parent_id": 14,
-              "type": "~element~",
-              "tag": "Indent",
-              "attributes": [],
-              "children": [
-                {
-                  "id": 9,
-                  "parent_id": 14,
-                  "type": "~block~",
-                  "children": [
-                    {
-                      "type": "~text~",
-                      "content": "lists of",
-                      "wrapped_with": null
-                    }
-                  ]
-                }
-              ]
+              "type": "~text~",
+              "content": "”, “",
+              "wrapped_with": null
+            },
+            {
+              "type": "~delimited~",
+              "open_delimeter": "$",
+              "close_delimeter": "$",
+              "terminal": "y_2 - y_1",
+              "display_type": "INLINE",
+              "wrapped_with": null
+            },
+            {
+              "type": "~text~",
+              "content": "      ",
+              "wrapped_with": null
             }
           ]
         }
-      ]
+      ],
+      "is_counter": false
     }
   ]
 }

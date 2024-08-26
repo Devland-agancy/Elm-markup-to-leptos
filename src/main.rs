@@ -1,3 +1,4 @@
+pub mod counter;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;
@@ -5,8 +6,9 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
+use counter::counter_commands::CounterCommand;
+use counter::counters::Counters;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
-use elm_parser::counter::counters::Counters;
 use emitter::Emitter;
 use parser::Parser;
 use parser_helpers::DataCell;
@@ -41,12 +43,16 @@ fn main() {
 
     let mut counters = Counters::new();
     let mut json = Parser::new(&mut counters);
-    let json_tree = json.export_json(&contents.to_string(), None, false);
+
+    let content_str = &contents;
+    let json_tree = json.export_json(&contents, None, false);
+
+    let mut counter_command = CounterCommand::new(&mut counters, &json_tree);
+    let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
+
+    let json_tree = counter_command.run(&mut json);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
-
-    let emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
-
     json_desugarer = json_desugarer
         .pre_process_exercises()
         .add_increamental_attr(vec![("Solution", "solution_number"), ("Grid", "id")])
@@ -77,9 +83,26 @@ fn main() {
                     element: "Space",
                     attach_to: AttachToEnum::BEFORE,
                 },
+                IgnoreOptions {
+                    element: "CounterInsert",
+                    attach_to: AttachToEnum::BOTH,
+                },
             ]),
         )
-        .wrap_children(vec!["Grid"], "Span", &None)
+        .wrap_children(
+            vec!["Grid"],
+            "Span",
+            &Some(vec![
+                IgnoreOptions {
+                    element: "CounterInsert",
+                    attach_to: AttachToEnum::BOTH,
+                },
+                IgnoreOptions {
+                    element: "CounterIncrement",
+                    attach_to: AttachToEnum::BOTH,
+                },
+            ]),
+        )
         .wrap_children(vec!["List"], "Item", &None)
         .add_indent(&ParagraphIndentOptions {
             tags_before_non_indents: vec![
@@ -91,20 +114,16 @@ fn main() {
                 "Table",
             ],
             tags_with_non_indent_first_child: vec![
-                "Paragraphs",
-                "Paragraph",
-                "Example",
-                "Section",
-                "tr",
-                "Table",
-                "Solution",
-                "Exercise",
+                "Example", "Section", "tr", "Table", "Solution", "Exercise",
             ],
         })
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
         .auto_convert_to_float(vec!["line"]);
 
     let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+
+    let mut emitter: Emitter =
+        Emitter::new(&json_value, vec!["img", "SectionDivider", "InlineImage"]);
     let leptos_code = emitter.emit_json(&json_value);
 
     let mut file = match File::create("src/content/output.rs") {

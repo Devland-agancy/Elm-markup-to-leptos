@@ -1,13 +1,6 @@
 |> tell
-    hi
 
-    |> yo 
-        counter Test 10
-
-        sd<<::::Test this is counter *value asd aa<<::::Test* 
-        
-    |> tell
-        
-    qwe >>sd
+    for
+    “$x_2 - x_1$”, “$y_2 - y_1$
 
     

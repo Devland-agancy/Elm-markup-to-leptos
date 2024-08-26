@@ -44,8 +44,6 @@ impl<'a> Parser<'a> {
         indent: usize,
     ) {
         let tag_name = trimmed_line[3..].trim();
-        //println!("line {}", line);
-        //println!("line {:#?}", tag_stack.last());
         tag_stack_pop(tag_stack, &indent);
 
         curr_el_id = if let Some(last) = tag_stack.last() {

@@ -1,6 +1,6 @@
 use crate::parser_helpers::{
     BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
-    ElementCell,
+    ElementCell, Prop,
 };
 
 pub struct Desugarer {
@@ -130,19 +130,18 @@ impl Desugarer {
         }
     }
 
-    pub fn auto_increamental_title(
-        &mut self,
-        tag_name: &str,
-        title_label: &str,
-        // wrapper: Option<&str>,
-        // wrapper_break_on: Option<&str>,
-    ) -> Desugarer {
+    pub fn auto_increamental_title(&mut self, tag_name: &str, title_label: &str) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
         self.find_cell(&binding, &vec![tag_name], &mut elements);
 
-        for (i, element) in elements.clone().iter().enumerate() {
+        for (i, element) in elements.clone().iter_mut().enumerate() {
+            if let CellType::Element(el) = &element.cell_type {
+                // counter prop to parent
+                println!("poar {}", element.parent_id);
+                ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
+            }
             let new_block_child = BlockChildType::Delimited(DelimitedCell {
                 open_delimeter: "*".to_string(),
                 close_delimeter: "*".to_string(),

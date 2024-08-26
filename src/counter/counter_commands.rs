@@ -154,7 +154,6 @@ impl<'a> CounterCommand<'a> {
 
     pub fn run(&mut self, json: &mut DataCell) -> String {
         let json_str = self.replace_counters(json, false);
-        println!("list {:?}", self.counters.handles_list);
         let mut json: DataCell = serde_json::from_str(&json_str).unwrap();
         let json_str = self.replace_counters(&mut json, true);
 
@@ -232,7 +231,6 @@ impl<'a> CounterCommand<'a> {
                         res.push_str(&execution.unwrap());
                     }
                 }
-                //println!("hd  {:?}", self.counters.handles_list);
             } else {
                 res.push_str(&split.content);
             }

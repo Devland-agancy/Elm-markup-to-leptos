@@ -1,16 +1,27 @@
-|> Solution
+|> Section
+
+    asdasd
 
     Mind you, concerning this example, that
     $$
-    \sss \{\{\} \} \ne \{\}
+    \Large \{\{\} \} \ne \{\}
     $$
-
-    |> ImageRight
-        src images/svg_empty_set_cloud.svg
-        offset_x 1em
 
     because a box containing an empty box is not the same
     thing as an empty box! Specifically,
     $$
     \Large \{ \{\} \}
     $$
+    answers “yes” to the question “do you contain 
+    $\{\}$?”
+    (a.k.a., “do you contain $\phi$?”) 
+    whereas
+    $$
+    \Large \{\}
+    $$
+    answers “no” to the same question. (Indeed, while the empty set
+    _contains_ nothing, it _is_ something.) Similarly,
+    $$
+    \Large \{\{\{\}\} \} \ne \{\{\}\}
+    $$
+    etc, etc: adding a new outer layer changes the whole set each time.

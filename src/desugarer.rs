@@ -320,6 +320,8 @@ impl Desugarer {
 
         self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
 
+        let mut elements_to_indent: Vec<&DataCell> = Vec::new();
+
         for element in _elements.iter() {
             let parent: Option<&mut DataCell> =
                 DataCell::get_cell_by_id(&mut root, element.parent_id);
@@ -332,7 +334,6 @@ impl Desugarer {
             if Self::is_first_child(element.id, &parent, options) {
                 continue;
             }
-
             // $$, __,  |_ paragraphs
             if Self::is_delimited(element, CheckFor::FIRST) {
                 continue;
@@ -346,6 +347,10 @@ impl Desugarer {
                 continue;
             }
 
+            elements_to_indent.push(element);
+        }
+
+        for element in elements_to_indent.iter() {
             self.last_id += 1;
             ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
             ElementCell::move_children(&mut root, element.id, self.last_id);

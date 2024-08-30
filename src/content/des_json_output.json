@@ -7,13 +7,8 @@
       "id": 1,
       "parent_id": 0,
       "type": "~element~",
-      "tag": "Solution",
-      "attributes": [
-        {
-          "key": "solution_number",
-          "value": "0"
-        }
-      ],
+      "tag": "Section",
+      "attributes": [],
       "children": [
         {
           "id": 6,
@@ -29,35 +24,10 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "Mind you, concerning this example, that ",
+                  "content": "asdasd",
                   "wrapped_with": null
-                },
-                {
-                  "type": "~delimited~",
-                  "open_delimeter": "$$",
-                  "close_delimeter": "$$",
-                  "terminal": " \\sss \\{\\{\\} \\} \\ne \\{\\} ",
-                  "display_type": "BLOCK",
-                  "wrapped_with": "InnerParagraph"
                 }
               ]
-            },
-            {
-              "id": 3,
-              "parent_id": 6,
-              "type": "~element~",
-              "tag": "ImageRight",
-              "attributes": [
-                {
-                  "key": "src",
-                  "value": "images/svg_empty_set_cloud.svg"
-                },
-                {
-                  "key": "offset_x",
-                  "value": "1em"
-                }
-              ],
-              "children": []
             }
           ]
         },
@@ -69,8 +39,46 @@
           "attributes": [],
           "children": [
             {
-              "id": 4,
+              "id": 9,
               "parent_id": 7,
+              "type": "~element~",
+              "tag": "Indent",
+              "attributes": [],
+              "children": [
+                {
+                  "id": 3,
+                  "parent_id": 7,
+                  "type": "~block~",
+                  "children": [
+                    {
+                      "type": "~text~",
+                      "content": "Mind you, concerning this example, that ",
+                      "wrapped_with": null
+                    },
+                    {
+                      "type": "~delimited~",
+                      "open_delimeter": "$$",
+                      "close_delimeter": "$$",
+                      "terminal": " \\Large \\{\\{\\} \\} \\ne \\{\\} ",
+                      "display_type": "BLOCK",
+                      "wrapped_with": "InnerParagraph"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "parent_id": 1,
+          "type": "~element~",
+          "tag": "Paragraph",
+          "attributes": [],
+          "children": [
+            {
+              "id": 4,
+              "parent_id": 8,
               "type": "~block~",
               "children": [
                 {
@@ -85,6 +93,89 @@
                   "terminal": " \\Large \\{ \\{\\} \\} ",
                   "display_type": "BLOCK",
                   "wrapped_with": "InnerParagraph"
+                },
+                {
+                  "type": "~text~",
+                  "content": " answers “yes” to the question “do you contain ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "$",
+                  "close_delimeter": "$",
+                  "terminal": "\\{\\}",
+                  "display_type": "INLINE",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": "?” (a.k.a., “do you contain ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "$",
+                  "close_delimeter": "$",
+                  "terminal": "\\phi",
+                  "display_type": "INLINE",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": "?”) whereas ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "$$",
+                  "close_delimeter": "$$",
+                  "terminal": " \\Large \\{\\} ",
+                  "display_type": "BLOCK",
+                  "wrapped_with": "InnerParagraph"
+                },
+                {
+                  "type": "~text~",
+                  "content": " answers “no” to the same question. (Indeed, while the empty set ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "_",
+                  "close_delimeter": "_",
+                  "terminal": "contains",
+                  "display_type": "INLINE",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": " nothing, it ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "_",
+                  "close_delimeter": "_",
+                  "terminal": "is",
+                  "display_type": "INLINE",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": " something.) Similarly, ",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~delimited~",
+                  "open_delimeter": "$$",
+                  "close_delimeter": "$$",
+                  "terminal": " \\Large \\{\\{\\{\\}\\} \\} \\ne \\{\\{\\}\\} ",
+                  "display_type": "BLOCK",
+                  "wrapped_with": "InnerParagraph"
+                },
+                {
+                  "type": "~text~",
+                  "content": " etc, etc: adding a new outer layer changes the whole set each time.                ",
+                  "wrapped_with": null
                 }
               ]
             }

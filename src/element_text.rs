@@ -81,7 +81,6 @@ impl ElementText {
 
     pub fn handle_delimeters(self) -> String {
         let mut i = 0;
-        let mut j = 0;
         let mut output = String::new();
 
         while i <= self.text.len() {
@@ -182,9 +181,7 @@ impl ElementText {
 
     pub fn split_text(self) -> Vec<BlockChildType> {
         let mut i = 0;
-        let mut j = 0;
         let mut output = Vec::<BlockChildType>::new();
-
         while i <= self.text.len() {
             let (del, skips, text) = &self.find_next_delimeter(i, true);
 
@@ -238,7 +235,6 @@ impl ElementText {
                 }
             }
         }
-
         output
     }
 
@@ -305,6 +301,7 @@ impl ElementText {
                 }
                 break;
             }
+
             if i.checked_sub(1).is_some() && !(i == 1 && &self.get_char(i - 1) == " ") {
                 text.push_str(&self.get_char(i - 1));
             }
@@ -376,11 +373,11 @@ impl ElementText {
     }
 
     fn get_char(&self, i: usize) -> String {
-        self.text
-            .chars()
-            .nth(i)
-            .unwrap_or(" ".chars().nth(0).unwrap())
-            .to_string()
+        if let Some(_char) = self.text.chars().nth(i) {
+            _char.to_string()
+        } else {
+            "".to_string()
+        }
     }
 
     fn is_escaped(&self, i: usize) -> bool {

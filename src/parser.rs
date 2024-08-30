@@ -97,15 +97,6 @@ impl<'a> Parser<'a> {
                 check_extra_spaces(indent, last.indent, line);
             }
 
-            //remove counters that are out of scope
-            // for counter in self.counters.clone().counters_list.iter_mut() {
-            //     if !line.is_empty()
-            //         && !line.chars().all(char::is_whitespace)
-            //         && counter.scope > indent / 4
-            //     {
-            //         self.counters.remove_counter(counter);
-            //     }
-            // }
             if trimmed_line.starts_with("|> ") {
                 self.handle_tag_line(trimmed_line, curr_el_id, &is_nested, &mut tag_stack, indent);
                 continue;

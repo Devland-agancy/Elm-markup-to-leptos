@@ -142,9 +142,6 @@ pub struct ElementCell {
     #[serde(rename = "attributes")]
     pub props: Vec<Prop>,
     pub children: Vec<DataCell>,
-    pub is_counter: bool,
-    // pub is_attached_to_prev: bool,
-    // pub is_attached_to_next: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

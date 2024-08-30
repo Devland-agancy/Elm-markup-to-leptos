@@ -42,17 +42,16 @@ fn main() {
     }
 
     let mut counters = Counters::new();
-    let mut json = Parser::new(&mut counters);
+    let mut parsed_json = Parser::new(&mut counters);
 
-    let content_str = &contents;
-    let json_tree = json.export_json(&contents, None, false);
+    let json_tree = parsed_json.export_json(&contents, None, false);
+    let last_item_id = parsed_json.id;
 
     let mut counter_command = CounterCommand::new(&mut counters, &json_tree);
     let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
-
     let json_tree = counter_command.run(&mut json);
 
-    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
+    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), last_item_id);
     json_desugarer = json_desugarer
         .pre_process_exercises()
         .add_increamental_attr(vec![("Solution", "solution_number"), ("Grid", "id")])

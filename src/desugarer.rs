@@ -1,6 +1,6 @@
 use crate::parser_helpers::{
     BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
-    ElementCell, Prop,
+    ElementCell,
 };
 
 pub struct Desugarer {
@@ -18,6 +18,12 @@ pub enum AttachToEnum {
     AFTER,
     BOTH,
 }
+
+enum CheckFor {
+    FIRST,
+    LAST,
+}
+
 pub struct IgnoreOptions {
     pub element: &'static str,
     pub attach_to: AttachToEnum,
@@ -137,7 +143,7 @@ impl Desugarer {
         self.find_cell(&binding, &vec![tag_name], &mut elements);
 
         for (i, element) in elements.clone().iter_mut().enumerate() {
-            if let CellType::Element(el) = &element.cell_type {
+            if let CellType::Element(_) = &element.cell_type {
                 // counter prop to parent
                 // ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
             }
@@ -314,7 +320,7 @@ impl Desugarer {
 
         self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
 
-        for (element) in _elements.iter() {
+        for element in _elements.iter() {
             let parent: Option<&mut DataCell> =
                 DataCell::get_cell_by_id(&mut root, element.parent_id);
 
@@ -326,8 +332,9 @@ impl Desugarer {
             if Self::is_first_child(element.id, &parent, options) {
                 continue;
             }
+
             // $$, __,  |_ paragraphs
-            if Self::is_delimited(element, true) {
+            if Self::is_delimited(element, CheckFor::FIRST) {
                 continue;
             }
             // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
@@ -384,30 +391,26 @@ impl Desugarer {
         false
     }
 
-    pub fn is_delimited(element: &DataCell, first_should_be_block: bool) -> bool {
-        if let CellType::Element(element) = &element.cell_type {
-            if let Some(block) = element.children.first() {
+    fn is_delimited(element: &DataCell, check_for: CheckFor) -> bool {
+        if let CellType::Element(el) = &element.cell_type {
+            if let Some(block) = el.children.first() {
                 if let CellType::Block(block) = &block.cell_type {
-                    let first_child_is_block = block.children.first().is_some_and(|first| {
-                        if let BlockChildType::Delimited(b) = first {
-                            return b.display_type == DelimitedDisplayType::BLOCK;
-                        } else {
-                            false
+                    match check_for {
+                        CheckFor::FIRST => {
+                            if let Some(block) = block.children.first() {
+                                if let BlockChildType::Delimited(b) = &block {
+                                    return b.display_type == DelimitedDisplayType::BLOCK
+                                        || b.open_delimeter == "*";
+                                }
+                            }
                         }
-                    });
-
-                    if block.children.len() > 1 && !first_child_is_block && !first_should_be_block {
-                        return false;
-                    }
-
-                    if block.children.len() > 1 && first_child_is_block && first_should_be_block {
-                        return true;
-                    }
-
-                    if let Some(block) = block.children.first() {
-                        if let BlockChildType::Delimited(b) = &block {
-                            return b.display_type == DelimitedDisplayType::BLOCK
-                                || b.open_delimeter == "*";
+                        CheckFor::LAST => {
+                            if let Some(block) = block.children.last() {
+                                if let BlockChildType::Delimited(b) = &block {
+                                    return b.display_type == DelimitedDisplayType::BLOCK
+                                        || b.open_delimeter == "*";
+                                }
+                            }
                         }
                     }
                 }
@@ -416,7 +419,7 @@ impl Desugarer {
         false
     }
 
-    pub fn prev_is_delimited(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
+    fn prev_is_delimited(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
         if let Some(parent) = parent {
             if let CellType::Element(parent) = &parent.cell_type {
                 let mut prev_el: Option<&DataCell> = None;
@@ -426,7 +429,7 @@ impl Desugarer {
                     }
                     prev_el = Some(&child)
                 }
-                if prev_el.is_some_and(|p| Self::is_delimited(p, false)) {
+                if prev_el.is_some_and(|p| Self::is_delimited(p, CheckFor::LAST)) {
                     return true;
                 }
             }
@@ -434,7 +437,7 @@ impl Desugarer {
         false
     }
 
-    pub fn tags_before_non_indents(
+    fn tags_before_non_indents(
         element_id: usize,
         parent: &Option<&mut DataCell>,
         option: &ParagraphIndentOptions,

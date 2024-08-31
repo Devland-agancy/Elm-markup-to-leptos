@@ -125,7 +125,7 @@ fn main() {
         Emitter::new(&json_value, vec!["img", "SectionDivider", "InlineImage"]);
     let leptos_code = emitter.emit_json(&json_value);
 
-    let mut file = match File::create("src/content/output.rs") {
+    let mut file = match File::create("src/content_files/output.rs") {
         Ok(file) => file,
         Err(error) => {
             println!("Error creating file: {}", error);
@@ -144,14 +144,14 @@ fn main() {
         Ok(_) => {
             println!("Data written to output.rs successfully");
             let _ = Command::new("leptosfmt")
-                .arg("src/content/output.rs")
+                .arg("src/content_files/output.rs")
                 .output()
                 .expect("Failed to execute command");
         }
         Err(error) => println!("Error writing to output.rs: {}", error),
     }
 
-    let mut json_file = match File::create("src/content/json_output.json") {
+    let mut json_file = match File::create("src/content_files/json_output.json") {
         Ok(file) => file,
         Err(error) => {
             println!("Error creating file: {}", error);
@@ -166,7 +166,7 @@ fn main() {
         Err(error) => println!("Error writing to json_output.json: {}", error),
     }
 
-    let mut desagurer_json_file = match File::create("src/content/des_json_output.json") {
+    let mut desagurer_json_file = match File::create("src/content_files/des_json_output.json") {
         Ok(file) => file,
         Err(error) => {
             println!("Error creating file: {}", error);

@@ -2,6 +2,7 @@ use crate::parser_helpers::{BlockChildType, DelimitedCell, DelimitedDisplayType,
 
 pub struct ElementText {
     pub text: String,
+    rules: Vec<DelimeterRules>,
 }
 
 #[derive(Debug)]
@@ -13,69 +14,84 @@ struct DelimeterRules {
     no_break: bool,
     keep_delimiter: bool,
     ignore_nested_delimeters: bool,
+    ignore_when_before: Vec<char>,
+    ignore_when_after: Vec<char>,
 }
 
-const DELIMETERS: [DelimeterRules; 6] = [
-    DelimeterRules {
-        symbol: "*",
-        end_symbol: "*",
-        left_replacement: "<Span bold=true>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "__",
-        end_symbol: "__",
-        left_replacement: "<Span italic=true align=Align::Center>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "_|",
-        end_symbol: "|_",
-        left_replacement: "<Span align=Align::Center>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "_",
-        end_symbol: "_",
-        left_replacement: "<Span italic=true>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "$$",
-        end_symbol: "$$",
-        left_replacement: "<MathBlock>",
-        right_replacement: "</MathBlock>",
-        no_break: true,
-        keep_delimiter: true,
-        ignore_nested_delimeters: true,
-    },
-    DelimeterRules {
-        symbol: "$",
-        end_symbol: "$",
-        left_replacement: "<Math>",
-        right_replacement: "</Math>",
-        no_break: true,
-        keep_delimiter: true,
-        ignore_nested_delimeters: true,
-    },
-];
+impl Default for DelimeterRules {
+    fn default() -> Self {
+        Self {
+            symbol: "",
+            end_symbol: "",
+            left_replacement: "",
+            right_replacement: "",
+            no_break: false,
+            keep_delimiter: false,
+            ignore_nested_delimeters: false,
+            ignore_when_before: Vec::new(),
+            ignore_when_after: Vec::new(),
+        }
+    }
+}
 
 impl ElementText {
     pub fn new(text: &str) -> ElementText {
         ElementText {
             text: text.to_string(),
+            rules: vec![
+                DelimeterRules {
+                    symbol: "*",
+                    end_symbol: "*",
+                    left_replacement: "<Span bold=true>",
+                    right_replacement: "</Span>",
+                    ignore_when_after: vec!['(', '[', '{', ' '],
+                    ignore_when_before: vec![')', ']', '}', ' '],
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "__",
+                    end_symbol: "__",
+                    left_replacement: "<Span italic=true align=Align::Center>",
+                    right_replacement: "</Span>",
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "_|",
+                    end_symbol: "|_",
+                    left_replacement: "<Span align=Align::Center>",
+                    right_replacement: "</Span>",
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "_",
+                    end_symbol: "_",
+                    left_replacement: "<Span italic=true>",
+                    right_replacement: "</Span>",
+                    ignore_when_after: vec!['(', '[', '{', ' '],
+                    ignore_when_before: vec![')', ']', '}', ' '],
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "$$",
+                    end_symbol: "$$",
+                    left_replacement: "<MathBlock>",
+                    right_replacement: "</MathBlock>",
+                    no_break: true,
+                    keep_delimiter: true,
+                    ignore_nested_delimeters: true,
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "$",
+                    end_symbol: "$",
+                    left_replacement: "<Math>",
+                    right_replacement: "</Math>",
+                    no_break: true,
+                    keep_delimiter: true,
+                    ignore_nested_delimeters: true,
+                    ..Default::default()
+                },
+            ],
         }
     }
 
@@ -246,11 +262,11 @@ impl ElementText {
         let mut found_symbol = "";
         let mut del: Option<&DelimeterRules> = None;
         let mut text = "".to_string();
-        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+        let symbols: Vec<&str> = self.rules.iter().map(|d| d.symbol).collect();
         let mut has_multi_char = false;
 
         while i <= self.text.len() {
-            let _del = DELIMETERS.iter().find(|d| {
+            let _del = self.rules.iter().find(|d| {
                 if i.checked_sub(d.symbol.len()).is_some() {
                     d.symbol
                         == &self
@@ -259,6 +275,10 @@ impl ElementText {
                             .take(i)
                             .skip(i - d.symbol.len())
                             .collect::<String>()
+                        && self.text.chars().nth(i - d.symbol.len() + 1).is_some()
+                        && !d
+                            .ignore_when_before
+                            .contains(&self.text.chars().nth(i - d.symbol.len() + 1).unwrap())
                 } else {
                     false
                 }
@@ -320,7 +340,7 @@ impl ElementText {
         let end_symbol = found_del.end_symbol;
         let mut found = false;
         let mut del_content = "".to_string();
-        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+        let symbols: Vec<&str> = self.rules.iter().map(|d| d.symbol).collect();
 
         while i < self.text.len() {
             let is_found = end_symbol
@@ -329,7 +349,11 @@ impl ElementText {
                     .chars()
                     .take(i + end_symbol.len())
                     .skip(i)
-                    .collect::<String>();
+                    .collect::<String>()
+                && !found_del
+                    .ignore_when_after
+                    .contains(&self.text.chars().nth(i - 1).unwrap());
+
             if !is_found {
                 if end_symbol
                     != &self
@@ -338,6 +362,9 @@ impl ElementText {
                         .take(i + end_symbol.len())
                         .skip(i)
                         .collect::<String>()
+                    || found_del
+                        .ignore_when_after
+                        .contains(&self.text.chars().nth(i - 1).unwrap())
                 {
                     del_content.push_str(&self.get_char(i));
                 }

@@ -168,13 +168,18 @@ impl<'a> Parser<'a> {
                         "{}{}{}",
                         text_node,
                         if text_node == "" { "" } else { " " },
-                        trimmed_line.trim_end(),
+                        // if there's one space we keep it
+                        if trimmed_line.trim_end().len() + 1 == trimmed_line.len() {
+                            trimmed_line
+                        } else {
+                            trimmed_line.trim_end()
+                        },
                     );
 
                     let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
-                    println!("blocs {:?}", block_children);
+
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
                             if text.content != "" {
@@ -207,7 +212,11 @@ impl<'a> Parser<'a> {
                     "{}{}{}",
                     text_node,
                     if text_node == "" { "" } else { " " },
-                    trimmed_line.trim_end(),
+                    if trimmed_line.trim_end().len() + 1 == trimmed_line.len() {
+                        trimmed_line
+                    } else {
+                        trimmed_line.trim_end()
+                    },
                 );
                 if !text_node.is_empty() {
                     text_node.push_str("\n")

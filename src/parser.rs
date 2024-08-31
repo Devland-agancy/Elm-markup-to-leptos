@@ -174,7 +174,7 @@ impl<'a> Parser<'a> {
                     let mut block = BlockCell::new();
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
-
+                    println!("blocs {:?}", block_children);
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
                             if text.content != "" {
@@ -207,8 +207,11 @@ impl<'a> Parser<'a> {
                     "{}{}{}",
                     text_node,
                     if text_node == "" { "" } else { " " },
-                    trimmed_line.trim_end()
+                    trimmed_line.trim_end(),
                 );
+                if !text_node.is_empty() {
+                    text_node.push_str("\n")
+                }
             }
         }
         let res = serde_json::to_string_pretty(&self.result);

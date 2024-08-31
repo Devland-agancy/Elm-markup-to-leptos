@@ -24,7 +24,7 @@
               "children": [
                 {
                   "type": "~text~",
-                  "content": "read",
+                  "content": "view functions as\n aaaaaaaaaaaaaaaaaa",
                   "wrapped_with": null
                 }
               ]
@@ -45,10 +45,15 @@
               "children": [
                 {
                   "type": "~delimited~",
-                  "open_delimeter": "__",
-                  "close_delimeter": "__",
-                  "terminal": "an element $x$ is in the thing I call “$A \\cup B$” if and only if $x$ is in $A$ or $x$ is in $B$",
+                  "open_delimeter": "$$",
+                  "close_delimeter": "$$",
+                  "terminal": "\n large ;general\n ;arge\n ",
                   "display_type": "BLOCK",
+                  "wrapped_with": null
+                },
+                {
+                  "type": "~text~",
+                  "content": "\n wow\n qwwwwwww",
                   "wrapped_with": null
                 }
               ]
@@ -63,14 +68,23 @@
           "attributes": [],
           "children": [
             {
-              "id": 4,
+              "id": 9,
               "parent_id": 8,
-              "type": "~block~",
+              "type": "~element~",
+              "tag": "Indent",
+              "attributes": [],
               "children": [
                 {
-                  "type": "~text~",
-                  "content": "sadas",
-                  "wrapped_with": null
+                  "id": 4,
+                  "parent_id": 8,
+                  "type": "~block~",
+                  "children": [
+                    {
+                      "type": "~text~",
+                      "content": "asd\n qwe\n qweqwe\n asd\n asd",
+                      "wrapped_with": null
+                    }
+                  ]
                 }
               ]
             }

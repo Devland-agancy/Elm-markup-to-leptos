@@ -1,13 +1,5 @@
-use leptos::html::{data, Data};
-use regex::Regex;
-
-use crate::counter::counter_commands::CommandType;
-use crate::counter::counters::Counters;
-use crate::parser_helpers::{BlockChildType, CellType, DataCell, DelimitedDisplayType};
-
 use super::element_text::ElementText;
-use super::helpers::*;
-use std::str::Lines;
+use crate::datacell::{BlockChildType::*, Datacell::*};
 
 #[derive(Debug, Default)]
 pub struct TagInfo {

@@ -1,4 +1,4 @@
-use crate::parser_helpers::{BlockChildType, DelimitedCell, DelimitedDisplayType, TextCell};
+use crate::datacell::{BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*};
 
 pub struct ElementText {
     pub text: String,

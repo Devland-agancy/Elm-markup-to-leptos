@@ -1,4 +1,5 @@
 pub mod counter;
+pub mod datacell;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;
@@ -8,15 +9,16 @@ pub mod parser_helpers;
 
 use counter::counter_commands::CounterCommand;
 use counter::counters::Counters;
+use datacell::Datacell::*;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
 use emitter::Emitter;
 use parser::Parser;
-use parser_helpers::DataCell;
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 

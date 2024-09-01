@@ -1,6 +1,6 @@
-use crate::parser_helpers::{BlockChildType, Cell, CellType, DataCell, ElementCell};
+use crate::datacell::{BlockChildType::*, Datacell::*};
 
-use super::{counters::Counters, handle_instance::HandleInstance};
+use super::counters::Counters;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -153,6 +153,9 @@ impl<'a> CounterCommand<'a> {
     }
 
     pub fn run(&mut self, json: &mut DataCell) -> String {
+        if self.counters.counters_list.is_empty() {
+            return self.json_tree.clone();
+        }
         let json_str = self.replace_counters(json, false);
         let mut json: DataCell = serde_json::from_str(&json_str).unwrap();
         let json_str = self.replace_counters(&mut json, true);

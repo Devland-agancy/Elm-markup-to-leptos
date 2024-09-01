@@ -1,7 +1,4 @@
-use crate::parser_helpers::{
-    BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
-    ElementCell,
-};
+use crate::datacell::{BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*};
 
 pub struct Desugarer {
     pub json: String,
@@ -95,6 +92,8 @@ impl Desugarer {
             }
             prop_line += "]";
 
+            //exercises_cell
+
             ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
         }
 
@@ -148,7 +147,7 @@ impl Desugarer {
 
                 ElementCell::add_attribute(
                     &mut root,
-                    element.parent_id,
+                    0,
                     &format!("counter {}_counter", title_label),
                 );
 

@@ -1,9 +1,11 @@
-use std::str::Lines;
 use std::vec;
 
+use super::datacell::{
+    BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*,
+};
 use super::element_text::ElementText;
 use super::helpers::*;
-use super::parser_helpers::*;
+use super::parser_helpers::{tag_stack_pop, TagInfo};
 
 #[derive(Debug)]
 pub struct Parser {
@@ -17,7 +19,10 @@ impl Parser {
             result: DataCell {
                 parent_id: 0,
                 id: 0,
-                cell_type: CellType::Root(Root { children: vec![] }),
+                cell_type: CellType::Root(Root {
+                    children: vec![],
+                    props: vec![],
+                }),
             },
             id: 1,
         }

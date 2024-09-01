@@ -1,4 +1,4 @@
-use crate::parser_helpers::{CellType, DataCell};
+use crate::datacell::{Datacell::*, ElementCell::Prop};
 
 use super::{
     counter_commands::CommandType, counter_instance::CounterInstance, counter_types::CounterType,
@@ -22,39 +22,49 @@ impl Counters {
         }
     }
 
+    fn iter_props(&mut self, json: &DataCell, props: &Vec<Prop>) {
+        props.iter().for_each(|prop| {
+            if CounterType::is_valid(&prop.key) {
+                let mut value_splits = prop.value.split(" ");
+                let counter_name = value_splits.next().expect("Counter must have a name");
+
+                let default_value = value_splits.next();
+                // create new counter
+                self.add_counter(CounterInstance::new(
+                    counter_name,
+                    &prop.key,
+                    json.id,
+                    default_value,
+                ));
+            }
+        })
+    }
+
     pub fn get_counters_from_json(&mut self, json: &DataCell) {
         match &json.cell_type {
             CellType::Element(el) => {
-                el.props.iter().for_each(|prop| {
-                    if CounterType::is_valid(&prop.key) {
-                        let mut value_splits = prop.value.split(" ");
-                        let counter_name = value_splits.next().expect("Counter must have a name");
-
-                        let default_value = value_splits.next();
-                        // create new counter
-                        self.add_counter(CounterInstance::new(
-                            counter_name,
-                            &prop.key,
-                            json.id,
-                            default_value,
-                        ));
-                    }
-                });
+                self.iter_props(json, &el.props);
                 el.children
                     .iter()
                     .for_each(|child| self.get_counters_from_json(child))
             }
-            CellType::Root(root) => root
-                .children
-                .iter()
-                .for_each(|child| self.get_counters_from_json(child)),
+            CellType::Root(root) => {
+                self.iter_props(json, &root.props);
+                root.children
+                    .iter()
+                    .for_each(|child| self.get_counters_from_json(child))
+            }
             _ => (),
         }
     }
 
     pub fn add_counter(&mut self, counter: CounterInstance) {
         let counter_exists = self.counters_list.iter().any(|c| c.name == counter.name);
-        assert!(!counter_exists, "Counter name already used");
+        assert!(
+            !counter_exists,
+            "Counter name {} already used",
+            counter.name
+        );
         self.counters_list.push(counter);
     }
 

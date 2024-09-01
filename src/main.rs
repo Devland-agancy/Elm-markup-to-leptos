@@ -41,15 +41,10 @@ fn main() {
         Ok(_) => (),
     }
 
-    let mut counters = Counters::new();
-    let mut parsed_json = Parser::new(&mut counters);
+    let mut parsed_json = Parser::new();
 
     let json_tree = parsed_json.export_json(&contents, None, false);
     let last_item_id = parsed_json.id;
-
-    let mut counter_command = CounterCommand::new(&mut counters, &json_tree);
-    let mut json: DataCell = serde_json::from_str(&json_tree).unwrap();
-    let json_tree = counter_command.run(&mut json);
 
     let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), last_item_id);
     json_desugarer = json_desugarer
@@ -119,8 +114,14 @@ fn main() {
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
         .auto_convert_to_float(vec!["line"]);
 
-    let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let mut desugarer_json_cell: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let mut counters = Counters::new();
+    counters.get_counters_from_json(&desugarer_json_cell);
 
+    let mut counter_command = CounterCommand::new(&mut counters, &json_desugarer.json);
+    let json_counter_string = counter_command.run(&mut desugarer_json_cell);
+
+    let json_value: DataCell = serde_json::from_str(&json_counter_string).unwrap();
     let mut emitter: Emitter =
         Emitter::new(&json_value, vec!["img", "SectionDivider", "InlineImage"]);
     let leptos_code = emitter.emit_json(&json_value);

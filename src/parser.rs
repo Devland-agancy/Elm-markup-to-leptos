@@ -1,23 +1,18 @@
 use std::str::Lines;
 use std::vec;
 
-use super::counter::counter_instance::CounterInstance;
-use super::counter::counter_types::CounterType;
-use super::counter::counters::Counters;
-
 use super::element_text::ElementText;
 use super::helpers::*;
 use super::parser_helpers::*;
 
 #[derive(Debug)]
-pub struct Parser<'a> {
+pub struct Parser {
     result: DataCell,
     pub id: usize,
-    pub counters: &'a mut Counters,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(counters: &'a mut Counters) -> Parser<'a> {
+impl Parser {
+    pub fn new() -> Parser {
         Self {
             result: DataCell {
                 parent_id: 0,
@@ -25,7 +20,6 @@ impl<'a> Parser<'a> {
                 cell_type: CellType::Root(Root { children: vec![] }),
             },
             id: 1,
-            counters,
         }
     }
 
@@ -74,7 +68,7 @@ impl<'a> Parser<'a> {
 
     pub fn export_json(
         &mut self,
-        elm: &'a str,
+        elm: &str,
         mut curr_el_id: Option<usize>,
         mut is_nested: bool,
     ) -> String {
@@ -125,21 +119,6 @@ impl<'a> Parser<'a> {
                     .expect(&format!("There is no parent tag . at line \n {:?}", line));
                 if last.in_props {
                     // tag props
-                    let mut prop_line_splits = trimmed_line.split(" ");
-                    let counter_type = prop_line_splits.next().unwrap();
-                    if CounterType::is_valid(counter_type) {
-                        let counter_name =
-                            prop_line_splits.next().expect("Counter must have a name");
-                        let default_value = prop_line_splits.next();
-                        // create new counter
-                        self.counters.add_counter(CounterInstance::new(
-                            counter_name,
-                            counter_type,
-                            self.id - 1,
-                            default_value,
-                        ));
-                    }
-
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);
                     continue;
                 }

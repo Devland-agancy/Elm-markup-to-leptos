@@ -1,7 +1,7 @@
 use crate::parser_helpers::{CellType, DataCell};
 
 use super::{
-    counter_commands::CommandType, counter_instance::CounterInstance,
+    counter_commands::CommandType, counter_instance::CounterInstance, counter_types::CounterType,
     handle_instance::HandleInstance,
 };
 
@@ -19,6 +19,36 @@ impl Counters {
         Counters {
             counters_list: Vec::new(),
             handles_list: Vec::new(),
+        }
+    }
+
+    pub fn get_counters_from_json(&mut self, json: &DataCell) {
+        match &json.cell_type {
+            CellType::Element(el) => {
+                el.props.iter().for_each(|prop| {
+                    if CounterType::is_valid(&prop.key) {
+                        let mut value_splits = prop.value.split(" ");
+                        let counter_name = value_splits.next().expect("Counter must have a name");
+
+                        let default_value = value_splits.next();
+                        // create new counter
+                        self.add_counter(CounterInstance::new(
+                            counter_name,
+                            &prop.key,
+                            json.id,
+                            default_value,
+                        ));
+                    }
+                });
+                el.children
+                    .iter()
+                    .for_each(|child| self.get_counters_from_json(child))
+            }
+            CellType::Root(root) => root
+                .children
+                .iter()
+                .for_each(|child| self.get_counters_from_json(child)),
+            _ => (),
         }
     }
 

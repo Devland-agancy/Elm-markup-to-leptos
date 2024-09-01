@@ -142,25 +142,42 @@ impl Desugarer {
         let binding = root.clone();
         self.find_cell(&binding, &vec![tag_name], &mut elements);
 
-        for (i, element) in elements.clone().iter_mut().enumerate() {
-            if let CellType::Element(_) = &element.cell_type {
-                // counter prop to parent
-                // ElementCell::add_attribute(&mut root, element.parent_id, "counter exercice_counter")
+        for (_, element) in elements.clone().iter_mut().enumerate() {
+            if let CellType::Element(el) = &element.cell_type {
+                // counter prop to parent if it doesn't have it
+
+                ElementCell::add_attribute(
+                    &mut root,
+                    element.parent_id,
+                    &format!("counter {}_counter", title_label),
+                );
+
+                let handle = el.props.iter().find(|x| x.key == "handle");
+
+                let command = format!(
+                    "{} {}::++{}_counter.",
+                    title_label,
+                    if handle.is_some() {
+                        handle.unwrap().value.to_owned() + "<<"
+                    } else {
+                        "".to_string()
+                    },
+                    title_label
+                );
+
+                let new_block_child = BlockChildType::Delimited(DelimitedCell {
+                    open_delimeter: "*".to_string(),
+                    close_delimeter: "*".to_string(),
+                    terminal: command,
+                    display_type: DelimitedDisplayType::INLINE,
+                    wrapped_with: None,
+                });
+
+                // add space to element text ( first block )
+                BlockChildType::insert_text_to_first_block_child_text(&mut root, element.id, " ");
+
+                BlockChildType::add_block_at_first(&mut root, element.id, &new_block_child);
             }
-            let new_block_child = BlockChildType::Delimited(DelimitedCell {
-                open_delimeter: "*".to_string(),
-                close_delimeter: "*".to_string(),
-                terminal: title_label.to_string() + " " + (i + 1).to_string().as_str() + ".",
-                display_type: DelimitedDisplayType::INLINE,
-                wrapped_with: None,
-            });
-
-            // add space to element text ( first block )
-            BlockChildType::insert_text_to_first_block_child_text(&mut root, element.id, " ");
-
-            BlockChildType::add_block_at_first(&mut root, element.id, &new_block_child);
-
-            //BlockCell::add_cell_at_first(&mut root, element.id, self.last_id, &new_block);
         }
 
         Desugarer {

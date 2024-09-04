@@ -91,9 +91,9 @@ impl Parser {
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line);
 
-            check_indent_size(indent as isize, line);
+            check_indent_size(indent as isize, index);
             if let Some(last) = tag_stack.last() {
-                check_extra_spaces(indent, last.indent, line);
+                check_extra_spaces(indent, last.indent, index);
             }
 
             if trimmed_line.starts_with("|> ") {
@@ -121,7 +121,7 @@ impl Parser {
 
                 let last = tag_stack
                     .last()
-                    .expect(&format!("There is no parent tag . at line \n {:?}", line));
+                    .expect(&format!("There is no parent tag . at line \n {:?}", index));
                 if last.in_props {
                     // tag props
                     ElementCell::add_attribute(&mut self.result, last.id, trimmed_line);

@@ -40,7 +40,7 @@ pub fn get_line_indent(line: &str) -> usize {
     line.len() - line.trim_start().len()
 }
 
-pub fn check_indent_size(size: isize, line: &str) {
+pub fn check_indent_size(size: isize, line: usize) {
     if size % 4 != 0 {
         panic!(
             "Syntax error: \\n
@@ -50,7 +50,7 @@ pub fn check_indent_size(size: isize, line: &str) {
     }
 }
 
-pub fn check_extra_spaces(indent: usize, parent_indent: usize, line: &str) {
+pub fn check_extra_spaces(indent: usize, parent_indent: usize, line: usize) {
     if indent > parent_indent + 4 {
         panic!(
             "Syntax error: \\n

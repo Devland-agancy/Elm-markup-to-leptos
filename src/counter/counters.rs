@@ -48,12 +48,10 @@ impl Counters {
                     .iter()
                     .for_each(|child| self.get_counters_from_json(child))
             }
-            CellType::Root(root) => {
-                self.iter_props(json, &root.props);
-                root.children
-                    .iter()
-                    .for_each(|child| self.get_counters_from_json(child))
-            }
+            CellType::Root(root) => root
+                .children
+                .iter()
+                .for_each(|child| self.get_counters_from_json(child)),
             _ => (),
         }
     }

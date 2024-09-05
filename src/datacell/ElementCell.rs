@@ -40,7 +40,6 @@ impl ElementCell {
         if tree.id == cell_id {
             match &mut tree.cell_type {
                 CellType::Element(ref mut el) => el.push_attribute(prop_line),
-                CellType::Root(ref mut el) => el.push_attribute(prop_line),
                 _ => (),
             }
             return;

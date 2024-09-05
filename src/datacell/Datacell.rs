@@ -19,7 +19,6 @@ pub enum CellType {
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Root {
     #[serde(rename = "attributes")]
-    pub props: Vec<Prop>,
     pub children: Vec<DataCell>,
 }
 
@@ -116,20 +115,20 @@ impl DataCell {
     }
 }
 
-impl Root {
-    pub fn push_attribute(&mut self, line: &str) {
-        if let Some(prop_line) = line.split_once(" ") {
-            if self
-                .props
-                .iter()
-                .any(|x| x.key == prop_line.0 && x.value == prop_line.1)
-            {
-                return;
-            }
-            self.props.push(Prop {
-                key: prop_line.0.to_string(),
-                value: prop_line.1.to_string(),
-            })
-        }
-    }
-}
+// impl Root {
+//     pub fn push_attribute(&mut self, line: &str) {
+//         if let Some(prop_line) = line.split_once(" ") {
+//             if self
+//                 .props
+//                 .iter()
+//                 .any(|x| x.key == prop_line.0 && x.value == prop_line.1)
+//             {
+//                 return;
+//             }
+//             self.props.push(Prop {
+//                 key: prop_line.0.to_string(),
+//                 value: prop_line.1.to_string(),
+//             })
+//         }
+//     }
+// }

@@ -1,5 +1,8 @@
 use super::element_text::ElementText;
-use crate::datacell::{BlockChildType::*, Datacell::*};
+use crate::{
+    counter::{counter_commands::CommandType, counter_types::CounterType},
+    datacell::{BlockChildType::*, Datacell::*},
+};
 
 #[derive(Debug, Default)]
 pub struct TagInfo {
@@ -11,16 +14,12 @@ pub struct TagInfo {
 
 #[derive(Debug)]
 pub struct Emitter<'a> {
-    pub tree: &'a DataCell,
     pub self_closing_tags: Vec<&'a str>,
 }
 
 impl<'a> Emitter<'a> {
-    pub fn new(tree: &'a DataCell, self_closing_tags: Vec<&'a str>) -> Emitter<'a> {
-        Emitter {
-            tree,
-            self_closing_tags,
-        }
+    pub fn new(self_closing_tags: Vec<&'a str>) -> Emitter<'a> {
+        Emitter { self_closing_tags }
     }
 
     pub fn emit_json(&mut self, data_cell: &DataCell) -> String {
@@ -35,10 +34,12 @@ impl<'a> Emitter<'a> {
             CellType::Element(el) => {
                 output.push_str(&format!("<{} ", el.name));
                 el.props.iter().for_each(|prop| {
-                    output.push_str(&Self::handle_prop_line(&format!(
-                        "{} {}",
-                        prop.key, prop.value
-                    )));
+                    if !CounterType::is_valid(&prop.key) {
+                        output.push_str(&Self::handle_prop_line(&format!(
+                            "{} {}",
+                            prop.key, prop.value
+                        )));
+                    }
                 });
                 if self.self_closing_tags.contains(&el.name.as_str()) {
                     output.push_str(" />");
@@ -115,6 +116,39 @@ impl<'a> Emitter<'a> {
         }
 
         output.replace("r#\"\"#", "")
+    }
+
+    pub fn split_and_emit(
+        &mut self,
+        data_cell: &DataCell,
+        split_children_of: &str,
+    ) -> Vec<(String, String)> {
+        let mut output = Vec::new();
+        match &data_cell.cell_type {
+            CellType::Element(el) => {
+                if el.name == split_children_of {
+                    el.children.iter().for_each(|child| {
+                        if let CellType::Element(child_el) = &child.cell_type {
+                            output.push((
+                                child_el.name.clone().to_lowercase(),
+                                self.emit_json(child),
+                            ));
+                        }
+                    });
+                } else {
+                    el.children.iter().for_each(|child| {
+                        output.extend(self.split_and_emit(child, split_children_of));
+                    });
+                }
+            }
+            CellType::Root(root) => {
+                root.children.iter().for_each(|child| {
+                    output.extend(self.split_and_emit(child, split_children_of));
+                });
+            }
+            _ => (),
+        }
+        output
     }
 
     fn handle_prop_line(line: &str) -> String {

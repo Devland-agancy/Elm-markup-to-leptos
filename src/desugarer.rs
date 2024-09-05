@@ -1,4 +1,6 @@
-use crate::datacell::{BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*};
+use crate::datacell::{
+    BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*,
+};
 
 pub struct Desugarer {
     pub json: String,
@@ -77,6 +79,42 @@ impl Desugarer {
         }
     }
 
+    fn find_cell_and_mark_article<'a>(
+        &self,
+        root: &'a DataCell,
+        tag_names: &Vec<&str>,
+        cells: &mut Vec<(usize, &'a DataCell)>, //usize is the article id
+        mut article: Option<usize>,
+        article_types: &Vec<String>,
+    ) {
+        match &root.cell_type {
+            CellType::Element(el) => {
+                if tag_names.is_empty() || tag_names.contains(&el.name.as_str()) {
+                    if let Some(article_id) = article {
+                        cells.push((article_id, root))
+                    }
+                }
+                if article_types.contains(&el.name) {
+                    article = Some(root.id)
+                }
+
+                el.children.iter().for_each(|child| {
+                    self.find_cell_and_mark_article(
+                        child,
+                        tag_names,
+                        cells,
+                        article,
+                        &article_types,
+                    )
+                })
+            }
+            CellType::Root(el) => el.children.iter().for_each(|child| {
+                self.find_cell_and_mark_article(child, tag_names, cells, article, &article_types)
+            }),
+            _ => (),
+        }
+    }
+
     pub fn pre_process_exercises(&mut self) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut exercises: Vec<&DataCell> = Vec::new();
@@ -103,17 +141,21 @@ impl Desugarer {
         }
     }
 
-    pub fn add_increamental_attr(&mut self, tags_attributes: Vec<(&str, &str)>) -> Desugarer {
+    pub fn add_increamental_attr(
+        &mut self,
+        tags_attributes: Vec<(&str, &str)>,
+        article_types: &Vec<String>,
+    ) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut elements: Vec<&DataCell> = Vec::new();
+        let mut elements: Vec<(usize, &DataCell)> = Vec::new();
         let binding = root.clone();
         let tag_names: Vec<&str> = tags_attributes.iter().map(|x| x.0).collect();
         let attribute_names: Vec<&str> = tags_attributes.iter().map(|x| x.1).collect();
-        self.find_cell(&binding, &tag_names, &mut elements);
+        self.find_cell_and_mark_article(&binding, &tag_names, &mut elements, None, article_types);
 
         let mut counters = vec![0; tag_names.len()];
 
-        for solution_cell in elements.iter() {
+        for (i, (article_id, solution_cell)) in elements.iter().enumerate() {
             //get element position in tag_names
             if let CellType::Element(el) = &solution_cell.cell_type {
                 let (tag_index, _) = tag_names
@@ -122,7 +164,13 @@ impl Desugarer {
                     .find(|x| x.1 == &el.name)
                     .unwrap();
 
+                // reset counter on new article
+                if i > 0 && elements[i - 1].0 != *article_id {
+                    counters[tag_index] = 0;
+                }
+
                 let prop_line = format!("{} {}", attribute_names[tag_index], counters[tag_index]);
+
                 counters[tag_index] += 1;
 
                 ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
@@ -135,33 +183,45 @@ impl Desugarer {
         }
     }
 
-    pub fn auto_increamental_title(&mut self, tag_name: &str, title_label: &str) -> Desugarer {
+    pub fn auto_increamental_title(
+        &mut self,
+        tag_name: &str,
+        title_label: &str,
+        article_types: &Vec<String>,
+    ) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut elements: Vec<&DataCell> = Vec::new();
+        let mut elements: Vec<(usize, &DataCell)> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, &vec![tag_name], &mut elements);
+        self.find_cell_and_mark_article(
+            &binding,
+            &vec![tag_name],
+            &mut elements,
+            None,
+            article_types,
+        );
 
-        for (_, element) in elements.clone().iter_mut().enumerate() {
+        for (_, (article_id, element)) in elements.clone().iter_mut().enumerate() {
             if let CellType::Element(el) = &element.cell_type {
                 // counter prop to parent if it doesn't have it
 
                 ElementCell::add_attribute(
                     &mut root,
-                    0,
-                    &format!("counter {}_counter", title_label),
+                    *article_id,
+                    &format!("counter {}{}_counter", title_label, article_id),
                 );
 
                 let handle = el.props.iter().find(|x| x.key == "handle");
 
                 let command = format!(
-                    "{} {}::++{}_counter.",
+                    "{} {}::++{}{}_counter.",
                     title_label,
                     if handle.is_some() {
                         handle.unwrap().value.to_owned() + "<<"
                     } else {
                         "".to_string()
                     },
-                    title_label
+                    title_label,
+                    article_id
                 );
 
                 let new_block_child = BlockChildType::Delimited(DelimitedCell {
@@ -175,7 +235,15 @@ impl Desugarer {
                 // add space to element text ( first block )
                 BlockChildType::insert_text_to_first_block_child_text(&mut root, element.id, " ");
 
-                BlockChildType::add_block_at_first(&mut root, element.id, &new_block_child);
+                BlockChildType::add_block_at_first(
+                    &mut root,
+                    element.id,
+                    &new_block_child,
+                    Some(&BlockCell {
+                        has_counter_commands: true,
+                        ..Default::default()
+                    }),
+                );
             }
         }
 

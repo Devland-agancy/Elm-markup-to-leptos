@@ -38,8 +38,13 @@ pub enum DelimitedDisplayType {
 
 pub trait BlockChild<T> {
     fn push_cell(parent: &mut BlockCell, s: T);
-    fn insert_block(parent: &mut DataCell, s: T);
-    fn add_block_at_first(add_to: &mut DataCell, parent_id: usize, block: &T);
+    fn insert_block_child(parent: &mut DataCell, s: T);
+    fn add_block_at_first(
+        add_to: &mut DataCell,
+        parent_id: usize,
+        block: &T,
+        block_options: Option<&BlockCell>,
+    );
     fn insert_text_to_first_block_child_text(add_to: &mut DataCell, parent_id: usize, text: &str);
 }
 
@@ -48,7 +53,7 @@ impl BlockChild<BlockChildType> for BlockChildType {
         parent.children.push(block)
     }
 
-    fn insert_block(parent: &mut DataCell, block_child: BlockChildType) {
+    fn insert_block_child(parent: &mut DataCell, block_child: BlockChildType) {
         if let CellType::Element(el) = &mut parent.cell_type {
             if let CellType::Block(block) = &mut el.children.first_mut().unwrap().cell_type {
                 block.children.insert(0, block_child);
@@ -56,9 +61,22 @@ impl BlockChild<BlockChildType> for BlockChildType {
         }
     }
 
-    fn add_block_at_first(add_to: &mut DataCell, block_id: usize, block_child: &BlockChildType) {
+    fn add_block_at_first(
+        add_to: &mut DataCell,
+        block_id: usize,
+        block_child: &BlockChildType,
+        block_options: Option<&BlockCell>,
+    ) {
         if add_to.id == block_id {
-            Self::insert_block(add_to, block_child.to_owned());
+            if let CellType::Element(el) = &mut add_to.cell_type {
+                if let CellType::Block(block) = &mut el.children.first_mut().unwrap().cell_type {
+                    block.children.insert(0, block_child.to_owned());
+                    if let Some(options) = block_options {
+                        block.has_counter_commands = options.has_counter_commands;
+                        block.has_handle_insert = options.has_handle_insert;
+                    }
+                }
+            }
             return;
         }
 
@@ -66,11 +84,11 @@ impl BlockChild<BlockChildType> for BlockChildType {
             CellType::Element(ref mut el) => el
                 .children
                 .iter_mut()
-                .for_each(|x| Self::add_block_at_first(x, block_id, block_child)),
+                .for_each(|x| Self::add_block_at_first(x, block_id, block_child, block_options)),
             CellType::Root(ref mut el) => el
                 .children
                 .iter_mut()
-                .for_each(|x| Self::add_block_at_first(x, block_id, block_child)),
+                .for_each(|x| Self::add_block_at_first(x, block_id, block_child, block_options)),
             _ => (),
         }
     }

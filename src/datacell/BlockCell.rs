@@ -5,15 +5,26 @@ use super::{
 };
 use serde::{Deserialize, Serialize};
 
+#[inline]
+fn is_false(v: &bool) -> bool {
+    !(*v)
+}
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BlockCell {
     pub children: Vec<BlockChildType>,
+    #[serde(skip_serializing_if = "is_false")]
+    #[serde(default)]
+    pub has_counter_commands: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    #[serde(default)]
+    pub has_handle_insert: bool,
 }
 
 impl BlockCell {
     pub fn new() -> BlockCell {
         BlockCell {
             children: Vec::new(),
+            ..Default::default()
         }
     }
 

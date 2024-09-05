@@ -100,6 +100,18 @@ impl<'a> CounterCommand<'a> {
         }
     }
 
+    pub fn has_counter_syntax(text: &str) -> bool {
+        let cmd_regex = r"(^|[^\\])(\w+<<)?(::|\.\.)(::|\+\+|--)\w+";
+        let re = Regex::new(cmd_regex).unwrap();
+        re.is_match(text)
+    }
+
+    pub fn has_handle_insert_syntax(text: &str) -> bool {
+        let handle_regex = r"(^|[^\\])(>>)\w+";
+        let re = Regex::new(handle_regex).unwrap();
+        re.is_match(text)
+    }
+
     fn split_line(&self, line: &str, handle_insert_command: bool) -> Vec<LineSplits> {
         let cmd_regex = if handle_insert_command {
             r"(^|[^\\])(>>)\w+"
@@ -168,9 +180,13 @@ impl<'a> CounterCommand<'a> {
 
         match &mut cell.cell_type {
             CellType::Block(block) => {
-                block.children.iter_mut().for_each(|child| {
-                    self.handle_block_child(child, &cloned_cell, handle_insert_command)
-                });
+                if (block.has_counter_commands && !handle_insert_command)
+                    || (block.has_handle_insert && handle_insert_command)
+                {
+                    block.children.iter_mut().for_each(|child| {
+                        self.handle_block_child(child, &cloned_cell, handle_insert_command)
+                    });
+                }
             }
             CellType::Element(el) => el.children.iter_mut().for_each(|child| {
                 self.replace_counters(child, handle_insert_command);

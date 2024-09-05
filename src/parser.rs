@@ -1,5 +1,7 @@
 use std::vec;
 
+use crate::counter::counter_commands::CounterCommand;
+
 use super::datacell::{
     BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*,
 };
@@ -19,10 +21,7 @@ impl Parser {
             result: DataCell {
                 parent_id: 0,
                 id: 0,
-                cell_type: CellType::Root(Root {
-                    children: vec![],
-                    props: vec![],
-                }),
+                cell_type: CellType::Root(Root { children: vec![] }),
             },
             id: 1,
         }
@@ -161,6 +160,11 @@ impl Parser {
                     );
 
                     let mut block = BlockCell::new();
+                    // mark block with counter syntax to avoid seaching all blocks later
+                    // if CounterCommand::has_counter_syntax(text_node.as_str()) {
+                    //     block.has_counter_commands = true;
+                    // }
+
                     let e = ElementText::new(&text_node);
                     let block_children = e.split_text();
 

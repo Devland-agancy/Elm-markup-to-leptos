@@ -147,10 +147,20 @@ fn main() {
     );
     println!("Time for desugering is: {:?}", start.elapsed());
 
-    // Emmitter
     let start = Instant::now();
     let mut desugarer_json_cell: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
-    let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let mut counters = Counters::new();
+    counters.get_counters_from_json(&desugarer_json_cell);
+    let mut counter_command = CounterCommand::new(&mut counters, &json_desugarer.json);
+    let json_counter_string = counter_command.run(&mut desugarer_json_cell);
+    println!("Time for counter logic is: {:?}", start.elapsed());
+
+    write_to_file("src/content_files/counter.json", &json_counter_string);
+
+    // Emmitter
+    let start = Instant::now();
+
+    let json_value: DataCell = serde_json::from_str(&json_counter_string).unwrap();
     let mut emitter: Emitter = Emitter::new(vec![
         "img",
         "col",
@@ -177,13 +187,4 @@ fn main() {
         .expect("Failed to execute command");
 
     println!("Time for emitting is: {:?}", start.elapsed());
-
-    let start = Instant::now();
-    let mut counters = Counters::new();
-    counters.get_counters_from_json(&desugarer_json_cell);
-    let mut counter_command = CounterCommand::new(&mut counters, &json_desugarer.json);
-    let json_counter_string = counter_command.run(&mut desugarer_json_cell);
-    println!("Time for counter logic is: {:?}", start.elapsed());
-
-    write_to_file("src/content_files/counter.json", &json_counter_string);
 }

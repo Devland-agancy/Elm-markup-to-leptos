@@ -125,14 +125,16 @@ impl Desugarer {
             let mut count: usize = 0;
             self.count_element(exercises_cell, "Exercise", &mut count);
             let mut prop_line = "labels vec![\"0\"".to_string();
-            for i in 1..=count - 1 {
-                prop_line += &format!(",\"{}\"", i);
+            if count > 0 {
+                for i in 1..=count - 1 {
+                    prop_line += &format!(",\"{}\"", i);
+                }
+                prop_line += "]";
+
+                //exercises_cell
+
+                ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
             }
-            prop_line += "]";
-
-            //exercises_cell
-
-            ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
         }
 
         Desugarer {

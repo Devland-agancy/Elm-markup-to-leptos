@@ -1,5 +1,3 @@
-use std::vec;
-
 use crate::counter::counter_commands::CounterCommand;
 
 use super::datacell::{
@@ -160,13 +158,18 @@ impl Parser {
                     );
 
                     let mut block = BlockCell::new();
+
+                    let e = ElementText::new(&text_node);
+                    let block_children = e.split_text();
+
                     // mark block with counter syntax to avoid seaching all blocks later
                     // if CounterCommand::has_counter_syntax(text_node.as_str()) {
                     //     block.has_counter_commands = true;
                     // }
-
-                    let e = ElementText::new(&text_node);
-                    let block_children = e.split_text();
+                    block.has_counter_commands =
+                        CounterCommand::has_counter_syntax(text_node.as_str());
+                    block.has_handle_insert =
+                        CounterCommand::has_handle_insert_syntax(text_node.as_str());
 
                     block_children.iter().for_each(|child| {
                         if let BlockChildType::Text(text) = &child {
@@ -179,6 +182,7 @@ impl Parser {
                     });
 
                     text_node = "".to_string();
+
                     BlockCell::add_cell(&mut self.result, curr_el_id.unwrap(), self.id, &block);
                     self.id += 1;
 

@@ -140,7 +140,7 @@ fn main() {
             ],
         })
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
-        .auto_convert_to_float(vec!["line"]);
+        .auto_convert_to_float(vec!["line", "padding_left"]);
     write_to_file(
         "src/content_files/des_json_output.json",
         &json_desugarer.json,

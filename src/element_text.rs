@@ -44,8 +44,8 @@ impl ElementText {
                     end_symbol: "*",
                     left_replacement: "<Span bold=true>",
                     right_replacement: "</Span>",
-                    ignore_when_after: vec!['(', '[', '{', ' '],
-                    ignore_when_before: vec![')', ']', '}', ' '],
+                    ignore_when_after: vec!['(', '[', '{', '*', ' '],
+                    ignore_when_before: vec![')', ']', '}', '*', ' '],
                     ..Default::default()
                 },
                 DelimeterRules {

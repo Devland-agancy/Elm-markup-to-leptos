@@ -88,6 +88,9 @@ impl Parser {
             let trimmed_line = line.trim_start();
             let indent = get_line_indent(line);
 
+            if trimmed_line.starts_with("!!") {
+                continue;
+            }
             check_indent_size(indent as isize, index);
             if let Some(last) = tag_stack.last() {
                 check_extra_spaces(indent, last.indent, index);

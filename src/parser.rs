@@ -11,6 +11,33 @@ use super::parser_helpers::{tag_stack_pop, TagInfo};
 pub struct Parser {
     result: DataCell,
     pub id: usize,
+    //reset_line_tracking_on: String // used for tracking error line on merged input files . when input files are merged we reset the line on every element related to file
+}
+
+#[derive(Debug)]
+pub enum ParserError {
+    ExtraSpacesError(usize),
+    None4xSpacesError(usize),
+}
+
+impl ParserError {
+    pub fn to_string(&self) -> String {
+        match self {
+            ParserError::ExtraSpacesError(line) => format!("Extra spaces found on line {}", line),
+            ParserError::None4xSpacesError(line) => {
+                format!("None 4x spaces found on line {}", line)
+            }
+        }
+    }
+
+    pub fn to_string_without_line(&self) -> String {
+        match self {
+            ParserError::ExtraSpacesError(_) => format!("Extra spaces found"),
+            ParserError::None4xSpacesError(_) => {
+                format!("None 4x spaces found")
+            }
+        }
+    }
 }
 
 impl Parser {
@@ -73,7 +100,7 @@ impl Parser {
         elm: &str,
         mut curr_el_id: Option<usize>,
         mut is_nested: bool,
-    ) -> String {
+    ) -> Result<String, ParserError> {
         let mut tag_stack: Vec<TagInfo> = Vec::new();
         let lines = elm.lines();
         let mut lines_to_skip: u32 = 0;
@@ -91,9 +118,9 @@ impl Parser {
             if trimmed_line.starts_with("!!") {
                 continue;
             }
-            check_indent_size(indent as isize, index);
+            check_indent_size(indent as isize, index)?;
             if let Some(last) = tag_stack.last() {
-                check_extra_spaces(indent, last.indent, index);
+                check_extra_spaces(indent, last.indent, index)?;
             }
 
             if trimmed_line.starts_with("|> ") {
@@ -219,7 +246,7 @@ impl Parser {
             }
         }
         let res = serde_json::to_string_pretty(&self.result);
-        res.unwrap_or("Something Wrong".to_string())
+        Ok(res.unwrap_or("Something Wrong".to_string()))
     }
 
     fn get_parent_id(&self, tag_stack: &Vec<TagInfo>) -> Option<usize> {

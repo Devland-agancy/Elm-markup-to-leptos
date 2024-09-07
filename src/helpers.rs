@@ -1,4 +1,7 @@
-use crate::emitter::{Emitter, TagInfo};
+use crate::{
+    emitter::{Emitter, TagInfo},
+    parser::ParserError,
+};
 
 pub fn concat_ignore_spaces(start: &str, content: &str, end: &str) -> String {
     let trimmed_content = content.trim_start(); // Remove leading spaces from content
@@ -40,24 +43,32 @@ pub fn get_line_indent(line: &str) -> usize {
     line.len() - line.trim_start().len()
 }
 
-pub fn check_indent_size(size: isize, line: usize) {
+pub fn check_indent_size(size: isize, line: usize) -> Result<(), ParserError> {
     if size % 4 != 0 {
-        panic!(
-            "Syntax error: \\n
-            There must be 4*x spaces before line {}",
-            line
-        )
+        // panic!(
+        //     "Syntax error: \\n
+        //     There must be 4*x spaces before line {}",
+        //     line
+        // )
+        return Err(ParserError::None4xSpacesError(line));
     }
+    Ok(())
 }
 
-pub fn check_extra_spaces(indent: usize, parent_indent: usize, line: usize) {
+pub fn check_extra_spaces(
+    indent: usize,
+    parent_indent: usize,
+    line: usize,
+) -> Result<(), ParserError> {
     if indent > parent_indent + 4 {
-        panic!(
-            "Syntax error: \\n
-            There are extra spaces at line {}",
-            line
-        )
+        // panic!(
+        //     "Syntax error: \\n
+        //     There are extra spaces at line {}",
+        //     line
+        // )
+        return Err(ParserError::ExtraSpacesError(line));
     }
+    Ok(())
 }
 
 pub fn get_slice(text: &str, start: usize, end: usize) -> Option<&str> {

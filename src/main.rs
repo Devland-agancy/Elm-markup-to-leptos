@@ -61,16 +61,22 @@ fn main() {
 
     //parsing
     let start = Instant::now();
-    let mut parsed_json = Parser::new();
+    let mut parser = Parser::new();
 
-    let json_tree = parsed_json.export_json(&contents, None, false);
-    let last_item_id = parsed_json.id;
-    write_to_file("src/content_files/json_output.json", &json_tree);
+    let parsed_json = parser.export_json(&contents, None, false);
+
+    if let Err(err) = parsed_json {
+        panic!("{}", err.to_string());
+    }
+    let parsed_json = parsed_json.unwrap();
+
+    let last_item_id = parser.id;
+    write_to_file("src/content_files/json_output.json", &parsed_json);
     println!("Time for parsing is: {:?}", start.elapsed());
 
     //desugering
     let start = Instant::now();
-    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), last_item_id);
+    let mut json_desugarer: Desugarer = Desugarer::new(parsed_json.as_str(), last_item_id);
     let article_types = &vec!["Chapter".to_string(), "Bootcamp".to_string()];
     json_desugarer = json_desugarer
         .pre_process_exercises()

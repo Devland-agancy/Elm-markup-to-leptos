@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use super::element_text::ElementText;
 use crate::{
-    counter::{counter_commands::CommandType, counter_types::CounterType},
+    counter::counter_types::CounterType,
     datacell::{BlockChildType::*, Datacell::*},
 };
 
@@ -122,17 +124,17 @@ impl<'a> Emitter<'a> {
         &mut self,
         data_cell: &DataCell,
         split_children_of: &str,
-    ) -> Vec<(String, String)> {
-        let mut output = Vec::new();
+    ) -> HashMap<String, String> {
+        let mut output = HashMap::new();
         match &data_cell.cell_type {
             CellType::Element(el) => {
-                if el.name == split_children_of {
+                if el.name.contains(&split_children_of) {
                     el.children.iter().for_each(|child| {
                         if let CellType::Element(child_el) = &child.cell_type {
-                            output.push((
+                            output.insert(
                                 child_el.name.clone().to_lowercase(),
                                 self.emit_json(child),
-                            ));
+                            );
                         }
                     });
                 } else {

@@ -94,7 +94,7 @@ impl Desugarer {
                         cells.push((article_id, root))
                     }
                 }
-                if article_types.contains(&el.name) {
+                if article_types.contains(&el.name.chars().filter(|c| !c.is_numeric()).collect()) {
                     article = Some(root.id)
                 }
 

@@ -95,7 +95,7 @@ impl ElementText {
         }
     }
 
-    pub fn handle_delimeters(self) -> String {
+    pub fn handle_delimeters(&self) -> String {
         let mut i = 0;
         let mut output = String::new();
 
@@ -195,7 +195,7 @@ impl ElementText {
         output
     }
 
-    pub fn split_text(self) -> Vec<BlockChildType> {
+    pub fn split_text(&self) -> Vec<BlockChildType> {
         let mut i = 0;
         let mut output = Vec::<BlockChildType>::new();
         while i <= self.text.len() {
@@ -252,6 +252,39 @@ impl ElementText {
             }
         }
         output
+    }
+
+    pub fn remove_escapes(&mut self) -> &Self {
+        let mut output = String::new();
+        let mut i = 0;
+        let symbols = self.get_all_symbols();
+        let text = &self.text;
+
+        // remove escape char if it's before a delimiter symbol
+        while i + 1 < text.len() {
+            if self.get_char(i) != "\\" {
+                output.push_str(&self.get_char(i));
+                i += 1;
+                continue;
+            }
+
+            let mut delimiter_escaped = false;
+            symbols.iter().any(|s| {
+                if self.get_char(i + s.len()) == *s {
+                    output.push_str(s);
+                    i += s.len() + 1;
+                    delimiter_escaped = true;
+                    return true;
+                }
+                false
+            });
+            if !delimiter_escaped {
+                output.push_str(&self.get_char(i));
+                i += 1
+            }
+        }
+        self.text = output;
+        self
     }
 
     fn find_next_delimeter(
@@ -355,13 +388,14 @@ impl ElementText {
                     .contains(&self.text.chars().nth(i - 1).unwrap());
 
             if !is_found {
-                if end_symbol
+                if (end_symbol
                     != &self
                         .text
                         .chars()
                         .take(i + end_symbol.len())
                         .skip(i)
                         .collect::<String>()
+                    && !self.escape_before_symbol(i, &end_symbol))
                     || found_del
                         .ignore_when_after
                         .contains(&self.text.chars().nth(i - 1).unwrap())
@@ -381,6 +415,7 @@ impl ElementText {
             {
                 i += 2;
                 del_content.push_str(next_char);
+
                 continue;
             }
             found = true;
@@ -391,6 +426,7 @@ impl ElementText {
                 del_content.push_str(end_symbol);
                 found = false;
                 i += end_symbol.len();
+
                 continue;
             }
             break;
@@ -409,6 +445,29 @@ impl ElementText {
 
     fn is_escaped(&self, i: usize) -> bool {
         i > 0 && self.get_char(i - 1) == "\\"
+    }
+
+    fn get_all_symbols(&self) -> Vec<String> {
+        let mut symbols: Vec<String> = self.rules.iter().map(|d| d.symbol.to_string()).collect();
+        let end_symbols: Vec<String> = self
+            .rules
+            .iter()
+            .map(|d| d.end_symbol.to_string())
+            .collect();
+        for end_s in end_symbols {
+            if !symbols.contains(&end_s) {
+                symbols.push(end_s)
+            }
+        }
+        symbols
+    }
+
+    fn escape_before_symbol(&self, i: usize, symbol: &str) -> bool {
+        i > 0
+            && self
+                .get_slice(i + 1, i + 1 + symbol.len())
+                .is_some_and(|s| self.get_all_symbols().contains(&s.to_string()))
+            && self.get_char(i) == "\\"
     }
 
     fn get_slice(&self, start: usize, end: usize) -> Option<&str> {

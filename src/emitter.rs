@@ -74,8 +74,9 @@ impl<'a> Emitter<'a> {
                                 if !sub_text_block.trim().is_empty() {
                                     text_block
                                         .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
-                                    let text_el = ElementText::new(sub_text_block.as_str());
-                                    text_block.push_str(&text_el.handle_delimeters());
+                                    let mut text_el = ElementText::new(sub_text_block.as_str());
+                                    text_block
+                                        .push_str(&&text_el.remove_escapes().handle_delimeters());
                                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                                 }
                                 sub_text_block = "".to_string();

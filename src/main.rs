@@ -132,19 +132,7 @@ fn main() {
             ]),
         )
         .wrap_children(vec!["List"], "Item", &None)
-        .add_indent(&ParagraphIndentOptions {
-            tags_before_non_indents: vec![
-                "Image",
-                "DisplayImage",
-                "Pause",
-                "InlineImage",
-                "MathBlock",
-                "Table",
-            ],
-            tags_with_non_indent_first_child: vec![
-                "Example", "Section", "tr", "Table", "Solution", "Exercise",
-            ],
-        })
+        .add_indent()
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
         .auto_convert_to_float(vec!["line", "padding_left"]);
     write_to_file(

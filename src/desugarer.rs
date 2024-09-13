@@ -400,7 +400,7 @@ impl Desugarer {
         }
     }
 
-    pub fn add_indent(&mut self, options: &ParagraphIndentOptions) -> Desugarer {
+    pub fn add_indent(&mut self) -> Desugarer {
         // A paragraph has an indent by default except:
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
@@ -415,28 +415,12 @@ impl Desugarer {
             let parent: Option<&mut DataCell> =
                 DataCell::get_cell_by_id(&mut root, element.parent_id);
 
-            // only paragraph elements that have block cell
-            if Self::paragraph_of_blocks(element) {
-                continue;
+            // an indent appears if this paragraph is preceded by a paragraph that has a non-block delimiter last child
+            if Self::paragraph_first_child_is_text(&element)
+                && Self::prev_is_non_block_delimiter(element.id, &parent)
+            {
+                elements_to_indent.push(element);
             }
-            // the first paragraph of every section, exercise, or example does not have an indent
-            if Self::is_first_child(element.id, &parent, options) {
-                continue;
-            }
-            // $$, __,  |_ paragraphs
-            if Self::is_delimited(element, CheckFor::FIRST) {
-                continue;
-            }
-            // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
-            if Self::prev_is_delimited(element.id, &parent) {
-                continue;
-            }
-            // a paragraph that follows tags defined in
-            if Self::tags_before_non_indents(element.id, &parent, &options) {
-                continue;
-            }
-
-            elements_to_indent.push(element);
         }
 
         for element in elements_to_indent.iter() {
@@ -451,17 +435,19 @@ impl Desugarer {
         }
     }
 
-    pub fn paragraph_of_blocks(element: &DataCell) -> bool {
+    pub fn paragraph_first_child_is_text(element: &DataCell) -> bool {
         if let CellType::Element(el) = &element.cell_type {
-            if el.children.first().is_some_and(|c| {
-                if let CellType::Block(_) = &c.cell_type {
-                    false
-                } else {
-                    true
+            return el.children.first().is_some_and(|c| {
+                if let CellType::Block(block) = &c.cell_type {
+                    return block.children.first().is_some_and(|block_child| {
+                        if let BlockChildType::Text(_) = &block_child {
+                            return true;
+                        }
+                        false
+                    });
                 }
-            }) {
-                return true;
-            }
+                false
+            });
         }
         false
     }
@@ -485,79 +471,37 @@ impl Desugarer {
         false
     }
 
-    fn is_delimited(element: &DataCell, check_for: CheckFor) -> bool {
-        if let CellType::Element(el) = &element.cell_type {
-            if let Some(block) = el.children.first() {
-                if let CellType::Block(block) = &block.cell_type {
-                    match check_for {
-                        CheckFor::FIRST => {
-                            if let Some(block) = block.children.first() {
-                                if let BlockChildType::Delimited(b) = &block {
-                                    return b.display_type == DelimitedDisplayType::BLOCK
-                                        || b.open_delimeter == "*";
-                                }
-                            }
-                        }
-                        CheckFor::LAST => {
-                            if let Some(block) = block.children.last() {
-                                if let BlockChildType::Delimited(b) = &block {
-                                    return b.display_type == DelimitedDisplayType::BLOCK
-                                        || b.open_delimeter == "*";
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        false
-    }
-
-    fn prev_is_delimited(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
+    fn prev_is_non_block_delimiter(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
         if let Some(parent) = parent {
-            if let CellType::Element(parent) = &parent.cell_type {
+            if let CellType::Element(parent_el) = &parent.cell_type {
                 let mut prev_el: Option<&DataCell> = None;
-                for child in &parent.children {
+                for child in &parent_el.children {
                     if child.id == element_id {
                         break;
                     }
                     prev_el = Some(&child)
                 }
-                if prev_el.is_some_and(|p| Self::is_delimited(p, CheckFor::LAST)) {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
-    fn tags_before_non_indents(
-        element_id: usize,
-        parent: &Option<&mut DataCell>,
-        option: &ParagraphIndentOptions,
-    ) -> bool {
-        if let Some(parent) = parent {
-            if let CellType::Element(parent) = &parent.cell_type {
-                let mut prev_el: Option<&DataCell> = None;
-                for child in &parent.children {
-                    if child.id == element_id {
-                        break;
-                    }
-                    prev_el = Some(&child)
-                }
-                if let Some(prev_el) = prev_el {
-                    if let CellType::Element(prev_el) = &prev_el.cell_type {
-                        if prev_el.children.first().is_some_and(|p| {
-                            if let CellType::Element(el) = &p.cell_type {
-                                return option.tags_before_non_indents.contains(&el.name.as_str());
-                            } else {
-                                false
+                return prev_el.is_some_and(|p| {
+                    if let CellType::Element(el) = &p.cell_type {
+                        if el.name != "Paragraph" {
+                            return false;
+                        }
+                        if let Some(block) = el.children.last() {
+                            if let CellType::Block(block) = &block.cell_type {
+                                if let Some(block) = block.children.last() {
+                                    if let BlockChildType::Delimited(b) = &block {
+                                        return b.display_type != DelimitedDisplayType::BLOCK
+                                            && b.open_delimeter != "*";
+                                    }
+                                    if let BlockChildType::Text(_) = &block {
+                                        return true;
+                                    }
+                                }
                             }
-                        }) {
-                            return true;
                         }
                     }
-                }
+                    false
+                });
             }
         }
         false

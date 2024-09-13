@@ -14,6 +14,7 @@ struct DelimeterRules {
     no_break: bool,
     keep_delimiter: bool,
     ignore_nested_delimeters: bool,
+    keep_escaped_char_when_closed: bool,
     ignore_when_before: Vec<char>,
     ignore_when_after: Vec<char>,
 }
@@ -30,6 +31,7 @@ impl Default for DelimeterRules {
             ignore_nested_delimeters: false,
             ignore_when_before: Vec::new(),
             ignore_when_after: Vec::new(),
+            keep_escaped_char_when_closed: false,
         }
     }
 }
@@ -89,6 +91,7 @@ impl ElementText {
                     no_break: true,
                     keep_delimiter: true,
                     ignore_nested_delimeters: true,
+                    keep_escaped_char_when_closed: true, // Ex: $ ex \$ $ --> <Math>$ ex \$ $</Math> instead of <Math>$ ex $ $</Math>
                     ..Default::default()
                 },
             ],
@@ -420,7 +423,7 @@ impl ElementText {
             }
             found = true;
             if self.is_escaped(i) {
-                if keep_escape_char {
+                if keep_escape_char || found_del.keep_escaped_char_when_closed {
                     del_content.push_str("\\");
                 }
                 del_content.push_str(end_symbol);

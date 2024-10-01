@@ -112,8 +112,8 @@ fn main() {
                     attach_to: AttachToEnum::BEFORE,
                 },
                 IgnoreOptions {
-                    element: "CounterInsert",
-                    attach_to: AttachToEnum::BOTH,
+                    element: "Pause",
+                    attach_to: AttachToEnum::NONE,
                 },
             ]),
         )

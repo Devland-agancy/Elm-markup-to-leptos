@@ -16,11 +16,7 @@ pub enum AttachToEnum {
     BEFORE,
     AFTER,
     BOTH,
-}
-
-enum CheckFor {
-    FIRST,
-    LAST,
+    NONE,
 }
 
 pub struct IgnoreOptions {
@@ -261,7 +257,7 @@ impl Desugarer {
         wrap_with: &str,
         ignore_elements: &Option<Vec<IgnoreOptions>>,
     ) -> Desugarer {
-        // elements are what we want to wrap it's children with wrap_with
+        // elements are what we want to wrap their children with wrap_with
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
@@ -274,6 +270,7 @@ impl Desugarer {
                 let mut include_prev_child = false;
                 let mut include_in_prev_wrapper = false;
                 let mut add_wrapper = true;
+                let mut no_wrap = false;
 
                 el.children.iter().enumerate().for_each(|(idx, child)| {
                     let mut element_ignored = None;
@@ -328,6 +325,17 @@ impl Desugarer {
                                 );
                                 include_in_prev_wrapper = true // next child to previous wrapper
                             }
+                            AttachToEnum::NONE => {
+                                // Do nothing for these elements . just move to last so ordering doesn't change .
+                                //no_wrap = true;
+                                add_wrapper = false;
+                                include_in_prev_wrapper = false;
+                                ElementCell::move_cell(
+                                    &mut root,
+                                    (element.id, child.id),
+                                    element.id,
+                                );
+                            }
                         }
                     } else if include_in_prev_wrapper {
                         ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
@@ -350,6 +358,9 @@ impl Desugarer {
                         }
                         ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
                     }
+                    // if no_wrap {
+
+                    // }
                 });
             }
         }

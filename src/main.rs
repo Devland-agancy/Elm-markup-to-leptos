@@ -13,12 +13,12 @@ use datacell::Datacell::*;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
 use emitter::Emitter;
 use parser::Parser;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
+use std::{env, vec};
 
 fn write_to_file(file_path: &str, contents: &str) {
     let mut json_file: File = match File::create(file_path) {
@@ -132,7 +132,7 @@ fn main() {
             ]),
         )
         .wrap_children(vec!["List"], "Item", &None)
-        .add_indent()
+        .add_indent(&vec!["Paragraph", "InnerParagraph"])
         .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
         .auto_convert_to_float(vec!["line", "padding_left"]);
     write_to_file(

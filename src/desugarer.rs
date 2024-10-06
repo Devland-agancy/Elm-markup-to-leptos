@@ -411,14 +411,14 @@ impl Desugarer {
         }
     }
 
-    pub fn add_indent(&mut self) -> Desugarer {
+    pub fn add_indent(&mut self, paragraph_tags: &Vec<&str>) -> Desugarer {
         // A paragraph has an indent by default except:
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
 
-        self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
+        self.find_cell(&binding, paragraph_tags, &mut _elements);
 
         let mut elements_to_indent: Vec<&DataCell> = Vec::new();
 
@@ -428,7 +428,7 @@ impl Desugarer {
 
             // an indent appears if this paragraph is preceded by a paragraph that has a non-block delimiter last child
             if Self::paragraph_first_child_is_text(&element)
-                && Self::prev_is_non_block_delimiter(element.id, &parent)
+                && Self::prev_is_non_block_delimiter(element.id, &parent, paragraph_tags)
             {
                 elements_to_indent.push(element);
             }
@@ -482,7 +482,11 @@ impl Desugarer {
         false
     }
 
-    fn prev_is_non_block_delimiter(element_id: usize, parent: &Option<&mut DataCell>) -> bool {
+    fn prev_is_non_block_delimiter(
+        element_id: usize,
+        parent: &Option<&mut DataCell>,
+        paragraph_tags: &Vec<&str>,
+    ) -> bool {
         if let Some(parent) = parent {
             if let CellType::Element(parent_el) = &parent.cell_type {
                 let mut prev_el: Option<&DataCell> = None;
@@ -494,7 +498,7 @@ impl Desugarer {
                 }
                 return prev_el.is_some_and(|p| {
                     if let CellType::Element(el) = &p.cell_type {
-                        if el.name != "Paragraph" {
+                        if !paragraph_tags.contains(&el.name.as_str()) {
                             return false;
                         }
                         if let Some(block) = el.children.last() {

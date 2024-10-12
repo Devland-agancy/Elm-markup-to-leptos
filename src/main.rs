@@ -75,77 +75,77 @@ fn main() {
     println!("Time for parsing is: {:?}", start.elapsed());
 
     //desugering
-    let start = Instant::now();
-    let mut json_desugarer: Desugarer = Desugarer::new(parsed_json.as_str(), last_item_id);
-    let article_types = &vec!["Chapter".to_string(), "Bootcamp".to_string()];
-    json_desugarer = json_desugarer
-        .pre_process_exercises()
-        .add_increamental_attr(
-            vec![("Solution", "solution_number"), ("Grid", "id")],
-            article_types,
-        )
-        .auto_increamental_title("Exercise", "Exercise", article_types)
-        .auto_increamental_title("Example", "Example", article_types)
-        .wrap_block_delimited("InnerParagraph")
-        .wrap_children(
-            vec!["Section", "Solution", "Example", "Exercise"],
-            "Paragraph",
-            &Some(vec![
-                IgnoreOptions {
-                    element: "InlineImage",
-                    attach_to: AttachToEnum::BOTH,
-                },
-                IgnoreOptions {
-                    element: "ImageRight",
-                    attach_to: AttachToEnum::BEFORE,
-                },
-                IgnoreOptions {
-                    element: "ImageLeft",
-                    attach_to: AttachToEnum::BEFORE,
-                },
-                IgnoreOptions {
-                    element: "del",
-                    attach_to: AttachToEnum::BOTH,
-                },
-                IgnoreOptions {
-                    element: "Space",
-                    attach_to: AttachToEnum::BEFORE,
-                },
-                IgnoreOptions {
-                    element: "Pause",
-                    attach_to: AttachToEnum::NONE,
-                },
-            ]),
-        )
-        .wrap_children(
-            vec!["Grid"],
-            "Span",
-            &Some(vec![
-                IgnoreOptions {
-                    element: "CounterInsert",
-                    attach_to: AttachToEnum::BOTH,
-                },
-                IgnoreOptions {
-                    element: "CounterIncrement",
-                    attach_to: AttachToEnum::BOTH,
-                },
-            ]),
-        )
-        .wrap_children(vec!["List"], "Item", &None)
-        .add_indent()
-        .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
-        .auto_convert_to_float(vec!["line", "padding_left"]);
-    write_to_file(
-        "src/content_files/des_json_output.json",
-        &json_desugarer.json,
-    );
-    println!("Time for desugering is: {:?}", start.elapsed());
+    // let start = Instant::now();
+    // let mut json_desugarer: Desugarer = Desugarer::new(parsed_json.as_str(), last_item_id);
+    // let article_types = &vec!["Chapter".to_string(), "Bootcamp".to_string()];
+    // json_desugarer = json_desugarer
+    //     .pre_process_exercises()
+    //     .add_increamental_attr(
+    //         vec![("Solution", "solution_number"), ("Grid", "id")],
+    //         article_types,
+    //     )
+    //     .auto_increamental_title("Exercise", "Exercise", article_types)
+    //     .auto_increamental_title("Example", "Example", article_types)
+    //     .wrap_block_delimited("InnerParagraph")
+    //     .wrap_children(
+    //         vec!["Section", "Solution", "Example", "Exercise"],
+    //         "Paragraph",
+    //         &Some(vec![
+    //             IgnoreOptions {
+    //                 element: "InlineImage",
+    //                 attach_to: AttachToEnum::BOTH,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "ImageRight",
+    //                 attach_to: AttachToEnum::BEFORE,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "ImageLeft",
+    //                 attach_to: AttachToEnum::BEFORE,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "del",
+    //                 attach_to: AttachToEnum::BOTH,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "Space",
+    //                 attach_to: AttachToEnum::BEFORE,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "Pause",
+    //                 attach_to: AttachToEnum::NONE,
+    //             },
+    //         ]),
+    //     )
+    //     .wrap_children(
+    //         vec!["Grid"],
+    //         "Span",
+    //         &Some(vec![
+    //             IgnoreOptions {
+    //                 element: "CounterInsert",
+    //                 attach_to: AttachToEnum::BOTH,
+    //             },
+    //             IgnoreOptions {
+    //                 element: "CounterIncrement",
+    //                 attach_to: AttachToEnum::BOTH,
+    //             },
+    //         ]),
+    //     )
+    //     .wrap_children(vec!["List"], "Item", &None)
+    //     .add_indent()
+    //     .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
+    //     .auto_convert_to_float(vec!["line", "padding_left"]);
+    // write_to_file(
+    //     "src/content_files/des_json_output.json",
+    //     &json_desugarer.json,
+    // );
+    // println!("Time for desugering is: {:?}", start.elapsed());
 
     let start = Instant::now();
-    let mut desugarer_json_cell: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let mut desugarer_json_cell: DataCell = serde_json::from_str(&parsed_json).unwrap();
     let mut counters = Counters::new();
     counters.get_counters_from_json(&desugarer_json_cell);
-    let mut counter_command = CounterCommand::new(&mut counters, &json_desugarer.json);
+    let mut counter_command = CounterCommand::new(&mut counters, &parsed_json);
     let json_counter_string = counter_command.run(&mut desugarer_json_cell);
     println!("Time for counter logic is: {:?}", start.elapsed());
 

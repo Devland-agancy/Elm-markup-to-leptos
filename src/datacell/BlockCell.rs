@@ -1,5 +1,5 @@
 use super::{
-    BlockChildType::BlockChildType,
+    BlockChildType::TextCell,
     CellTrait::Cell,
     Datacell::{CellType, DataCell},
 };
@@ -11,7 +11,8 @@ fn is_false(v: &bool) -> bool {
 }
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BlockCell {
-    pub children: Vec<BlockChildType>,
+    pub children: Vec<TextCell>,
+
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
     pub has_counter_commands: bool,

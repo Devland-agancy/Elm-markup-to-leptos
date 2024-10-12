@@ -1,5 +1,6 @@
 use super::{
     BlockCell::BlockCell,
+    BlockChildType::TextCell,
     ElementCell::{ElementCell, Prop},
 };
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,33 @@ pub enum CellType {
     Element(ElementCell),
     #[serde(rename = "~block~")]
     Block(BlockCell),
+}
+
+impl CellType {
+    pub fn as_block(&self) -> Option<&BlockCell> {
+        match self {
+            CellType::Block(block) => Some(block),
+            _ => None,
+        }
+    }
+
+    pub fn as_element(&self) -> Option<&ElementCell> {
+        match self {
+            CellType::Element(element) => Some(element),
+            _ => None,
+        }
+    }
+
+    pub fn create_block_from_text(text: &str) -> Self {
+        Self::Block(BlockCell {
+            children: vec![TextCell {
+                content: text.to_string(),
+                wrapped_with: None,
+            }],
+            has_counter_commands: false,
+            has_handle_insert: false,
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -114,21 +142,3 @@ impl DataCell {
         None
     }
 }
-
-// impl Root {
-//     pub fn push_attribute(&mut self, line: &str) {
-//         if let Some(prop_line) = line.split_once(" ") {
-//             if self
-//                 .props
-//                 .iter()
-//                 .any(|x| x.key == prop_line.0 && x.value == prop_line.1)
-//             {
-//                 return;
-//             }
-//             self.props.push(Prop {
-//                 key: prop_line.0.to_string(),
-//                 value: prop_line.1.to_string(),
-//             })
-//         }
-//     }
-// }

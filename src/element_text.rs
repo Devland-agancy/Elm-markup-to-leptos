@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use crate::datacell::{BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*};
 
 pub struct ElementText {
@@ -9,8 +11,8 @@ pub struct ElementText {
 struct DelimeterRules {
     symbol: &'static str,
     end_symbol: &'static str,
-    left_replacement: &'static str,
-    right_replacement: &'static str,
+    element_name: &'static str,
+    props: Vec<Prop>,
     no_break: bool,
     keep_delimiter: bool,
     ignore_nested_delimeters: bool,
@@ -24,8 +26,8 @@ impl Default for DelimeterRules {
         Self {
             symbol: "",
             end_symbol: "",
-            left_replacement: "",
-            right_replacement: "",
+            element_name: "",
+            props: Vec::new(),
             no_break: false,
             keep_delimiter: false,
             ignore_nested_delimeters: false,
@@ -44,8 +46,11 @@ impl ElementText {
                 DelimeterRules {
                     symbol: "*",
                     end_symbol: "*",
-                    left_replacement: "<Span bold=true>",
-                    right_replacement: "</Span>",
+                    element_name: "Span",
+                    props: vec![Prop {
+                        key: "bold".to_string(),
+                        value: "true".to_string(),
+                    }],
                     ignore_when_after: vec!['(', '[', '{', '*', ' '],
                     ignore_when_before: vec![')', ']', '}', '*', ' '],
                     ..Default::default()
@@ -53,22 +58,37 @@ impl ElementText {
                 DelimeterRules {
                     symbol: "__",
                     end_symbol: "__",
-                    left_replacement: "<Span italic=true align=Align::Center>",
-                    right_replacement: "</Span>",
+                    element_name: "Span",
+                    props: vec![
+                        Prop {
+                            key: "italic".to_string(),
+                            value: "true".to_string(),
+                        },
+                        Prop {
+                            key: "align".to_string(),
+                            value: "center".to_string(),
+                        },
+                    ],
                     ..Default::default()
                 },
                 DelimeterRules {
                     symbol: "_|",
                     end_symbol: "|_",
-                    left_replacement: "<Span align=Align::Center>",
-                    right_replacement: "</Span>",
+                    element_name: "Span",
+                    props: vec![Prop {
+                        key: "align".to_string(),
+                        value: "center".to_string(),
+                    }],
                     ..Default::default()
                 },
                 DelimeterRules {
                     symbol: "_",
                     end_symbol: "_",
-                    left_replacement: "<Span italic=true>",
-                    right_replacement: "</Span>",
+                    element_name: "Span",
+                    props: vec![Prop {
+                        key: "italic".to_string(),
+                        value: "true".to_string(),
+                    }],
                     ignore_when_after: vec!['(', '[', '{', ' '],
                     ignore_when_before: vec![')', ']', '}', ' '],
                     ..Default::default()
@@ -76,8 +96,7 @@ impl ElementText {
                 DelimeterRules {
                     symbol: "$$",
                     end_symbol: "$$",
-                    left_replacement: "<MathBlock>",
-                    right_replacement: "</MathBlock>",
+                    element_name: "Mathblock",
                     no_break: true,
                     keep_delimiter: true,
                     ignore_nested_delimeters: true,
@@ -86,8 +105,7 @@ impl ElementText {
                 DelimeterRules {
                     symbol: "$",
                     end_symbol: "$",
-                    left_replacement: "<Math>",
-                    right_replacement: "</Math>",
+                    element_name: "Math",
                     no_break: true,
                     keep_delimiter: true,
                     ignore_nested_delimeters: true,
@@ -98,157 +116,163 @@ impl ElementText {
         }
     }
 
-    pub fn handle_delimeters(&self) -> String {
+    // pub fn handle_delimeters(&self) -> String {
+    //     let mut i = 0;
+    //     let mut output = String::new();
+
+    //     while i <= self.text.len() {
+    //         let (del, skips, text) = &self.find_next_delimeter(i, false);
+
+    //         output.push_str(text);
+
+    //         if del.is_none() {
+    //             break;
+    //         }
+
+    //         i = *skips;
+
+    //         if i <= self.text.len() {
+    //             let (found, closing_index, del_content) =
+    //                 &self.find_closing_delimeter(i, &del.unwrap(), false);
+
+    //             if !found {
+    //                 // closing del not found , we push the symbol as normal text and continue
+
+    //                 output.push_str(&del.unwrap().symbol);
+    //                 let nested_content = ElementText::new(&del_content).handle_delimeters();
+
+    //                 output.push_str(nested_content.as_str());
+    //                 i = *closing_index + 1;
+    //                 continue;
+    //             }
+
+    //             let nested_content = if !del.unwrap().ignore_nested_delimeters {
+    //                 ElementText::new(&del_content).handle_delimeters()
+    //             } else {
+    //                 del_content.to_string()
+    //             };
+
+    //             if i <= self.text.len() {
+    //                 i = closing_index + del.unwrap().end_symbol.len();
+    //                 let mut char_after_closing_del = "";
+    //                 if i <= self.text.len() && del.unwrap().no_break {
+    //                     char_after_closing_del = &self.get_slice(i, i + 1).unwrap_or("");
+    //                 }
+
+    //                 if char_after_closing_del != " "
+    //                     && char_after_closing_del != ""
+    //                     && del.unwrap().no_break
+    //                 {
+    //                     // remove prev chars until we hit a space
+    //                     let mut removed = String::new();
+    //                     while output.len() > 0 && output.chars().last().unwrap() != ' ' {
+    //                         // replace first char of removed
+    //                         removed = format!("{}{}", output.pop().unwrap(), removed);
+    //                     }
+    //                     output.push_str("\"#<span class=\"nobreak\">r#\"");
+    //                     output.push_str(removed.as_str());
+    //                     output.push_str("\"#");
+    //                 } else {
+    //                     output.push_str("\"#");
+    //                 }
+    //                 output.push_str(del.unwrap().left_replacement);
+    //                 output.push_str("r#\"");
+
+    //                 if del.unwrap().keep_delimiter {
+    //                     output.push_str(&del.unwrap().symbol);
+    //                 }
+
+    //                 output.push_str(&nested_content);
+
+    //                 if del.unwrap().keep_delimiter {
+    //                     output.push_str(&del.unwrap().end_symbol);
+    //                 }
+    //                 output.push_str("\"#");
+    //                 output.push_str(del.unwrap().right_replacement);
+    //                 if del.unwrap().no_break
+    //                     && char_after_closing_del != " "
+    //                     && char_after_closing_del != ""
+    //                 {
+    //                     output.push_str("r#\"");
+    //                     let mut string = "".to_string();
+    //                     while i < self.text.len()
+    //                         && self.get_char(i) != " "
+    //                         && self.get_char(i) != ""
+    //                     {
+    //                         string.push_str(self.get_char(i).as_str());
+    //                         i += 1;
+    //                     }
+    //                     let handled_string = self::ElementText::new(&string).handle_delimeters();
+    //                     i += 1;
+    //                     output.push_str(&handled_string);
+    //                     output.push_str("\"#</span>r#\"");
+    //                 } else {
+    //                     output.push_str("r#\"");
+    //                     i += 1;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     output
+    // }
+
+    pub fn split_text(&self) -> Vec<CellType> {
         let mut i = 0;
-        let mut output = String::new();
-
-        while i <= self.text.len() {
-            let (del, skips, text) = &self.find_next_delimeter(i, false);
-
-            output.push_str(text);
-
-            if del.is_none() {
-                break;
-            }
-
-            i = *skips;
-
-            if i <= self.text.len() {
-                let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap(), false);
-
-                if !found {
-                    // closing del not found , we push the symbol as normal text and continue
-
-                    output.push_str(&del.unwrap().symbol);
-                    let nested_content = ElementText::new(&del_content).handle_delimeters();
-
-                    output.push_str(nested_content.as_str());
-                    i = *closing_index + 1;
-                    continue;
-                }
-
-                let nested_content = if !del.unwrap().ignore_nested_delimeters {
-                    ElementText::new(&del_content).handle_delimeters()
-                } else {
-                    del_content.to_string()
-                };
-
-                if i <= self.text.len() {
-                    i = closing_index + del.unwrap().end_symbol.len();
-                    let mut char_after_closing_del = "";
-                    if i <= self.text.len() && del.unwrap().no_break {
-                        char_after_closing_del = &self.get_slice(i, i + 1).unwrap_or("");
-                    }
-
-                    if char_after_closing_del != " "
-                        && char_after_closing_del != ""
-                        && del.unwrap().no_break
-                    {
-                        // remove prev chars until we hit a space
-                        let mut removed = String::new();
-                        while output.len() > 0 && output.chars().last().unwrap() != ' ' {
-                            // replace first char of removed
-                            removed = format!("{}{}", output.pop().unwrap(), removed);
-                        }
-                        output.push_str("\"#<span class=\"nobreak\">r#\"");
-                        output.push_str(removed.as_str());
-                        output.push_str("\"#");
-                    } else {
-                        output.push_str("\"#");
-                    }
-                    output.push_str(del.unwrap().left_replacement);
-                    output.push_str("r#\"");
-
-                    if del.unwrap().keep_delimiter {
-                        output.push_str(&del.unwrap().symbol);
-                    }
-
-                    output.push_str(&nested_content);
-
-                    if del.unwrap().keep_delimiter {
-                        output.push_str(&del.unwrap().end_symbol);
-                    }
-                    output.push_str("\"#");
-                    output.push_str(del.unwrap().right_replacement);
-                    if del.unwrap().no_break
-                        && char_after_closing_del != " "
-                        && char_after_closing_del != ""
-                    {
-                        output.push_str("r#\"");
-                        let mut string = "".to_string();
-                        while i < self.text.len()
-                            && self.get_char(i) != " "
-                            && self.get_char(i) != ""
-                        {
-                            string.push_str(self.get_char(i).as_str());
-                            i += 1;
-                        }
-                        let handled_string = self::ElementText::new(&string).handle_delimeters();
-                        i += 1;
-                        output.push_str(&handled_string);
-                        output.push_str("\"#</span>r#\"");
-                    } else {
-                        output.push_str("r#\"");
-                        i += 1;
-                    }
-                }
-            }
-        }
-        output
-    }
-
-    pub fn split_text(&self) -> Vec<BlockChildType> {
-        let mut i = 0;
-        let mut output = Vec::<BlockChildType>::new();
+        let mut output = Vec::<CellType>::new();
         while i <= self.text.len() {
             let (del, skips, text) = &self.find_next_delimeter(i, true);
 
-            output.push(BlockChildType::Text(TextCell {
-                content: text.to_string(),
-                wrapped_with: None,
-            }));
+            let mut text_cell = text.clone();
+
             if !del.is_some() {
                 break;
             }
+            let del = del.unwrap();
 
             i = *skips;
 
             if i <= self.text.len() {
                 let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap(), true);
+                    &self.find_closing_delimeter(i, &del, true);
 
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
 
-                    let last_child = output.pop().unwrap();
-                    match last_child {
-                        BlockChildType::Text(mut t) => {
-                            t.content
-                                .push_str(&format!("{}{}", &del.unwrap().symbol, del_content));
-                            output.push(BlockChildType::Text(t))
-                        }
-                        _ => (),
-                    }
+                    text_cell.push_str(&del.symbol);
+                    // let nested_content = ElementText::new(&del_content).handle_delimeters();
+                    text_cell.push_str(&del_content);
+
+                    output.push(CellType::create_block_from_text(&text_cell));
                     i = *closing_index + 1;
 
                     continue;
                 }
+                output.push(CellType::create_block_from_text(&text_cell));
 
                 if i <= self.text.len() {
-                    i = closing_index + del.unwrap().end_symbol.len();
+                    i = closing_index + del.end_symbol.len();
 
-                    output.push(BlockChildType::Delimited(DelimitedCell {
-                        terminal: del_content.to_owned(),
-                        open_delimeter: del.unwrap().symbol.to_string(),
-                        close_delimeter: del.unwrap().end_symbol.to_string(),
-                        display_type: if del.unwrap().symbol.len() > 1 {
-                            DelimitedDisplayType::BLOCK
-                        } else {
-                            DelimitedDisplayType::INLINE
-                        },
-                        wrapped_with: None,
-                    }));
+                    let del_content_block = CellType::create_block_from_text(&del_content)
+                        .as_block()
+                        .unwrap();
+
+                    let element = ElementCell {
+                        name: del.element_name.to_string(),
+                        props: del.props.clone(),
+                        children: vec![],
+                    };
+
+                    // output.push(BlockChildType::Delimited(DelimitedCell {
+                    //     terminal: del_content.to_owned(),
+                    //     open_delimeter: del.symbol.to_string(),
+                    //     close_delimeter: del.end_symbol.to_string(),
+                    //     display_type: if del.symbol.len() > 1 {
+                    //         DelimitedDisplayType::BLOCK
+                    //     } else {
+                    //         DelimitedDisplayType::INLINE
+                    //     },
+                    //     wrapped_with: None,
+                    // }));
 
                     i += 1;
                 }

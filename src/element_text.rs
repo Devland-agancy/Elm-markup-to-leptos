@@ -1,7 +1,8 @@
-use crate::parser_helpers::{BlockChildType, DelimitedCell, DelimitedDisplayType, TextCell};
+use crate::datacell::{BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*};
 
 pub struct ElementText {
     pub text: String,
+    rules: Vec<DelimeterRules>,
 }
 
 #[derive(Debug)]
@@ -13,85 +14,98 @@ struct DelimeterRules {
     no_break: bool,
     keep_delimiter: bool,
     ignore_nested_delimeters: bool,
+    keep_escaped_char_when_closed: bool,
+    ignore_when_before: Vec<char>,
+    ignore_when_after: Vec<char>,
 }
 
-const DELIMETERS: [DelimeterRules; 6] = [
-    DelimeterRules {
-        symbol: "*",
-        end_symbol: "*",
-        left_replacement: "<Span bold=true>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "__",
-        end_symbol: "__",
-        left_replacement: "<Span italic=true align=Align::Center>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "_|",
-        end_symbol: "|_",
-        left_replacement: "<Span align=Align::Center>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "_",
-        end_symbol: "_",
-        left_replacement: "<Span italic=true>",
-        right_replacement: "</Span>",
-        no_break: false,
-        keep_delimiter: false,
-        ignore_nested_delimeters: false,
-    },
-    DelimeterRules {
-        symbol: "$$",
-        end_symbol: "$$",
-        left_replacement: "<MathBlock>",
-        right_replacement: "</MathBlock>",
-        no_break: false,
-        keep_delimiter: true,
-        ignore_nested_delimeters: true,
-    },
-    DelimeterRules {
-        symbol: "$",
-        end_symbol: "$",
-        left_replacement: "<Math>",
-        right_replacement: "</Math>",
-        no_break: false,
-        keep_delimiter: true,
-        ignore_nested_delimeters: true,
-    },
-];
+impl Default for DelimeterRules {
+    fn default() -> Self {
+        Self {
+            symbol: "",
+            end_symbol: "",
+            left_replacement: "",
+            right_replacement: "",
+            no_break: false,
+            keep_delimiter: false,
+            ignore_nested_delimeters: false,
+            ignore_when_before: Vec::new(),
+            ignore_when_after: Vec::new(),
+            keep_escaped_char_when_closed: false,
+        }
+    }
+}
 
 impl ElementText {
     pub fn new(text: &str) -> ElementText {
         ElementText {
             text: text.to_string(),
+            rules: vec![
+                DelimeterRules {
+                    symbol: "*",
+                    end_symbol: "*",
+                    left_replacement: "<Span bold=true>",
+                    right_replacement: "</Span>",
+                    ignore_when_after: vec!['(', '[', '{', '*', ' '],
+                    ignore_when_before: vec![')', ']', '}', '*', ' '],
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "__",
+                    end_symbol: "__",
+                    left_replacement: "<Span italic=true align=Align::Center>",
+                    right_replacement: "</Span>",
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "_|",
+                    end_symbol: "|_",
+                    left_replacement: "<Span align=Align::Center>",
+                    right_replacement: "</Span>",
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "_",
+                    end_symbol: "_",
+                    left_replacement: "<Span italic=true>",
+                    right_replacement: "</Span>",
+                    ignore_when_after: vec!['(', '[', '{', ' '],
+                    ignore_when_before: vec![')', ']', '}', ' '],
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "$$",
+                    end_symbol: "$$",
+                    left_replacement: "<MathBlock>",
+                    right_replacement: "</MathBlock>",
+                    no_break: true,
+                    keep_delimiter: true,
+                    ignore_nested_delimeters: true,
+                    ..Default::default()
+                },
+                DelimeterRules {
+                    symbol: "$",
+                    end_symbol: "$",
+                    left_replacement: "<Math>",
+                    right_replacement: "</Math>",
+                    no_break: true,
+                    keep_delimiter: true,
+                    ignore_nested_delimeters: true,
+                    keep_escaped_char_when_closed: true, // Ex: $ ex \$ $ --> <Math>$ ex \$ $</Math> instead of <Math>$ ex $ $</Math>
+                    ..Default::default()
+                },
+            ],
         }
     }
 
-    pub fn handle_delimeters(self) -> String {
+    pub fn handle_delimeters(&self) -> String {
         let mut i = 0;
-        let mut j = 0;
         let mut output = String::new();
 
         while i <= self.text.len() {
-            let (del, skips, text) = &self.find_next_delimeter(i);
+            let (del, skips, text) = &self.find_next_delimeter(i, false);
 
-            if text == " " {
-                //output += "r#\" \"#"
-            } else {
-                output += text;
-            }
+            output.push_str(text);
 
             if del.is_none() {
                 break;
@@ -101,7 +115,7 @@ impl ElementText {
 
             if i <= self.text.len() {
                 let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap());
+                    &self.find_closing_delimeter(i, &del.unwrap(), false);
 
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
@@ -131,7 +145,15 @@ impl ElementText {
                         && char_after_closing_del != ""
                         && del.unwrap().no_break
                     {
-                        output.push_str("\"#<span class=\"nobreak\">");
+                        // remove prev chars until we hit a space
+                        let mut removed = String::new();
+                        while output.len() > 0 && output.chars().last().unwrap() != ' ' {
+                            // replace first char of removed
+                            removed = format!("{}{}", output.pop().unwrap(), removed);
+                        }
+                        output.push_str("\"#<span class=\"nobreak\">r#\"");
+                        output.push_str(removed.as_str());
+                        output.push_str("\"#");
                     } else {
                         output.push_str("\"#");
                     }
@@ -176,13 +198,11 @@ impl ElementText {
         output
     }
 
-    pub fn split_text(self) -> Vec<BlockChildType> {
+    pub fn split_text(&self) -> Vec<BlockChildType> {
         let mut i = 0;
-        let mut j = 0;
         let mut output = Vec::<BlockChildType>::new();
-
         while i <= self.text.len() {
-            let (del, skips, text) = &self.find_next_delimeter(i);
+            let (del, skips, text) = &self.find_next_delimeter(i, true);
 
             output.push(BlockChildType::Text(TextCell {
                 content: text.to_string(),
@@ -196,12 +216,12 @@ impl ElementText {
 
             if i <= self.text.len() {
                 let (found, closing_index, del_content) =
-                    &self.find_closing_delimeter(i, &del.unwrap());
+                    &self.find_closing_delimeter(i, &del.unwrap(), true);
 
                 if !found {
                     // closing del not found , we push the symbol as normal text and continue
 
-                    let mut last_child = output.pop().unwrap();
+                    let last_child = output.pop().unwrap();
                     match last_child {
                         BlockChildType::Text(mut t) => {
                             t.content
@@ -211,6 +231,7 @@ impl ElementText {
                         _ => (),
                     }
                     i = *closing_index + 1;
+
                     continue;
                 }
 
@@ -236,15 +257,52 @@ impl ElementText {
         output
     }
 
-    fn find_next_delimeter(&self, mut i: usize) -> (Option<&DelimeterRules>, usize, String) {
+    pub fn remove_escapes(&mut self) -> &Self {
+        let mut output = String::new();
+        let mut i = 0;
+        let symbols = self.get_all_symbols();
+        let text = &self.text;
+
+        // remove escape char if it's before a delimiter symbol
+        while i + 1 < text.len() {
+            if self.get_char(i) != "\\" {
+                output.push_str(&self.get_char(i));
+                i += 1;
+                continue;
+            }
+
+            let mut delimiter_escaped = false;
+            symbols.iter().any(|s| {
+                if self.get_char(i + s.len()) == *s {
+                    output.push_str(s);
+                    i += s.len() + 1;
+                    delimiter_escaped = true;
+                    return true;
+                }
+                false
+            });
+            if !delimiter_escaped {
+                output.push_str(&self.get_char(i));
+                i += 1
+            }
+        }
+        self.text = output;
+        self
+    }
+
+    fn find_next_delimeter(
+        &self,
+        mut i: usize,
+        keep_escape_char: bool,
+    ) -> (Option<&DelimeterRules>, usize, String) {
         let mut found_symbol = "";
         let mut del: Option<&DelimeterRules> = None;
         let mut text = "".to_string();
-        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+        let symbols: Vec<&str> = self.rules.iter().map(|d| d.symbol).collect();
         let mut has_multi_char = false;
 
         while i <= self.text.len() {
-            let _del = DELIMETERS.iter().find(|d| {
+            let _del = self.rules.iter().find(|d| {
                 if i.checked_sub(d.symbol.len()).is_some() {
                     d.symbol
                         == &self
@@ -253,6 +311,10 @@ impl ElementText {
                             .take(i)
                             .skip(i - d.symbol.len())
                             .collect::<String>()
+                        && self.text.chars().nth(i - d.symbol.len() + 1).is_some()
+                        && !d
+                            .ignore_when_before
+                            .contains(&self.text.chars().nth(i - d.symbol.len() + 1).unwrap())
                 } else {
                     false
                 }
@@ -282,15 +344,20 @@ impl ElementText {
                         text.pop();
                         nth = text.chars().nth(i);
                     }
-                    // pop the "\"
-                    text.pop();
+
+                    if !keep_escape_char {
+                        // pop the "\"
+                        text.pop();
+                    }
 
                     text.push_str(found_symbol); // push again without "\"
                     i += 1;
+
                     continue;
                 }
                 break;
             }
+
             if i.checked_sub(1).is_some() && !(i == 1 && &self.get_char(i - 1) == " ") {
                 text.push_str(&self.get_char(i - 1));
             }
@@ -304,11 +371,12 @@ impl ElementText {
         &self,
         mut i: usize,
         found_del: &DelimeterRules,
+        keep_escape_char: bool,
     ) -> (bool, usize, String) {
         let end_symbol = found_del.end_symbol;
         let mut found = false;
         let mut del_content = "".to_string();
-        let symbols: Vec<&str> = DELIMETERS.iter().map(|d| d.symbol).collect();
+        let symbols: Vec<&str> = self.rules.iter().map(|d| d.symbol).collect();
 
         while i < self.text.len() {
             let is_found = end_symbol
@@ -317,15 +385,23 @@ impl ElementText {
                     .chars()
                     .take(i + end_symbol.len())
                     .skip(i)
-                    .collect::<String>();
+                    .collect::<String>()
+                && !found_del
+                    .ignore_when_after
+                    .contains(&self.text.chars().nth(i - 1).unwrap());
+
             if !is_found {
-                if end_symbol
+                if (end_symbol
                     != &self
                         .text
                         .chars()
                         .take(i + end_symbol.len())
                         .skip(i)
                         .collect::<String>()
+                    && !self.escape_before_symbol(i, &end_symbol))
+                    || found_del
+                        .ignore_when_after
+                        .contains(&self.text.chars().nth(i - 1).unwrap())
                 {
                     del_content.push_str(&self.get_char(i));
                 }
@@ -342,13 +418,18 @@ impl ElementText {
             {
                 i += 2;
                 del_content.push_str(next_char);
+
                 continue;
             }
             found = true;
             if self.is_escaped(i) {
+                if keep_escape_char || found_del.keep_escaped_char_when_closed {
+                    del_content.push_str("\\");
+                }
                 del_content.push_str(end_symbol);
                 found = false;
                 i += end_symbol.len();
+
                 continue;
             }
             break;
@@ -358,15 +439,38 @@ impl ElementText {
     }
 
     fn get_char(&self, i: usize) -> String {
-        self.text
-            .chars()
-            .nth(i)
-            .unwrap_or(" ".chars().nth(0).unwrap())
-            .to_string()
+        if let Some(_char) = self.text.chars().nth(i) {
+            _char.to_string()
+        } else {
+            "".to_string()
+        }
     }
 
     fn is_escaped(&self, i: usize) -> bool {
         i > 0 && self.get_char(i - 1) == "\\"
+    }
+
+    fn get_all_symbols(&self) -> Vec<String> {
+        let mut symbols: Vec<String> = self.rules.iter().map(|d| d.symbol.to_string()).collect();
+        let end_symbols: Vec<String> = self
+            .rules
+            .iter()
+            .map(|d| d.end_symbol.to_string())
+            .collect();
+        for end_s in end_symbols {
+            if !symbols.contains(&end_s) {
+                symbols.push(end_s)
+            }
+        }
+        symbols
+    }
+
+    fn escape_before_symbol(&self, i: usize, symbol: &str) -> bool {
+        i > 0
+            && self
+                .get_slice(i + 1, i + 1 + symbol.len())
+                .is_some_and(|s| self.get_all_symbols().contains(&s.to_string()))
+            && self.get_char(i) == "\\"
     }
 
     fn get_slice(&self, start: usize, end: usize) -> Option<&str> {

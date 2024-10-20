@@ -1,10 +1,10 @@
-use regex::Regex;
-
-use crate::parser_helpers::{BlockChildType, CellType, DataCell, DelimitedDisplayType};
+use std::collections::HashMap;
 
 use super::element_text::ElementText;
-use super::helpers::*;
-use std::str::Lines;
+use crate::{
+    counter::counter_types::CounterType,
+    datacell::{BlockChildType::*, Datacell::*},
+};
 
 #[derive(Debug, Default)]
 pub struct TagInfo {
@@ -15,18 +15,17 @@ pub struct TagInfo {
 }
 
 #[derive(Debug)]
-pub struct Emitter {
-    pub self_closing_tags: Vec<&'static str>,
+pub struct Emitter<'a> {
+    pub self_closing_tags: Vec<&'a str>,
 }
 
-impl Emitter {
-    pub fn new(self_closing_tags: Vec<&'static str>) -> Emitter {
+impl<'a> Emitter<'a> {
+    pub fn new(self_closing_tags: Vec<&'a str>) -> Emitter<'a> {
         Emitter { self_closing_tags }
     }
 
-    pub fn emit_json(&self, data_cell: &DataCell) -> String {
+    pub fn emit_json(&mut self, data_cell: &DataCell) -> String {
         let mut output = String::new();
-        /* let json_tree: DataCell = serde_json::from_str(json).unwrap(); */
 
         match &data_cell.cell_type {
             CellType::Root(root) => {
@@ -37,10 +36,12 @@ impl Emitter {
             CellType::Element(el) => {
                 output.push_str(&format!("<{} ", el.name));
                 el.props.iter().for_each(|prop| {
-                    output.push_str(&Self::handle_prop_line(&format!(
-                        "{} {}",
-                        prop.key, prop.value
-                    )));
+                    if !CounterType::is_valid(&prop.key) {
+                        output.push_str(&Self::handle_prop_line(&format!(
+                            "{} {}",
+                            prop.key, prop.value
+                        )));
+                    }
                 });
                 if self.self_closing_tags.contains(&el.name.as_str()) {
                     output.push_str(" />");
@@ -64,32 +65,38 @@ impl Emitter {
                     .children
                     .iter()
                     .enumerate()
-                    .for_each(|(i, child)| match child {
+                    .for_each(|(_, child)| match child {
                         BlockChildType::Text(text) => {
-                            if !text.content.trim().is_empty() {
-                                sub_text_block.push_str(&format!("\"#<{}>r#\"", "span"));
-                                sub_text_block.push_str(&text.content);
-                                sub_text_block.push_str(&format!("\"#</{}>r#\"", "span"));
-                            } else {
-                                sub_text_block.push_str(&text.content);
-                            }
+                            sub_text_block.push_str(&text.content);
                         }
                         BlockChildType::Delimited(dl) => {
-                            if let Some(wrap_with) = &dl.wrapped_with {
+                            if let Some(_) = &dl.wrapped_with {
                                 if !sub_text_block.trim().is_empty() {
                                     text_block
                                         .push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
-                                    text_block.push_str(&sub_text_block);
+                                    let text_el = ElementText::new(sub_text_block.as_str());
+                                    text_block.push_str(&&text_el.handle_delimeters());
                                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                                 }
-
                                 sub_text_block = "".to_string();
-                                text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
-                                text_block.push_str(&dl.open_delimeter);
-                                text_block.push_str(&dl.terminal);
+                                //text_block.push_str(&format!("\"#<{}>r#\"", wrap_with));
 
-                                text_block.push_str(&dl.close_delimeter);
-                                text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
+                                sub_text_block.push_str(&dl.open_delimeter);
+                                sub_text_block.push_str(&dl.terminal);
+                                sub_text_block.push_str(&dl.close_delimeter);
+
+                                let text_el = ElementText::new(sub_text_block.as_str());
+                                text_block.push_str(&text_el.handle_delimeters());
+                                //text_block.push_str(&format!("\"#</{}>r#\"", wrap_with));
+                                sub_text_block = "".to_string();
+                            } else if dl.display_type == DelimitedDisplayType::BLOCK {
+                                sub_text_block = "".to_string();
+                                sub_text_block.push_str(&dl.open_delimeter);
+                                sub_text_block.push_str(&dl.terminal);
+                                sub_text_block.push_str(&dl.close_delimeter);
+                                let text_el = ElementText::new(sub_text_block.as_str());
+                                text_block.push_str(&text_el.handle_delimeters());
+                                sub_text_block = "".to_string();
                             } else {
                                 sub_text_block.push_str(&dl.open_delimeter);
                                 sub_text_block.push_str(&dl.terminal);
@@ -97,19 +104,53 @@ impl Emitter {
                             }
                         }
                     });
+
                 if !sub_text_block.trim().is_empty() {
                     text_block.push_str(&format!("\"#<{} class=\"text\">r#\"", "span"));
-                    text_block.push_str(&sub_text_block);
+                    let text_el = ElementText::new(sub_text_block.as_str());
+                    text_block.push_str(&text_el.handle_delimeters());
                     text_block.push_str(&format!("\"#</{}>r#\"", "span"));
                 }
 
-                let text_el = ElementText::new(&text_block);
-                output.push_str(&format!("r#\"{}\"#", text_el.handle_delimeters()))
+                output.push_str(&format!("r#\"{}\"#", text_block));
             }
             _ => {}
         }
 
         output.replace("r#\"\"#", "")
+    }
+
+    pub fn split_and_emit(
+        &mut self,
+        data_cell: &DataCell,
+        split_children_of: &str,
+    ) -> HashMap<String, String> {
+        let mut output = HashMap::new();
+        match &data_cell.cell_type {
+            CellType::Element(el) => {
+                if el.name.contains(&split_children_of) {
+                    el.children.iter().for_each(|child| {
+                        if let CellType::Element(child_el) = &child.cell_type {
+                            output.insert(
+                                child_el.name.clone().to_lowercase(),
+                                self.emit_json(child),
+                            );
+                        }
+                    });
+                } else {
+                    el.children.iter().for_each(|child| {
+                        output.extend(self.split_and_emit(child, split_children_of));
+                    });
+                }
+            }
+            CellType::Root(root) => {
+                root.children.iter().for_each(|child| {
+                    output.extend(self.split_and_emit(child, split_children_of));
+                });
+            }
+            _ => (),
+        }
+        output
     }
 
     fn handle_prop_line(line: &str) -> String {

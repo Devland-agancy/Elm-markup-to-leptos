@@ -1,3 +1,5 @@
+pub mod counter;
+pub mod datacell;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;
@@ -5,15 +7,34 @@ pub mod helpers;
 pub mod parser;
 pub mod parser_helpers;
 
+use counter::counter_commands::CounterCommand;
+use counter::counters::Counters;
+use datacell::Datacell::*;
 use desugarer::{AttachToEnum, Desugarer, IgnoreOptions, ParagraphIndentOptions};
 use emitter::Emitter;
 use parser::Parser;
-use parser_helpers::DataCell;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
+use std::time::Instant;
+use std::{env, vec};
+
+fn write_to_file(file_path: &str, contents: &str) {
+    let mut json_file: File = match File::create(file_path) {
+        Ok(file) => file,
+        Err(error) => {
+            println!("Error creating file: {}", error);
+            return;
+        }
+    };
+
+    match json_file.write_all(contents.as_bytes()) {
+        Ok(_) => (),
+        Err(error) => println!("Error writing to {file_path}: {error}"),
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -38,18 +59,33 @@ fn main() {
         Ok(_) => (),
     }
 
-    let mut json = Parser::new();
-    let json_tree = json.export_json(&contents.to_string(), None, false);
+    //parsing
+    let start = Instant::now();
+    let mut parser = Parser::new();
 
-    let mut json_desugarer: Desugarer = Desugarer::new(json_tree.as_str(), json.id);
+    let parsed_json = parser.export_json(&contents, None, false);
 
-    let emitter: Emitter = Emitter::new(vec!["img", "SectionDivider", "InlineImage"]);
+    if let Err(err) = parsed_json {
+        panic!("{}", err.to_string());
+    }
+    let parsed_json = parsed_json.unwrap();
 
+    let last_item_id = parser.id;
+    write_to_file("src/content_files/json_output.json", &parsed_json);
+    println!("Time for parsing is: {:?}", start.elapsed());
+
+    //desugering
+    let start = Instant::now();
+    let mut json_desugarer: Desugarer = Desugarer::new(parsed_json.as_str(), last_item_id);
+    let article_types = &vec!["Chapter".to_string(), "Bootcamp".to_string()];
     json_desugarer = json_desugarer
         .pre_process_exercises()
-        .pre_process_solutions()
-        .auto_increamental_title("Exercise", "Exercise")
-        .auto_increamental_title("Example", "Example")
+        .add_increamental_attr(
+            vec![("Solution", "solution_number"), ("Grid", "id")],
+            article_types,
+        )
+        .auto_increamental_title("Exercise", "Exercise", article_types)
+        .auto_increamental_title("Example", "Example", article_types)
         .wrap_block_delimited("InnerParagraph")
         .wrap_children(
             vec!["Section", "Solution", "Example", "Exercise"],
@@ -71,42 +107,64 @@ fn main() {
                     element: "del",
                     attach_to: AttachToEnum::BOTH,
                 },
+                IgnoreOptions {
+                    element: "Space",
+                    attach_to: AttachToEnum::BEFORE,
+                },
+                IgnoreOptions {
+                    element: "Pause",
+                    attach_to: AttachToEnum::NONE,
+                },
             ]),
         )
-        .wrap_children(vec!["Grid"], "Span", &None)
+        .wrap_children(
+            vec!["Grid"],
+            "Span",
+            &Some(vec![
+                IgnoreOptions {
+                    element: "CounterInsert",
+                    attach_to: AttachToEnum::BOTH,
+                },
+                IgnoreOptions {
+                    element: "CounterIncrement",
+                    attach_to: AttachToEnum::BOTH,
+                },
+            ]),
+        )
         .wrap_children(vec!["List"], "Item", &None)
-        .add_indent(&ParagraphIndentOptions {
-            tags_before_non_indents: vec![
-                "Image",
-                "DisplayImage",
-                "Pause",
-                "InlineImage",
-                "MathBlock",
-                "Table",
-            ],
-            tags_with_non_indent_first_child: vec![
-                "Paragraphs",
-                "Paragraph",
-                "Example",
-                "Section",
-                "tr",
-                "Table",
-                "Solution",
-                "Exercise",
-            ],
-        })
-        .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"));
+        .add_indent(&vec!["Paragraph", "InnerParagraph"])
+        .add_attribute(vec!["Solution", "Example"], ("no_padding", "true"))
+        .auto_convert_to_float(vec!["line", "padding_left"]);
+    write_to_file(
+        "src/content_files/des_json_output.json",
+        &json_desugarer.json,
+    );
+    println!("Time for desugering is: {:?}", start.elapsed());
 
-    let json_value: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let start = Instant::now();
+    let mut desugarer_json_cell: DataCell = serde_json::from_str(&json_desugarer.json).unwrap();
+    let mut counters = Counters::new();
+    counters.get_counters_from_json(&desugarer_json_cell);
+    let mut counter_command = CounterCommand::new(&mut counters, &json_desugarer.json);
+    let json_counter_string = counter_command.run(&mut desugarer_json_cell);
+    println!("Time for counter logic is: {:?}", start.elapsed());
+
+    write_to_file("src/content_files/counter.json", &json_counter_string);
+
+    // Emmitter
+    let start = Instant::now();
+
+    let json_value: DataCell = serde_json::from_str(&json_counter_string).unwrap();
+    let mut emitter: Emitter = Emitter::new(vec![
+        "img",
+        "col",
+        "SectionDivider",
+        "InlineImage",
+        "StarDivider",
+        "br",
+    ]);
     let leptos_code = emitter.emit_json(&json_value);
 
-    let mut file = match File::create("src/output.rs") {
-        Ok(file) => file,
-        Err(error) => {
-            println!("Error creating file: {}", error);
-            return;
-        }
-    };
     let file_content = format!(
         r#"
     view! {{
@@ -115,44 +173,12 @@ fn main() {
     "#,
         leptos_code
     );
-    match file.write_all(file_content.as_bytes()) {
-        Ok(_) => {
-            println!("Data written to output.rs successfully");
-            let _ = Command::new("leptosfmt")
-                .arg("src/output.rs")
-                .output()
-                .expect("Failed to execute command");
-        }
-        Err(error) => println!("Error writing to output.rs: {}", error),
-    }
 
-    let mut json_file = match File::create("src/json_output.json") {
-        Ok(file) => file,
-        Err(error) => {
-            println!("Error creating file: {}", error);
-            return;
-        }
-    };
+    write_to_file("src/content_files/output.rs", &file_content);
+    let _ = Command::new("leptosfmt")
+        .arg("src/content_files/output.rs")
+        .output()
+        .expect("Failed to execute command");
 
-    match json_file.write_all(json_tree.as_bytes()) {
-        Ok(_) => {
-            println!("Json written to json_output.json successfully");
-        }
-        Err(error) => println!("Error writing to json_output.json: {}", error),
-    }
-
-    let mut desagurer_json_file = match File::create("src/des_json_output.json") {
-        Ok(file) => file,
-        Err(error) => {
-            println!("Error creating file: {}", error);
-            return;
-        }
-    };
-
-    match desagurer_json_file.write_all(json_desugarer.json.as_bytes()) {
-        Ok(_) => {
-            println!("Json written to des_json_output.json successfully");
-        }
-        Err(error) => println!("Error writing to des_json_output.json: {}", error),
-    }
+    println!("Time for emitting is: {:?}", start.elapsed());
 }

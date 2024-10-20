@@ -370,11 +370,12 @@ checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 
 [[package]]
 name = "elm-parser"
-version = "2.0.8"
+version = "4.0.10"
 dependencies = [
  "cps",
  "leptos",
  "nom",
+ "numerals",
  "proc-macro2",
  "quote",
  "regex",
@@ -1092,6 +1093,12 @@ checksum = "39e3200413f237f41ab11ad6d161bc7239c84dcb631773ccd7de3dfe4b5c267c"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "numerals"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e25be21376a772d15f97ae789845340a9651d3c4246ff5ebb6a2b35f9c37bd31"
 
 [[package]]
 name = "object"

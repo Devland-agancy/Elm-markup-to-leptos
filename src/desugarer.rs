@@ -1,17 +1,10 @@
-use crate::{
-    element_text,
-    emitter::Emitter,
-    parser_helpers::{
-        BlockChild, BlockChildType, Cell, CellType, DataCell, DelimitedCell, DelimitedDisplayType,
-        ElementCell,
-    },
+use crate::datacell::{
+    BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*,
 };
-
-use super::helpers::*;
 
 pub struct Desugarer {
     pub json: String,
-    pub last_id: u32,
+    pub last_id: usize,
 }
 
 pub struct ParagraphIndentOptions {
@@ -23,14 +16,16 @@ pub enum AttachToEnum {
     BEFORE,
     AFTER,
     BOTH,
+    NONE,
 }
+
 pub struct IgnoreOptions {
     pub element: &'static str,
     pub attach_to: AttachToEnum,
 }
 
 impl Desugarer {
-    pub fn new(json: &str, last_id: u32) -> Desugarer {
+    pub fn new(json: &str, last_id: usize) -> Desugarer {
         Desugarer {
             json: json.to_string(),
             last_id,
@@ -80,6 +75,42 @@ impl Desugarer {
         }
     }
 
+    fn find_cell_and_mark_article<'a>(
+        &self,
+        root: &'a DataCell,
+        tag_names: &Vec<&str>,
+        cells: &mut Vec<(usize, &'a DataCell)>, //usize is the article id
+        mut article: Option<usize>,
+        article_types: &Vec<String>,
+    ) {
+        match &root.cell_type {
+            CellType::Element(el) => {
+                if tag_names.is_empty() || tag_names.contains(&el.name.as_str()) {
+                    if let Some(article_id) = article {
+                        cells.push((article_id, root))
+                    }
+                }
+                if article_types.contains(&el.name.chars().filter(|c| !c.is_numeric()).collect()) {
+                    article = Some(root.id)
+                }
+
+                el.children.iter().for_each(|child| {
+                    self.find_cell_and_mark_article(
+                        child,
+                        tag_names,
+                        cells,
+                        article,
+                        &article_types,
+                    )
+                })
+            }
+            CellType::Root(el) => el.children.iter().for_each(|child| {
+                self.find_cell_and_mark_article(child, tag_names, cells, article, &article_types)
+            }),
+            _ => (),
+        }
+    }
+
     pub fn pre_process_exercises(&mut self) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut exercises: Vec<&DataCell> = Vec::new();
@@ -90,12 +121,16 @@ impl Desugarer {
             let mut count: usize = 0;
             self.count_element(exercises_cell, "Exercise", &mut count);
             let mut prop_line = "labels vec![\"0\"".to_string();
-            for i in 1..=count - 1 {
-                prop_line += &format!(",\"{}\"", i);
-            }
-            prop_line += "]";
+            if count > 0 {
+                for i in 1..=count - 1 {
+                    prop_line += &format!(",\"{}\"", i);
+                }
+                prop_line += "]";
 
-            ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
+                //exercises_cell
+
+                ElementCell::add_attribute(&mut root, exercises_cell.id, prop_line.as_str());
+            }
         }
 
         Desugarer {
@@ -104,16 +139,40 @@ impl Desugarer {
         }
     }
 
-    pub fn pre_process_solutions(&mut self) -> Desugarer {
+    pub fn add_increamental_attr(
+        &mut self,
+        tags_attributes: Vec<(&str, &str)>,
+        article_types: &Vec<String>,
+    ) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut solutions: Vec<&DataCell> = Vec::new();
+        let mut elements: Vec<(usize, &DataCell)> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, &vec!["Solution"], &mut solutions);
+        let tag_names: Vec<&str> = tags_attributes.iter().map(|x| x.0).collect();
+        let attribute_names: Vec<&str> = tags_attributes.iter().map(|x| x.1).collect();
+        self.find_cell_and_mark_article(&binding, &tag_names, &mut elements, None, article_types);
 
-        for (i, solution_cell) in solutions.iter().enumerate() {
-            let prop_line = format!("solution_number {}", i);
+        let mut counters = vec![0; tag_names.len()];
 
-            ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
+        for (i, (article_id, solution_cell)) in elements.iter().enumerate() {
+            //get element position in tag_names
+            if let CellType::Element(el) = &solution_cell.cell_type {
+                let (tag_index, _) = tag_names
+                    .iter()
+                    .enumerate()
+                    .find(|x| x.1 == &el.name)
+                    .unwrap();
+
+                // reset counter on new article
+                if i > 0 && elements[i - 1].0 != *article_id {
+                    counters[tag_index] = 0;
+                }
+
+                let prop_line = format!("{} {}", attribute_names[tag_index], counters[tag_index]);
+
+                counters[tag_index] += 1;
+
+                ElementCell::add_attribute(&mut root, solution_cell.id, prop_line.as_str());
+            }
         }
 
         Desugarer {
@@ -126,26 +185,64 @@ impl Desugarer {
         &mut self,
         tag_name: &str,
         title_label: &str,
-        // wrapper: Option<&str>,
-        // wrapper_break_on: Option<&str>,
+        article_types: &Vec<String>,
     ) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut elements: Vec<&DataCell> = Vec::new();
+        let mut elements: Vec<(usize, &DataCell)> = Vec::new();
         let binding = root.clone();
-        self.find_cell(&binding, &vec![tag_name], &mut elements);
+        self.find_cell_and_mark_article(
+            &binding,
+            &vec![tag_name],
+            &mut elements,
+            None,
+            article_types,
+        );
 
-        for (i, element) in elements.clone().iter().enumerate() {
-            let new_block_child = BlockChildType::Delimited(DelimitedCell {
-                open_delimeter: "*".to_string(),
-                close_delimeter: "*".to_string(),
-                terminal: title_label.to_string() + " " + (i + 1).to_string().as_str() + ". ",
-                display_type: DelimitedDisplayType::INLINE,
-                wrapped_with: None,
-            });
+        for (_, (article_id, element)) in elements.clone().iter_mut().enumerate() {
+            if let CellType::Element(el) = &element.cell_type {
+                // counter prop to parent if it doesn't have it
 
-            BlockChildType::add_block_at_first(&mut root, element.id, &new_block_child);
+                ElementCell::add_attribute(
+                    &mut root,
+                    *article_id,
+                    &format!("counter {}{}_counter", title_label, article_id),
+                );
 
-            //BlockCell::add_cell_at_first(&mut root, element.id, self.last_id, &new_block);
+                let handle = el.props.iter().find(|x| x.key == "handle");
+
+                let command = format!(
+                    "{} {}::++{}{}_counter.",
+                    title_label,
+                    if handle.is_some() {
+                        handle.unwrap().value.to_owned() + "<<"
+                    } else {
+                        "".to_string()
+                    },
+                    title_label,
+                    article_id
+                );
+
+                let new_block_child = BlockChildType::Delimited(DelimitedCell {
+                    open_delimeter: "*".to_string(),
+                    close_delimeter: "*".to_string(),
+                    terminal: command,
+                    display_type: DelimitedDisplayType::INLINE,
+                    wrapped_with: None,
+                });
+
+                // add space to element text ( first block )
+                BlockChildType::insert_text_to_first_block_child_text(&mut root, element.id, " ");
+
+                BlockChildType::add_block_at_first(
+                    &mut root,
+                    element.id,
+                    &new_block_child,
+                    Some(&BlockCell {
+                        has_counter_commands: true,
+                        ..Default::default()
+                    }),
+                );
+            }
         }
 
         Desugarer {
@@ -160,19 +257,20 @@ impl Desugarer {
         wrap_with: &str,
         ignore_elements: &Option<Vec<IgnoreOptions>>,
     ) -> Desugarer {
-        // elements are what we want to wrap it's children with wrap_with
+        // elements are what we want to wrap their children with wrap_with
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
         self.find_cell(&binding, &elements, &mut _elements);
 
-        for (i, element) in _elements.iter().enumerate() {
+        for (_, element) in _elements.iter().enumerate() {
             //let prop_line = format!("solution_number {}", i);
             if let CellType::Element(el) = &element.cell_type {
                 let mut include_prev_child = false;
                 let mut include_in_prev_wrapper = false;
                 let mut add_wrapper = true;
+                let mut no_wrap = false;
 
                 el.children.iter().enumerate().for_each(|(idx, child)| {
                     let mut element_ignored = None;
@@ -208,7 +306,7 @@ impl Desugarer {
                                 // move to next wrapper
                                 include_prev_child = true
                             }
-                            _ => {
+                            AttachToEnum::BOTH => {
                                 // this and next block should be in previous added wrapper
                                 if idx == 0 {
                                     self.last_id += 1;
@@ -226,6 +324,17 @@ impl Desugarer {
                                     self.last_id,
                                 );
                                 include_in_prev_wrapper = true // next child to previous wrapper
+                            }
+                            AttachToEnum::NONE => {
+                                // Do nothing for these elements . just move to last so ordering doesn't change .
+                                //no_wrap = true;
+                                add_wrapper = false;
+                                include_in_prev_wrapper = false;
+                                ElementCell::move_cell(
+                                    &mut root,
+                                    (element.id, child.id),
+                                    element.id,
+                                );
                             }
                         }
                     } else if include_in_prev_wrapper {
@@ -249,6 +358,9 @@ impl Desugarer {
                         }
                         ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
                     }
+                    // if no_wrap {
+
+                    // }
                 });
             }
         }
@@ -299,39 +411,30 @@ impl Desugarer {
         }
     }
 
-    pub fn add_indent(&mut self, options: &ParagraphIndentOptions) -> Desugarer {
+    pub fn add_indent(&mut self, paragraph_tags: &Vec<&str>) -> Desugarer {
         // A paragraph has an indent by default except:
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
 
-        self.find_cell(&binding, &vec!["Paragraph"], &mut _elements);
+        self.find_cell(&binding, paragraph_tags, &mut _elements);
 
-        for (element) in _elements.iter() {
+        let mut elements_to_indent: Vec<&DataCell> = Vec::new();
+
+        for element in _elements.iter() {
             let parent: Option<&mut DataCell> =
                 DataCell::get_cell_by_id(&mut root, element.parent_id);
 
-            // only paragraph elements that have block cell
-            if Self::paragraph_of_blocks(element) {
-                continue;
+            // an indent appears if this paragraph is preceded by a paragraph that has a non-block delimiter last child
+            if Self::paragraph_first_child_is_text(&element)
+                && Self::prev_is_non_block_delimiter(element.id, &parent, paragraph_tags)
+            {
+                elements_to_indent.push(element);
             }
-            // the first paragraph of every section, exercise, or example does not have an indent
-            if Self::is_first_child(element.id, &parent, options) {
-                continue;
-            }
-            // $$, __,  |_ paragraphs
-            if Self::is_delimited(element) {
-                continue;
-            }
-            // a paragraph that follows a paragraph ending with the $$, __,  |_ delimeters does not have an indent
-            if Self::prev_is_delimited(element.id, &parent) {
-                continue;
-            }
-            // a paragraph that follows tags defined in
-            if Self::tags_before_non_indents(element.id, &parent, &options) {
-                continue;
-            }
+        }
+
+        for element in elements_to_indent.iter() {
             self.last_id += 1;
             ElementCell::add_cell(&mut root, element.id, self.last_id, "Indent");
             ElementCell::move_children(&mut root, element.id, self.last_id);
@@ -343,23 +446,25 @@ impl Desugarer {
         }
     }
 
-    pub fn paragraph_of_blocks(element: &DataCell) -> bool {
+    pub fn paragraph_first_child_is_text(element: &DataCell) -> bool {
         if let CellType::Element(el) = &element.cell_type {
-            if el.children.first().is_some_and(|c| {
-                if let CellType::Block(_) = &c.cell_type {
-                    false
-                } else {
-                    true
+            return el.children.first().is_some_and(|c| {
+                if let CellType::Block(block) = &c.cell_type {
+                    return block.children.first().is_some_and(|block_child| {
+                        if let BlockChildType::Text(_) = &block_child {
+                            return true;
+                        }
+                        false
+                    });
                 }
-            }) {
-                return true;
-            }
+                false
+            });
         }
         false
     }
 
     pub fn is_first_child(
-        element_id: u32,
+        element_id: usize,
         parent: &Option<&mut DataCell>,
         options: &ParagraphIndentOptions,
     ) -> bool {
@@ -377,69 +482,41 @@ impl Desugarer {
         false
     }
 
-    pub fn is_delimited(element: &DataCell) -> bool {
-        if let CellType::Element(element) = &element.cell_type {
-            if let Some(block) = element.children.first() {
-                if let CellType::Block(block) = &block.cell_type {
-                    if let Some(block) = block.children.first() {
-                        if let BlockChildType::Delimited(b) = &block {
-                            return b.open_delimeter == "$$"
-                                || b.open_delimeter == "__"
-                                || b.open_delimeter == "_|"
-                                || b.open_delimeter == "*";
-                        }
-                    }
-                }
-            }
-        }
-        false
-    }
-
-    pub fn prev_is_delimited(element_id: u32, parent: &Option<&mut DataCell>) -> bool {
-        if let Some(parent) = parent {
-            if let CellType::Element(parent) = &parent.cell_type {
-                let mut prev_el: Option<&DataCell> = None;
-                for child in &parent.children {
-                    if child.id == element_id {
-                        break;
-                    }
-                    prev_el = Some(&child)
-                }
-                if prev_el.is_some_and(|p| Self::is_delimited(p)) {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
-    pub fn tags_before_non_indents(
-        element_id: u32,
+    fn prev_is_non_block_delimiter(
+        element_id: usize,
         parent: &Option<&mut DataCell>,
-        option: &ParagraphIndentOptions,
+        paragraph_tags: &Vec<&str>,
     ) -> bool {
         if let Some(parent) = parent {
-            if let CellType::Element(parent) = &parent.cell_type {
+            if let CellType::Element(parent_el) = &parent.cell_type {
                 let mut prev_el: Option<&DataCell> = None;
-                for child in &parent.children {
+                for child in &parent_el.children {
                     if child.id == element_id {
                         break;
                     }
                     prev_el = Some(&child)
                 }
-                if let Some(prev_el) = prev_el {
-                    if let CellType::Element(prev_el) = &prev_el.cell_type {
-                        if prev_el.children.first().is_some_and(|p| {
-                            if let CellType::Element(el) = &p.cell_type {
-                                return option.tags_before_non_indents.contains(&el.name.as_str());
-                            } else {
-                                false
+                return prev_el.is_some_and(|p| {
+                    if let CellType::Element(el) = &p.cell_type {
+                        if !paragraph_tags.contains(&el.name.as_str()) {
+                            return false;
+                        }
+                        if let Some(block) = el.children.last() {
+                            if let CellType::Block(block) = &block.cell_type {
+                                if let Some(block) = block.children.last() {
+                                    if let BlockChildType::Delimited(b) = &block {
+                                        return b.display_type != DelimitedDisplayType::BLOCK
+                                            && b.open_delimeter != "*";
+                                    }
+                                    if let BlockChildType::Text(_) = &block {
+                                        return true;
+                                    }
+                                }
                             }
-                        }) {
-                            return true;
                         }
                     }
-                }
+                    false
+                });
             }
         }
         false
@@ -470,174 +547,32 @@ impl Desugarer {
         }
     }
 
-    // /*    pub fn pre_process_exercises(&mut self) -> Desugarer {
-    //        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
-    //        let binding = lines.clone();
+    pub fn auto_convert_to_float(&mut self, attrs: Vec<&str>) -> Desugarer {
+        fn convert_recusive(root: &mut DataCell, attrs: &Vec<&str>) {
+            match &mut root.cell_type {
+                CellType::Element(el) => {
+                    el.props.iter_mut().for_each(|prop| {
+                        if attrs.contains(&prop.key.as_str()) && !prop.value.contains('.') {
+                            prop.value = format!("{}.0", prop.value);
+                        }
+                    });
+                    el.children
+                        .iter_mut()
+                        .for_each(|child| convert_recusive(child, attrs))
+                }
+                CellType::Root(el) => el
+                    .children
+                    .iter_mut()
+                    .for_each(|child| convert_recusive(child, attrs)),
+                _ => (),
+            }
+        }
 
-    //        /* Wrap exercises inside Exercises component */
-    //        /* Right now this works only if there are consuctive exercises */
-    //        let mut exercises = binding
-    //            .iter()
-    //            .enumerate()
-    //            .filter(|(_, line)| line.trim() == "|> Exercise");
-
-    //        if let Some(exo) = exercises.nth(0) {
-    //            // add prop line which is like labels=vec!["0", "1", "2", "3"]
-    //            let mut props_string = "    labels=vec![\"0\"".to_string();
-    //            for i in 1..exercises.clone().count() + 1 {
-    //                props_string += &format!(",\"{}\"", i);
-    //            }
-    //            props_string += "]";
-
-    //            lines.insert(exo.0 - 1, props_string);
-    //        }
-
-    //        Desugarer {
-    //            json: lines.join("\n"),
-    //        }
-    //    }
-
-    //    pub fn pre_process_solutions(&mut self) -> Desugarer {
-    //        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
-    //        let binding = lines.clone();
-
-    //        let mut solutions = binding
-    //            .iter()
-    //            .enumerate()
-    //            .filter(|(_, line)| line.trim() == "|> Solution");
-
-    //        for i in 0..solutions.clone().count() {
-    //            let solution = solutions.next().unwrap();
-    //            let solution_tag_line = solution.0 + i;
-
-    //            let indent = solution.1.len() - solution.1.trim_start().len();
-    //            let mut indent_string = "    ".to_string();
-    //            for _ in 0..indent {
-    //                indent_string += " ";
-    //            }
-    //            let props_string = format!("{}solution_number={}", indent_string, i);
-    //            lines.insert(solution_tag_line + 1, props_string);
-    //        }
-    //        Desugarer {
-    //            json: lines.join("\n"),
-    //        }
-    //    }
-
-    //    pub fn remove_empty_line_above(
-    //        &mut self,
-    //        tags: Vec<&str>,
-    //        ignore_prop: Option<(&str, &str)>, // (key, value)
-    //        parser: &mut Emitter,
-    //    ) -> Desugarer {
-    //        // Removes empty lines above tags
-
-    //        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
-    //        let binding = lines.clone();
-    //        let mut lines_removed = 0;
-
-    //        binding
-    //            .iter()
-    //            .enumerate()
-    //            .filter(|(i, line)| {
-    //                let tag_found = line.trim().starts_with("|> ") && tags.contains(&&line.trim()[3..]);
-    //                let mut should_ignore = false;
-
-    //                if tag_found && ignore_prop.is_some() {
-    //                    // search props
-    //                    let indent = get_line_indent(line);
-    //                    let mut j = *i + 1;
-    //                    let next_line = binding.iter().nth(j);
-    //                    if let Some(mut next_line) = next_line {
-    //                        let mut next_line_indent = get_line_indent(next_line);
-
-    //                        while next_line_indent > indent && !should_ignore {
-    //                            let prop_key = next_line.trim().split_once(" ");
-    //                            if let Some(prop_key) = prop_key {
-    //                                should_ignore = prop_key.0 == ignore_prop.unwrap().0
-    //                                    && prop_key.1 == ignore_prop.unwrap().1
-    //                            }
-    //                            j += 1;
-    //                            if binding.iter().nth(j).is_none() {
-    //                                break;
-    //                            }
-    //                            next_line = binding.iter().nth(j).unwrap();
-    //                            next_line_indent = get_line_indent(next_line);
-    //                        }
-    //                    }
-    //                }
-    //                tag_found && !should_ignore
-    //            })
-    //            .for_each(|tag| {
-    //                lines.remove(tag.0 - 1 - lines_removed);
-    //                lines_removed += 1;
-    //                parser.track_line_delta -= 1
-    //            });
-
-    //        Desugarer {
-    //            json: lines.join("\n"),
-    //        }
-    //    }
-
-    //    pub fn auto_increamental_title(
-    //        &mut self,
-
-    //        tag_name: &str,
-    //        title_label: &str,
-    //        wrapper: Option<&str>,
-    //        wrapper_break_on: Option<&str>,
-    //    ) -> Desugarer {
-    //        let mut lines: Vec<String> = self.json.lines().map(|s| s.to_string()).collect();
-    //        let binding = lines.clone();
-    //        let mut jump = 2;
-
-    //        let _ = binding
-    //            .iter()
-    //            .enumerate()
-    //            .filter(|(_, line)| line.trim() == format!("|> {}", tag_name))
-    //            .enumerate()
-    //            .for_each(|(idx, ex)| {
-    //                // Suppose there are not props for Example , we add title at 3rd line
-    //                let indent = ex.1.len() - ex.1.trim_start().len();
-    //                let mut indent_string = "    ".to_string();
-    //                for _ in 0..indent {
-    //                    indent_string += " ";
-    //                }
-    //                if let Some(wrapper) = wrapper {
-    //                    lines.insert(
-    //                        ex.0 + jump + idx,
-    //                        format!("{}|> {}", indent_string, wrapper),
-    //                    );
-    //                    lines.insert(ex.0 + jump + 1 + idx, "".to_string());
-    //                    indent_string += "    ";
-    //                    jump += 2;
-
-    //                    let mut i = ex.0 + jump + idx;
-
-    //                    while i < lines.len()
-    //                        && lines[i].trim() != format!("|> {}", wrapper_break_on.unwrap())
-    //                        && (lines[i].is_empty()
-    //                            || lines[i].chars().all(char::is_whitespace)
-    //                            || lines[i].len() - lines[i].trim_start().len() > indent)
-    //                    {
-    //                        i += 1;
-    //                    }
-
-    //                    for i in ex.0 + jump + idx..i {
-    //                        if lines[i].is_empty() || lines[i].chars().all(char::is_whitespace) {
-    //                            continue;
-    //                        };
-    //                        lines[i] = format!("    {}", lines[i]);
-    //                    }
-    //                }
-    //                lines.insert(
-    //                    ex.0 + jump + idx,
-    //                    format!("{}*{} {}.*", indent_string, title_label, idx + 1),
-    //                );
-    //            });
-
-    //        Desugarer {
-    //            json: lines.join("\n"),
-    //        }
-    //    }
-    // */
+        let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
+        convert_recusive(&mut root, &attrs);
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
+    }
 }

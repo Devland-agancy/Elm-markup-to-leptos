@@ -1,3 +1,5 @@
+pub mod counter;
+pub mod datacell;
 pub mod desugarer;
 pub mod element_text;
 pub mod emitter;

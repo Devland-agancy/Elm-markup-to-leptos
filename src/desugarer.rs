@@ -1,5 +1,9 @@
+use nom::bytes::complete::tag;
+use regex::Regex;
+use syn::ext;
+
 use crate::datacell::{
-    BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::*,
+    BlockCell::BlockCell, BlockChildType::*, CellTrait::Cell, Datacell::*, ElementCell::ElementCell,
 };
 
 pub struct Desugarer {
@@ -12,6 +16,7 @@ pub struct ParagraphIndentOptions {
     pub tags_with_non_indent_first_child: Vec<&'static str>,
 }
 
+#[derive(Clone, Debug)]
 pub enum AttachToEnum {
     BEFORE,
     AFTER,
@@ -19,10 +24,12 @@ pub enum AttachToEnum {
     NONE,
 }
 
+#[derive(Clone, Debug)]
 pub struct IgnoreOptions {
     pub element: &'static str,
     pub attach_to: AttachToEnum,
 }
+
 
 impl Desugarer {
     pub fn new(json: &str, last_id: usize) -> Desugarer {
@@ -55,22 +62,26 @@ impl Desugarer {
     fn find_cell<'a>(
         &self,
         root: &'a DataCell,
-        tag_names: &Vec<&str>,
+        tag_patterns: &Vec<&str>, // regex patterns
         cells: &mut Vec<&'a DataCell>,
     ) {
         match &root.cell_type {
             CellType::Element(el) => {
-                if tag_names.is_empty() || tag_names.contains(&el.name.as_str()) {
+                let element_found = tag_patterns.is_empty() || tag_patterns.iter().any(|pattern|{
+                    let re = Regex::new(&format!("^{}$", pattern)).expect("Unvalid pattern {pattern}");
+                    re.is_match(&el.name)
+                });
+                if element_found {
                     cells.push(root)
                 }
                 el.children
                     .iter()
-                    .for_each(|child| self.find_cell(child, tag_names, cells))
+                    .for_each(|child| self.find_cell(child, tag_patterns, cells))
             }
             CellType::Root(el) => el
                 .children
                 .iter()
-                .for_each(|child| self.find_cell(child, tag_names, cells)),
+                .for_each(|child| self.find_cell(child, tag_patterns, cells)),
             _ => (),
         }
     }
@@ -251,42 +262,65 @@ impl Desugarer {
         }
     }
 
-    pub fn wrap_children(
+    pub fn wrap_children<'a>(
         &mut self,
-        elements: Vec<&str>,
+        elements: Vec<&'static str>, // regex patterns
         wrap_with: &str,
         ignore_elements: &Option<Vec<IgnoreOptions>>,
     ) -> Desugarer {
         // elements are what we want to wrap their children with wrap_with
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
-        let mut _elements: Vec<&DataCell> = Vec::new();
         let binding = root.clone();
+        let mut _elements: Vec<&DataCell> = Vec::new();
+      
         self.find_cell(&binding, &elements, &mut _elements);
+        
+        // element theme selves will also be ignored 
+        let mut extra_ignored_elements = elements.iter().map(|el|{
+            IgnoreOptions{
+                element: el,
+                attach_to: AttachToEnum::NONE
+            }
+        }).collect::<Vec<IgnoreOptions>>();
 
-        for (_, element) in _elements.iter().enumerate() {
+        if let Some(ignored) = ignore_elements {
+            ignored.iter().for_each(|i|{
+                extra_ignored_elements.push(i.clone());
+            });
+        }
+        
+        for element in _elements {
             //let prop_line = format!("solution_number {}", i);
-            if let CellType::Element(el) = &element.cell_type {
+            self.wrap_element_children(&mut root, element, &extra_ignored_elements, wrap_with);
+        }
+
+        Desugarer {
+            json: serde_json::to_string_pretty(&root).unwrap(),
+            last_id: self.last_id,
+        }
+
+     }
+
+     fn wrap_element_children<T: FlatElement>(&mut self, root: &mut DataCell, el: &T, ignore_elements: &Vec<IgnoreOptions>, wrap_with: &str) {
                 let mut include_prev_child = false;
                 let mut include_in_prev_wrapper = false;
                 let mut add_wrapper = true;
                 let mut no_wrap = false;
 
-                el.children.iter().enumerate().for_each(|(idx, child)| {
+                el.children().unwrap().iter().enumerate().for_each(|(idx, child)| {
                     let mut element_ignored = None;
-                    if let Some(ignore_options) = ignore_elements {
-                        ignore_options.iter().any(|option| {
-                            if let CellType::Element(child_el) = &child.cell_type {
-                                if option.element == child_el.name {
-                                    element_ignored = Some(option);
-                                    add_wrapper = false;
-                                    return true;
-                                }
+                    ignore_elements.iter().any(|option| {
+                        if let CellType::Element(child_el) = &child.cell_type {
+                            if option.element == child_el.name {
+                                element_ignored = Some(option);
+                                add_wrapper = false;
+                                return true;
                             }
-                            add_wrapper = true;
-                            false
-                        });
-                    }
+                        }
+                        add_wrapper = true;
+                        false
+                    });
 
                     if let Some(el_ignored) = element_ignored {
                         match el_ignored.attach_to {
@@ -296,8 +330,8 @@ impl Desugarer {
                                     add_wrapper = true;
                                 } else {
                                     ElementCell::move_cell(
-                                        &mut root,
-                                        (element.id, child.id),
+                                        root,
+                                        (el.id(), child.id),
                                         self.last_id,
                                     );
                                 }
@@ -311,16 +345,16 @@ impl Desugarer {
                                 if idx == 0 {
                                     self.last_id += 1;
                                     ElementCell::add_cell(
-                                        &mut root,
-                                        element.id,
+                                        root,
+                                        el.id(),
                                         self.last_id,
                                         wrap_with,
                                     );
                                 }
                                 ElementCell::move_cell(
                                     // current child to previous wrapper
-                                    &mut root,
-                                    (element.id, child.id),
+                                    root,
+                                    (el.id(), child.id),
                                     self.last_id,
                                 );
                                 include_in_prev_wrapper = true // next child to previous wrapper
@@ -331,14 +365,14 @@ impl Desugarer {
                                 add_wrapper = false;
                                 include_in_prev_wrapper = false;
                                 ElementCell::move_cell(
-                                    &mut root,
-                                    (element.id, child.id),
-                                    element.id,
+                                    root,
+                                    (el.id(), child.id),
+                                    el.id(),
                                 );
                             }
                         }
                     } else if include_in_prev_wrapper {
-                        ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
+                        ElementCell::move_cell(root, (el.id(), child.id), self.last_id);
                         include_in_prev_wrapper = false;
 
                         add_wrapper = false
@@ -346,30 +380,23 @@ impl Desugarer {
 
                     if add_wrapper {
                         self.last_id += 1;
-                        ElementCell::add_cell(&mut root, element.id, self.last_id, wrap_with);
+                        ElementCell::add_cell(root, el.id(), self.last_id, wrap_with);
 
                         if include_prev_child {
                             ElementCell::move_cell(
-                                &mut root,
-                                (element.id, el.children[idx - 1].id),
+                                root,
+                                (el.id(), el.children().unwrap()[idx - 1].id),
                                 self.last_id,
                             );
                             include_prev_child = false
                         }
-                        ElementCell::move_cell(&mut root, (element.id, child.id), self.last_id);
+                        ElementCell::move_cell(root, (el.id(), child.id), self.last_id);
                     }
                     // if no_wrap {
 
                     // }
                 });
-            }
         }
-
-        Desugarer {
-            json: serde_json::to_string_pretty(&root).unwrap(),
-            last_id: self.last_id,
-        }
-    }
 
     pub fn wrap_block_delimited(&self, wrap_with: &str) -> Desugarer {
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
@@ -523,7 +550,7 @@ impl Desugarer {
     }
 
     pub fn add_attribute(&mut self, tag_names: Vec<&str>, attribute: (&str, &str)) -> Desugarer {
-        // elements are what we want to wrap it's children with wrap_with
+        // usefull for adding attributes for custom wrappers added by wrap_children fn
 
         let mut root: DataCell = serde_json::from_str(&self.json).unwrap();
         let mut _elements: Vec<&DataCell> = Vec::new();
@@ -531,7 +558,6 @@ impl Desugarer {
         self.find_cell(&binding, &tag_names, &mut _elements);
 
         for (_, element) in _elements.iter().enumerate() {
-            //let prop_line = format!("solution_number {}", i);
             if let CellType::Element(_) = &element.cell_type {
                 ElementCell::add_attribute(
                     &mut root,
@@ -576,3 +602,4 @@ impl Desugarer {
         }
     }
 }
+

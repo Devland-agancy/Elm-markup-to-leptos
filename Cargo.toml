@@ -1,6 +1,6 @@
 [package]
 name = "elm-parser"
-version = "4.0.10"
+version = "4.0.11"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/"
@@ -16,7 +16,7 @@ description = "Elm markup parser to leptos"
 [dependencies]
 quote = "1.0"
 syn = "2.0"
-leptos = { version = "0.4", features = ["csr"] }
+leptos = { version = "0.6.15", features = ["csr"] }
 proc-macro2 = "1.0.69"
 regex = "1.10.0"
 nom = "7.1.3"

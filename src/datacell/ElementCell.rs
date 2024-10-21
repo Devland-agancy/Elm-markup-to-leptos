@@ -1,6 +1,6 @@
 use super::{
     CellTrait::Cell,
-    Datacell::{CellType, DataCell},
+    Datacell::{CellType, DataCell, FlatElement},
 };
 use serde::{Deserialize, Serialize};
 
@@ -94,15 +94,14 @@ impl ElementCell {
         move_to: usize,
     ) {
         if tree.id == cell_to_move_parent_id {
-            if let CellType::Element(ref mut el) = tree.cell_type {
+            if let Some(children) = tree.children() {
                 // Get a mutable reference to `el`
-                let (child_to_move, remaining_children): (Vec<_>, Vec<_>) = el
-                    .children // Split children into two vecs
+                let (child_to_move, remaining_children): (Vec<_>, Vec<_>) = children // Split children into two vecs
                     .iter()
                     .cloned() // Clone to avoid ownership issues
                     .partition(|child| child.id == cell_to_move_id);
 
-                el.children = remaining_children;
+                let _ = tree.update_children(remaining_children);
                 if let Some(child_to_move) = child_to_move.first() {
                     // Use if let to unwrap the child
                     Self::add_existing_cell(tree, move_to, child_to_move);

@@ -30,6 +30,63 @@ pub struct DataCell {
     pub cell_type: CellType,
 }
 
+pub trait FlatElement {
+    fn id(&self) -> usize;
+    fn parent_id(&self) -> usize;
+    fn children(&self) -> Option<&Vec<DataCell>>;
+    fn props(&self) -> Option<&Vec<Prop>>;
+    fn name(&self) -> Option<&String>;
+
+    fn update_children(&mut self, new: Vec<DataCell>) -> Result<(), &str>;
+}
+
+impl FlatElement for DataCell {
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn parent_id(&self) -> usize {
+        self.parent_id
+    }
+
+    fn children(&self) -> Option<&Vec<DataCell>> {
+        match &self.cell_type {
+            CellType::Element(el) => Some(&el.children),
+            CellType::Root(el) => Some(&el.children),
+            _ => None
+        }
+    }
+
+    fn update_children(&mut self, new: Vec<DataCell>) -> Result<(), &str> {
+         match &mut self.cell_type {
+            CellType::Element(el) => {
+                el.children = new;
+                Ok(())
+            },
+            CellType::Root(el) => {
+                el.children = new;
+                Ok(())
+            },
+            _ => Err("Cannot update children of this type of cell")
+        }
+    }
+
+    fn name(&self) -> Option<&String> {
+        if let CellType::Element(el) = &self.cell_type{
+            return Some(&el.name)
+        }
+        None
+    }
+
+    fn props(&self) -> Option<&Vec<Prop>> {
+         if let CellType::Element(el) = &self.cell_type{
+            return Some(&el.props)
+        }
+        None
+    }
+}
+
+
 impl DataCell {
     pub fn get_cell_by_id(cell: &mut DataCell, id: usize) -> Option<&mut DataCell> {
         if cell.id == id {
@@ -114,21 +171,3 @@ impl DataCell {
         None
     }
 }
-
-// impl Root {
-//     pub fn push_attribute(&mut self, line: &str) {
-//         if let Some(prop_line) = line.split_once(" ") {
-//             if self
-//                 .props
-//                 .iter()
-//                 .any(|x| x.key == prop_line.0 && x.value == prop_line.1)
-//             {
-//                 return;
-//             }
-//             self.props.push(Prop {
-//                 key: prop_line.0.to_string(),
-//                 value: prop_line.1.to_string(),
-//             })
-//         }
-//     }
-// }

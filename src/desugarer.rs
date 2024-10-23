@@ -276,23 +276,9 @@ impl Desugarer {
       
         self.find_cell(&binding, &elements, &mut _elements);
         
-        // element theme selves will also be ignored 
-        let mut extra_ignored_elements = elements.iter().map(|el|{
-            IgnoreOptions{
-                element: el,
-                attach_to: AttachToEnum::NONE
-            }
-        }).collect::<Vec<IgnoreOptions>>();
-
-        if let Some(ignored) = ignore_elements {
-            ignored.iter().for_each(|i|{
-                extra_ignored_elements.push(i.clone());
-            });
-        }
-        
         for element in _elements {
             //let prop_line = format!("solution_number {}", i);
-            self.wrap_element_children(&mut root, element, &extra_ignored_elements, wrap_with);
+            self.wrap_element_children(&mut root, element, ignore_elements, wrap_with);
         }
 
         Desugarer {
@@ -302,25 +288,26 @@ impl Desugarer {
 
      }
 
-     fn wrap_element_children<T: FlatElement>(&mut self, root: &mut DataCell, el: &T, ignore_elements: &Vec<IgnoreOptions>, wrap_with: &str) {
+     fn wrap_element_children<T: FlatElement>(&mut self, root: &mut DataCell, el: &T, ignore_elements: &Option<Vec<IgnoreOptions>>, wrap_with: &str) {
                 let mut include_prev_child = false;
                 let mut include_in_prev_wrapper = false;
                 let mut add_wrapper = true;
-                let mut no_wrap = false;
 
                 el.children().unwrap().iter().enumerate().for_each(|(idx, child)| {
                     let mut element_ignored = None;
-                    ignore_elements.iter().any(|option| {
-                        if let CellType::Element(child_el) = &child.cell_type {
-                            if option.element == child_el.name {
-                                element_ignored = Some(option);
-                                add_wrapper = false;
-                                return true;
+                    if let Some(ignored) = ignore_elements {
+                        ignored.iter().any(|option| {
+                            if let CellType::Element(child_el) = &child.cell_type {
+                                if option.element == child_el.name {
+                                    element_ignored = Some(option);
+                                    add_wrapper = false;
+                                    return true;
+                                }
                             }
-                        }
-                        add_wrapper = true;
-                        false
-                    });
+                            add_wrapper = true;
+                            false
+                        });
+                    }
 
                     if let Some(el_ignored) = element_ignored {
                         match el_ignored.attach_to {
